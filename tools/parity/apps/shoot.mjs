@@ -10,7 +10,7 @@ const out = join(here, "out");
 const shots = join(here, "shots");
 await mkdir(shots, { recursive: true });
 const { chromium } = await import(process.env.PARITY_PLAYWRIGHT ? pathToFileURL(process.env.PARITY_PLAYWRIGHT).href : "playwright");
-const SCENES = { home: 1700, hover: 900, "popover-winget": 760, "popover-release": 760, run: 760, installing: 1000, setup: 820, detail: 1080, "detail-suite": 1080, search: 900, category: 760, settings: 900 };
+const SCENES = { home: 1700, hover: 900, "popover-winget": 760, "popover-release": 760, run: 760, installing: 1000, setup: 820, detail: 1080, "detail-suite": 1080, search: 900, category: 760, settings: 900, library: 900, "library-empty": 760, "library-error": 760, "update-all": 900, "library-updated": 900, "detail-gallery": 1080, "detail-freeware": 1080 };
 const PRESETS = (process.env.PARITY_PRESETS || "obsidian,alabaster-daylight").split(",");
 const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".gif": "image/gif", ".webp": "image/webp", ".svg": "image/svg+xml", ".ico": "image/x-icon", ".mp4": "video/mp4", ".webm": "video/webm" };
 const server = createServer(async (req, res) => {

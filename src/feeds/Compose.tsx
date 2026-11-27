@@ -25,12 +25,12 @@ export function Compose({ sources, initial = "", initialTargets, onReview, onClo
       <div className="lf-compose-head">
         <span className="lf-h2">New post</span>
         <span className="lf-spacer" />
-        {onClose ? <button className="lf-ico" aria-label="Close" onClick={onClose}><X size={14} /></button> : null}
+        {onClose ? <button data-weight="medium" className="lf-ico" aria-label="Close" onClick={onClose}><X size={14} /></button> : null}
       </div>
       {postable.length ? (
         <div className="lf-chips">
           {postable.map((s) => (
-            <button key={s.id} className={`lf-chip ${targets.includes(s.id) ? "" : "off"}`} aria-pressed={targets.includes(s.id)} onClick={() => toggle(s.id)}>
+            <button data-weight="light" key={s.id} className={`lf-chip ${targets.includes(s.id) ? "" : "off"}`} aria-pressed={targets.includes(s.id)} onClick={() => toggle(s.id)}>
               <SourceDot source={s.kind} size={12} /> {s.label}
             </button>
           ))}
@@ -42,7 +42,7 @@ export function Compose({ sources, initial = "", initialTargets, onReview, onClo
       <div className="lf-compose-foot">
         <span className={`lf-count ${over ? "over" : ""}`}>{n}/{limit}</span>
         <span className="lf-spacer" />
-        <button className="lf-btn primary" disabled={!text.trim() || over || targets.length === 0} onClick={() => onReview(text, targets)}>Review</button>
+        <button data-weight="heavy" className="lf-btn primary" disabled={!text.trim() || over || targets.length === 0} onClick={() => onReview(text, targets)}>Review</button>
       </div>
     </div>
   );
@@ -85,7 +85,7 @@ export function PostApproval({ text, targets, sources, verb = "Post", onApprove,
         </div>
       ) : (
         <div className="lf-approve-foot">
-          <button className="lf-btn" onClick={onDeny}>Cancel</button>
+          <button data-weight="medium" className="lf-btn" onClick={onDeny}>Cancel</button>
           <HoldButton label={`Hold to ${verb.toLowerCase()}`} onDone={onApprove} className="primary" />
         </div>
       )}

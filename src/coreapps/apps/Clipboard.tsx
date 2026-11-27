@@ -11,6 +11,7 @@ import { ago, plural } from "../shell/format";
 import { KIND_LABEL, filterClips, groupClips, type ClipFilter } from "../models/clipboard";
 import { friendlyError } from "../models/load";
 import { coreApp } from "../registry";
+import { oops, quiet } from "../../ui/oops";
 
 const PASTE_AS: { id: PasteAs; label: string }[] = [
   { id: "original", label: "As copied" },
@@ -57,7 +58,8 @@ export const Clipboard: React.FC<{ config: LensConfig | null; updateConfig: (c: 
     // Hide first so the paste lands in the window you were using.
     getCurrentWindow()
       .hide()
-      .catch(() => {})
+      // If the window can't hide, the paste still goes ahead (and reports its own failure).
+      .catch(quiet)
       .finally(() => invoke("clip_paste", { id: c.id, mode }).catch((e) => setToast({ text: friendlyError(String(e)), tone: "bad" })));
   };
   const copy = (c: ClipView) => run(invoke("clip_copy", { id: c.id, mode }), "Copied. Paste anywhere with Ctrl+V.");
@@ -130,7 +132,7 @@ export const Clipboard: React.FC<{ config: LensConfig | null; updateConfig: (c: 
           title="Clipboard history is off"
           config={config}
           action={
-            <Button variant="primary" onClick={() => invoke("open_surface", { label: "settings" }).catch(() => {})}>
+            <Button variant="primary" onClick={() => invoke("open_surface", { label: "settings" }).catch(oops("open Settings"))}>
               Open Settings
             </Button>
           }

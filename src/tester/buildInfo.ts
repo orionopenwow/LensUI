@@ -2,528 +2,495 @@
 // Do not edit by hand.
 export const BUILD_INFO: unknown = {
   "version": "0.3.0",
-  "sha": "c68b35b5b15ab666a61e4fe6ca96e8189bfbcad3",
-  "builtAt": "2026-11-25T01:06:41.788Z",
-  "branch": "fix/dock-styles-smooth",
+  "sha": "abc33147801174ab7614274f20e1b37fb8b313e9",
+  "builtAt": "2026-11-27T00:31:28.874Z",
+  "branch": "fable/apps-20261126",
   "commits": [
     {
-      "sha": "c68b35b5b15ab666a61e4fe6ca96e8189bfbcad3",
-      "subject": "Dock attention: use the generated AttentionSnapshot type from #79",
-      "date": "2026-11-24T18:06:18-07:00",
+      "sha": "abc33147801174ab7614274f20e1b37fb8b313e9",
+      "subject": "Lens Apps: Library (installed, updates, Update all), credits and licences in plain words, screenshot gallery",
+      "date": "2026-11-26T17:21:00-07:00",
       "files": [
-        "src/dock/attention.ts"
-      ],
-      "pr": 79
+        "src/__tests__/appsLibrary.test.ts",
+        "src/apps/ActionPill.tsx",
+        "src/apps/AppsSurface.tsx",
+        "src/apps/Detail.tsx",
+        "src/apps/Gallery.tsx",
+        "src/apps/LensApps.tsx",
+        "src/apps/Library.tsx",
+        "src/apps/api.ts",
+        "src/apps/approval.ts",
+        "src/apps/apps-settings.css",
+        "src/apps/apps.css",
+        "src/apps/library.css"
+      ]
     },
     {
-      "sha": "04914b8a4818b5b83f14cf6ece78af551cf6a859",
-      "subject": "Dock: failsafe glide cap as a named helper; smoothness doc is a developer doc",
-      "date": "2026-11-24T18:06:05-07:00",
+      "sha": "d5904ad88e0a06941048fda9757dba1674d74050",
+      "subject": "Merge pull request #117 from orionopenwow/feature/dock-unified",
+      "date": "2026-11-26T17:05:22-07:00",
+      "files": [],
+      "pr": 117
+    },
+    {
+      "sha": "46babca10e3e7bbd155d0f25c955fa4836e57e0d",
+      "subject": "Merge pull request #121 from orionopenwow/site/accent-and-app-thumbs",
+      "date": "2026-11-26T16:38:20-07:00",
+      "files": [],
+      "pr": 121
+    },
+    {
+      "sha": "0fec783f958b9bf8decf802b99b5c0be28660108",
+      "subject": "Merge main; regenerate generated files",
+      "date": "2026-11-26T16:28:09-07:00",
       "files": [
         "docs/brain/generated/loc.md",
-        "src/guide/index.json",
-        "src/guide/indexData.ts",
-        "src/surfaces/DockSurface.tsx",
-        "tools/guide/extract.mjs"
+        "docs/brain/generated/patterns.md",
+        "docs/brain/generated/prs.md"
       ]
     },
     {
-      "sha": "dbadd8a56ce68bcea0e6d50fa10a09c1fc943ee3",
-      "subject": "Merge main; regenerate generated files",
-      "date": "2026-11-24T18:00:28-07:00",
+      "sha": "bc2b908af1abf75155e92c4a1bbfa5cb2adce811",
+      "subject": "Merge remote-tracking branch 'origin/main' into feature/dock-unified",
+      "date": "2026-11-26T16:27:59-07:00",
       "files": []
     },
     {
-      "sha": "7922639538369d279823f7870dca455cad5e4945",
-      "subject": "Dock: search and docked Settings never stay open; Settings sits exactly on the Dock",
-      "date": "2026-11-24T17:59:46-07:00",
+      "sha": "3dd13f7581197a42fc629b4c58da4d2f469a4325",
+      "subject": "Goldens: Dock & Bar settings (Catppuccin Mocha) with the Unified style card, from the CI log",
+      "date": "2026-11-26T16:27:58-07:00",
       "files": [
-        ".github/workflows/e2e.yml",
-        "src-tauri/src/app/watcher.rs",
-        "src/surfaces/DockSurface.tsx",
-        "tests/e2e/run.mjs",
-        "tools/parity/mock/core.ts",
-        "tools/robust/dock-dismiss.mjs"
+        "tools/parity/golden/settings-dock-catppuccin-mocha-1024x700.png"
       ]
     },
     {
-      "sha": "6aa467169134a7017c0cab8d8c00e9ad22f57ae9",
-      "subject": "Merge pull request #90 from orionopenwow/docs/living-brain",
-      "date": "2026-11-24T17:51:31-07:00",
+      "sha": "123a5f3061635b2f07ecf35cc2a122475a44932b",
+      "subject": "Merge pull request #125 from orionopenwow/fix/magic-start-esc",
+      "date": "2026-11-26T16:26:14-07:00",
       "files": [],
-      "pr": 90
+      "pr": 125
     },
     {
-      "sha": "43037ab7cbd38a241b164fb769ae17ce9320083e",
-      "subject": "Merge main; regenerate generated files",
-      "date": "2026-11-24T17:51:14-07:00",
-      "files": []
-    },
-    {
-      "sha": "abc49469d65e6dfc1779ca83481e52f30b683b83",
-      "subject": "Merge pull request #79 from orionopenwow/fix/dock-native",
-      "date": "2026-11-24T17:50:55-07:00",
-      "files": [],
-      "pr": 79
-    },
-    {
-      "sha": "86d4777d28c9d270204f3a73aa5a0c25fe8c873e",
-      "subject": "Merge main; regenerate generated files",
-      "date": "2026-11-24T17:50:36-07:00",
-      "files": []
-    },
-    {
-      "sha": "4545969045945c4e7fed8772197e3c29c6efba9c",
-      "subject": "Merge pull request #82 from orionopenwow/feature/restart-update-report-bug",
-      "date": "2026-11-24T17:50:19-07:00",
-      "files": [],
-      "pr": 82
-    },
-    {
-      "sha": "2d09aaba93db3b5f310c4556b106236d8cad4e48",
-      "subject": "Merge main; regenerate generated files",
-      "date": "2026-11-24T17:49:58-07:00",
-      "files": []
-    },
-    {
-      "sha": "e49bb6fa28d65e62ab5f737d637f07c912463019",
-      "subject": "Dock search: the results panel and the Dock read as one shape",
-      "date": "2026-11-24T17:45:21-07:00",
+      "sha": "0dea2da4eba1071ca708c50392c9bbf8ea5620c6",
+      "subject": "Site: open on the Dock widget, Magic Mouse, an agentic desk the Lens cursor drives, readable captions",
+      "date": "2026-11-26T16:16:03-07:00",
       "files": [
-        "src/surfaces/DockSurface.css",
-        "src/surfaces/DockSurface.tsx",
-        "tools/robust/dock-layout.mjs"
-      ]
-    },
-    {
-      "sha": "370c0d111d0899c128dc4b2a5a16c67db0c2899f",
-      "subject": "Merge pull request #88 from orionopenwow/fix/theme-switch-stability",
-      "date": "2026-11-24T17:37:30-07:00",
-      "files": [],
-      "pr": 88
-    },
-    {
-      "sha": "b5ccdc4ac9386b6ce71aa39f9da2d8eae76f0498",
-      "subject": "Merge pull request #87 from orionopenwow/site/browser-feature",
-      "date": "2026-11-24T17:36:44-07:00",
-      "files": [],
-      "pr": 87
-    },
-    {
-      "sha": "518dfdb3da44fc5a5ebe4a6dd2845a46d34e227d",
-      "subject": "Dock auto-hide: a visible slide on every style and edge",
-      "date": "2026-11-24T17:27:04-07:00",
-      "files": [
-        ".github/workflows/e2e.yml",
-        "src/surfaces/DockSurface.css",
-        "tools/robust/dock-slide.mjs"
-      ]
-    },
-    {
-      "sha": "1a41ed02e4c0434e329dd079e68bd23eb39d1a05",
-      "subject": "Living brain: IDENTITY (mission, brand, design philosophy), the all-time FEATURES catalogue, and a plan to replace Windhawk",
-      "date": "2026-11-24T17:26:46-07:00",
-      "files": [
-        "DESIGN.md",
-        "docs/VISION.md",
-        "docs/WINDHAWK_REPLACEMENT.md",
-        "docs/brain/FEATURES.md",
-        "docs/brain/IDENTITY.md",
-        "docs/brain/README.md",
-        "docs/brain/generated/loc.md",
-        "docs/brain/generated/prs.md",
-        "src/guide/index.json",
-        "src/guide/indexData.ts",
-        "tools/spikes/dwm-foreign-window.ps1"
-      ]
-    },
-    {
-      "sha": "48eb294f71b0aaf5d88144af180a0a665a22d2b3",
-      "subject": "Dock: tokens-only close-button CSS, wider Slim search field, goldens for the intended changes",
-      "date": "2026-11-24T17:21:09-07:00",
-      "files": [
-        "src/surfaces/DockSurface.tsx",
-        "src/ui/flyoutClose.css",
-        "tools/parity/golden/dock-search-alabaster-daylight-1366x640.png",
-        "tools/parity/golden/dock-search-alabaster-daylight-1920x760.png",
-        "tools/parity/golden/dock-search-catppuccin-mocha-1366x640.png",
-        "tools/parity/golden/dock-search-catppuccin-mocha-1920x760.png",
-        "tools/parity/golden/dock-search-obsidian-1366x640.png",
-        "tools/parity/golden/dock-search-obsidian-1920x760.png",
-        "tools/parity/golden/launcher-catppuccin-mocha-1024x720.png",
-        "tools/parity/golden/launcher-obsidian-1024x720.png",
-        "tools/parity/golden/quicksettings-alabaster-daylight-404x580.png",
-        "tools/parity/golden/quicksettings-alabaster-daylight-440x640.png"
-      ]
-    },
-    {
-      "sha": "a3b0196af1e89cb89607185cb8b6c46a47aac3ff",
-      "subject": "Merge main (#80, #81) into dock native",
-      "date": "2026-11-24T17:09:28-07:00",
-      "files": [],
-      "pr": 80
-    },
-    {
-      "sha": "6d18a4af5f1f27e26ab2d0ffc6c0cea0954a85a0",
-      "subject": "Site: the hero's free-play line points at the docks tour",
-      "date": "2026-11-24T17:08:52-07:00",
-      "files": [
+        "docs/site/css/site.css",
+        "docs/site/js/desk.js",
+        "docs/site/js/exhibits.js",
+        "docs/site/js/guide.js",
+        "docs/site/js/hero.js",
+        "docs/site/js/home.js",
+        "tools/site/check.mjs",
+        "tools/site/live/build-live.mjs",
+        "tools/site/live/surfaces/snip.ts",
+        "tools/site/live/surfaces/voice.tsx",
         "tools/site/pages.mjs"
       ]
     },
     {
-      "sha": "c9043af68d1f1e7cee54e0453fc0d30b7c1c2712",
-      "subject": "Guide index and brain files for docs/BROWSER_RESEARCH.md; merge main (Lens glow new tab)",
-      "date": "2026-11-24T17:07:52-07:00",
+      "sha": "578e69f7e63dd0eb799b68eaeef54f25bbf03d91",
+      "subject": "Magic Start: Esc works even before keyboard focus reaches the panel",
+      "date": "2026-11-26T15:56:42-07:00",
       "files": [
-        "docs/brain/generated/loc.md",
-        "docs/brain/generated/prs.md",
+        "src/__tests__/magicStart.test.ts",
+        "src/magic/start/MagicStartWindow.tsx"
+      ]
+    },
+    {
+      "sha": "5392d41ed567adc8130d396d188230c1b4083d33",
+      "subject": "Merge main; regenerate generated files",
+      "date": "2026-11-26T15:48:57-07:00",
+      "files": []
+    },
+    {
+      "sha": "a0e8a091ee091509f3f9202c7173767c8739c2ce",
+      "subject": "Dock: drop the old music card's mediaInfo from the hover card's measure deps (the new DockMusicCard measures itself)",
+      "date": "2026-11-26T15:48:41-07:00",
+      "files": [
+        "src/surfaces/DockSurface.tsx"
+      ]
+    },
+    {
+      "sha": "0db55154d2c397bde6428107c7ecc971af52080b",
+      "subject": "Merge pull request #118 from orionopenwow/wave/settings-polish",
+      "date": "2026-11-26T15:47:04-07:00",
+      "files": [],
+      "pr": 118
+    },
+    {
+      "sha": "8cfaca790433578cfbfdd99234e18162a606fd55",
+      "subject": "Merge main; regenerate generated files",
+      "date": "2026-11-26T15:10:00-07:00",
+      "files": []
+    },
+    {
+      "sha": "0dc0ccdabc52816f4ed137f0c335e33db9220cb0",
+      "subject": "Merge main; regenerate generated files",
+      "date": "2026-11-26T15:09:11-07:00",
+      "files": []
+    },
+    {
+      "sha": "e56c2b2744d344948834deed7090534ea9b7e074",
+      "subject": "Merge pull request #120 from orionopenwow/feature/music-sound-glow",
+      "date": "2026-11-26T14:53:41-07:00",
+      "files": [],
+      "pr": 120
+    },
+    {
+      "sha": "158622c88f29ca512df92a36d3074509a4f20985",
+      "subject": "Dock carousel and clock report failures through failsafe/calls (#119 rules)",
+      "date": "2026-11-26T14:30:47-07:00",
+      "files": [
+        "src/dock/DockSystemArea.tsx",
+        "src/dock/DockWindowCarousel.tsx",
+        "src/surfaces/DockSurface.tsx"
+      ],
+      "pr": 119
+    },
+    {
+      "sha": "878095f7bdd3a57dc94a900e506b50d9cfcc3349",
+      "subject": "Site: accents that visibly repaint the lab desk; Lens Apps cards with real screenshots and credits",
+      "date": "2026-11-26T14:30:24-07:00",
+      "files": [
+        "catalog/apps/catalog.json",
+        "catalog/apps/schema.json",
+        "docs/media/apps/affine.webp",
+        "docs/media/apps/artcraft.webp",
+        "docs/media/apps/concat.webp",
+        "docs/media/apps/deckcraft.webp",
+        "docs/media/apps/degenview.webp",
+        "docs/media/apps/gridcraft.webp",
+        "docs/media/apps/ollama.webp",
+        "docs/media/apps/thumbdesk.webp",
+        "docs/media/apps/wordcraft.webp",
+        "docs/site/css/lab-accent.css"
+      ]
+    },
+    {
+      "sha": "3eb4488b267d65c40cb4e465bb764b69e3a78800",
+      "subject": "Include Unified in the side-edge Dock E2E loop and the soak style list",
+      "date": "2026-11-26T14:29:56-07:00",
+      "files": [
+        "tests/e2e/autohide.mjs",
+        "tools/soak/run.mjs"
+      ]
+    },
+    {
+      "sha": "5f5ed99f10d9c512738445a188cd94b64d9e2238",
+      "subject": "Merge main; regenerate generated files",
+      "date": "2026-11-26T14:29:52-07:00",
+      "files": []
+    },
+    {
+      "sha": "2773dd7e4ff8665baa4a038f6951fbedcf63602c",
+      "subject": "Merge origin/main into feature/dock-unified; rebuild guide index",
+      "date": "2026-11-26T14:29:25-07:00",
+      "files": []
+    },
+    {
+      "sha": "1a737ae75a8baee1e1a1a21ba33623b504885549",
+      "subject": "Merge origin/main; keep the new Dock music pop-out, regenerate guide index",
+      "date": "2026-11-26T14:28:34-07:00",
+      "files": []
+    },
+    {
+      "sha": "81c44ea9a8f93992c21f7aa9738852cb53bb6a11",
+      "subject": "Visual goldens for the Dock music pop-out (dock-music), recorded from CI",
+      "date": "2026-11-26T14:17:47-07:00",
+      "files": [
+        "tools/parity/golden/dock-music-alabaster-daylight-1366x640.png",
+        "tools/parity/golden/dock-music-alabaster-daylight-1920x760.png",
+        "tools/parity/golden/dock-music-catppuccin-mocha-1366x640.png",
+        "tools/parity/golden/dock-music-catppuccin-mocha-1920x760.png",
+        "tools/parity/golden/dock-music-obsidian-1366x640.png",
+        "tools/parity/golden/dock-music-obsidian-1920x760.png"
+      ]
+    },
+    {
+      "sha": "c3fefdcaea5051304c650834f0fc297389ef8f9f",
+      "subject": "Merge pull request #119 from orionopenwow/wave/robustness",
+      "date": "2026-11-26T14:14:31-07:00",
+      "files": [],
+      "pr": 119
+    },
+    {
+      "sha": "75e663bd19eedacdcffbe63d0967600d11bda64b",
+      "subject": "Dock search: tray and clock in the row step aside while searching; update Dock & Bar goldens",
+      "date": "2026-11-26T14:13:31-07:00",
+      "files": [
+        "docs/features/dock.md",
+        "src/surfaces/DockSurface.css",
+        "src/surfaces/DockSurface.tsx",
+        "tools/parity/golden/settings-dock-alabaster-daylight-1024x700.png",
+        "tools/parity/golden/settings-dock-catppuccin-mocha-1024x700.png",
+        "tools/parity/golden/settings-dock-obsidian-1024x700.png"
+      ]
+    },
+    {
+      "sha": "fee473443589f384cd43bd27293b9f0b6730bbc0",
+      "subject": "Re-record 30 goldens from the CI log (VISUAL_EMIT_B64)",
+      "date": "2026-11-26T14:07:30-07:00",
+      "files": [
+        "tools/parity/golden/command-full-catppuccin-mocha-1000x640.png",
+        "tools/parity/golden/command-full-catppuccin-mocha-760x560.png",
+        "tools/parity/golden/command-mini-catppuccin-mocha-376x456.png",
+        "tools/parity/golden/command-mini-catppuccin-mocha-440x520.png",
+        "tools/parity/golden/dock-search-catppuccin-mocha-1366x640.png",
+        "tools/parity/golden/dock-search-catppuccin-mocha-1920x760.png",
+        "tools/parity/golden/launcher-catppuccin-mocha-1024x720.png",
+        "tools/parity/golden/launcher-catppuccin-mocha-780x640.png",
+        "tools/parity/golden/overview-catppuccin-mocha-1120x700.png",
+        "tools/parity/golden/overview-catppuccin-mocha-1366x768.png",
+        "tools/parity/golden/palette-catppuccin-mocha-660x460.png",
+        "tools/parity/golden/palette-catppuccin-mocha-760x560.png"
+      ]
+    },
+    {
+      "sha": "66392cc9f7507db4578cd8914e270b3e380d7301",
+      "subject": "Merge pull request #113 from orionopenwow/fable/dock-topbar-settings-themes",
+      "date": "2026-11-26T14:01:01-07:00",
+      "files": [],
+      "pr": 113
+    },
+    {
+      "sha": "8e8a2ebf182306b14fa950ebda34f450a8346bb6",
+      "subject": "Dock music pop-out: art + level meter, seek row, controls, sound glow",
+      "date": "2026-11-26T13:53:54-07:00",
+      "files": [
+        "CHANGELOG.md",
+        "docs/MUSIC.md",
+        "docs/features/music.md",
+        "src-tauri/src/commands/music.rs",
+        "src-tauri/src/commands/system.rs",
+        "src-tauri/src/lib.rs",
+        "src-tauri/src/music/mod.rs",
+        "src-tauri/src/win_media.rs",
+        "src/__tests__/soundGlow.test.ts",
+        "src/components/MusicCard.tsx",
         "src/guide/index.json",
         "src/guide/indexData.ts"
       ]
     },
     {
-      "sha": "8616be542184678f7f440b379a9d259062ac313d",
-      "subject": "Merge remote-tracking branch 'origin/main' into site/browser-feature",
-      "date": "2026-11-24T17:07:38-07:00",
+      "sha": "8079b58c7b0d51f05a9073fc28fa2ef24a1adb65",
+      "subject": "Merge origin/main into wave/robustness",
+      "date": "2026-11-26T13:49:27-07:00",
       "files": []
     },
     {
-      "sha": "290b5c718180bc33acce2db7e6c879e82a81049b",
-      "subject": "Theme switching: one clean frame instead of a lagging, washed-out cross-fade; theme-switch rig",
-      "date": "2026-11-24T17:02:54-07:00",
+      "sha": "aa7d15ce584ac4b8e6ae8b62841328fc12433626",
+      "subject": "Robustness wave: side-edge Dock E2E, multi-monitor DPI fixes, no stuck pop-outs",
+      "date": "2026-11-26T13:49:21-07:00",
       "files": [
-        ".github/workflows/e2e.yml",
+        "CHANGELOG.md",
+        "docs/FAILSAFE.md",
         "docs/TESTING.md",
-        "src/hooks/useLensState.ts",
-        "src/styles/motion.css",
-        "src/styles/tokens.css",
-        "tools/robust/theme-switch.mjs"
+        "docs/brain/BUGS.md",
+        "docs/features/README.md",
+        "docs/features/command.md",
+        "docs/features/dock.md",
+        "docs/features/magic.md",
+        "docs/features/topbar.md",
+        "src-tauri/src/app/flyout_geom.rs",
+        "src-tauri/src/app/integration.rs",
+        "src-tauri/src/app/place.rs"
       ]
     },
     {
-      "sha": "1b5d65575e1b414fd0980da85ba1d78eb4a0c683",
-      "subject": "Merge main (#80, #81) into update/report",
-      "date": "2026-11-24T16:57:55-07:00",
-      "files": [],
-      "pr": 80
-    },
-    {
-      "sha": "eea9d969d10ef0d761af4ed4ee96a0eb24630e36",
-      "subject": "Merge pull request #81 from orionopenwow/feature/browser-lens-glow",
-      "date": "2026-11-24T16:57:32-07:00",
-      "files": [],
-      "pr": 81
-    },
-    {
-      "sha": "dc74548f8bf456fc2fcb1e0ec0dd5d9f2cd4c15d",
-      "subject": "Site: Lens Browser front and centre, docks first, right-click spotlight, tighter page",
-      "date": "2026-11-24T16:57:28-07:00",
+      "sha": "53379908cc3b4c87c258fc15278b788005c2a8b6",
+      "subject": "Refresh brain line counts after merging main",
+      "date": "2026-11-26T13:46:55-07:00",
       "files": [
-        "docs/BROWSER_RESEARCH.md",
-        "docs/site/css/site.css",
-        "docs/site/js/desk.js",
-        "docs/site/js/exhibits.js",
-        "docs/site/js/home.js",
-        "docs/site/js/showcases.js",
-        "tools/parity/browser/entry.tsx",
-        "tools/site/check.mjs",
-        "tools/site/pages.mjs"
+        "docs/brain/generated/loc.md"
       ]
     },
     {
-      "sha": "6c7cf27b29d10da2ad0ae39811898f18f9819b1c",
-      "subject": "Dock: research notes, style-switch perf scenario, native attention snapshot",
-      "date": "2026-11-24T16:48:40-07:00",
+      "sha": "0255ca3ecae1bab14c30494f857607cf76cc0b09",
+      "subject": "Merge remote-tracking branch 'origin/main' into feature/dock-unified",
+      "date": "2026-11-26T13:46:28-07:00",
+      "files": []
+    },
+    {
+      "sha": "9c4704cec7cb600bdd3d847f9d2e56fccb90cf08",
+      "subject": "Merge main into wave/settings-polish",
+      "date": "2026-11-26T13:46:27-07:00",
+      "files": []
+    },
+    {
+      "sha": "ca19bb8c13caad698d8a11e0b242615c89eb2306",
+      "subject": "Dock: Unified style, window-count marks, window carousel, smooth reflow, Launcher pins",
+      "date": "2026-11-26T13:46:27-07:00",
       "files": [
-        "docs/DOCK_SMOOTHNESS.md",
+        "CHANGELOG.md",
+        "DESIGN.md",
         "docs/DOCK_STYLES.md",
         "docs/brain/generated/loc.md",
         "docs/brain/generated/patterns.md",
         "docs/brain/generated/prs.md",
-        "src/__tests__/dockAttention.test.ts",
-        "src/dock/attention.ts",
-        "src/guide/index.json",
-        "src/guide/indexData.ts",
-        "tools/perf/run.mjs",
-        "tools/robust/dock-layout.mjs"
-      ]
-    },
-    {
-      "sha": "57a1866031c7a8d9071746bc20be0adb995f916a",
-      "subject": "Dock pop-outs: one shared close button",
-      "date": "2026-11-24T16:45:01-07:00",
-      "files": [
-        ".github/workflows/e2e.yml",
-        "src/music/NowPlaying.tsx",
-        "src/surfaces/DesktopFolderSurface.tsx",
-        "src/surfaces/DockSurface.css",
-        "src/surfaces/DockSurface.tsx",
-        "src/surfaces/LauncherSurface.css",
-        "src/surfaces/LauncherSurface.tsx",
-        "src/surfaces/QuickSettingsSurface.tsx",
-        "src/surfaces/WidgetDrawerSurface.tsx",
-        "src/ui/FlyoutClose.tsx",
-        "src/ui/flyoutClose.css",
-        "tools/parity/mock/core.ts"
-      ]
-    },
-    {
-      "sha": "5df85f3165e752cd99feb61b4fbefdbb547a2dfe",
-      "subject": "Merge pull request #80 from orionopenwow/fix/window-buttons-blend",
-      "date": "2026-11-24T16:40:25-07:00",
-      "files": [],
-      "pr": 80
-    },
-    {
-      "sha": "a8f5c1002dff7f6ac2e95e07d75a9b344e854aa6",
-      "subject": "Dock attention: apps that flash (FlashWindowEx) are reported to the Dock",
-      "date": "2026-11-24T16:39:35-07:00",
-      "files": [
-        "docs/DOCK_SMOOTHNESS.md",
-        "docs/brain/generated/commands.md",
-        "docs/brain/generated/loc.md",
-        "docs/brain/generated/patterns.md",
-        "docs/brain/generated/prs.md",
-        "src-tauri/src/app/setup.rs",
-        "src-tauri/src/attention.rs",
-        "src-tauri/src/lib.rs",
-        "src/guide/index.json",
-        "src/guide/indexData.ts",
-        "src/types/generated.ts"
-      ]
-    },
-    {
-      "sha": "41331dae7a9c64f60a41a212cf445b5fa6c5583d",
-      "subject": "Dock: apps asking for attention show it on every style",
-      "date": "2026-11-24T16:36:14-07:00",
-      "files": [
-        "src/__tests__/dockAttention.test.ts",
-        "src/dock/attention.ts",
-        "src/surfaces/DockSurface.css",
-        "src/surfaces/DockSurface.tsx",
-        "tools/robust/dock-layout.mjs"
-      ]
-    },
-    {
-      "sha": "e2a99a85736290ebfe5dccf39188077b0af799a4",
-      "subject": "Dock: every style keeps Settings and search whole; smoother magnification, hover and reorder",
-      "date": "2026-11-24T16:31:59-07:00",
-      "files": [
-        ".github/workflows/e2e.yml",
-        "src/components/DockPreviewStrip.tsx",
-        "src/dock/islands/islands.css",
-        "src/surfaces/DockSurface.css",
-        "src/surfaces/DockSurface.tsx",
-        "tools/robust/.gitignore",
-        "tools/robust/dock-layout.mjs"
-      ]
-    },
-    {
-      "sha": "4eb3f64897f39317dc6c35ae84fa7cbe2c004c73",
-      "subject": "Restart to update and Report a problem",
-      "date": "2026-11-24T16:31:13-07:00",
-      "files": [
-        ".github/ISSUE_TEMPLATE/bug_report.yml",
-        "CHANGELOG.md",
-        "docs/RELEASING.md",
-        "docs/REPORTING.md",
-        "docs/brain/generated/commands.md",
-        "docs/brain/generated/loc.md",
-        "docs/brain/generated/patterns.md",
-        "docs/brain/generated/prs.md",
-        "src-tauri/src/app/tray.rs",
-        "src-tauri/src/commands/power.rs",
-        "src-tauri/src/commands/release.rs",
-        "src-tauri/src/lib.rs"
-      ]
-    },
-    {
-      "sha": "56ab05720d29c459d9eff574c923cdae88e7b483",
-      "subject": "Lens Browser: new tab and error pages use the Lens glow instead of the dither pattern",
-      "date": "2026-11-24T16:30:29-07:00",
-      "files": [
-        "src/browser/Browser.css",
-        "src/browser/Pages.tsx"
-      ]
-    },
-    {
-      "sha": "542e409eb3ba189c75766a318576257bb3f5684d",
-      "subject": "Previews: declare SetTimer like the rest of the crate",
-      "date": "2026-11-24T16:27:41-07:00",
-      "files": [
-        "src-tauri/src/win_previews.rs"
-      ]
-    },
-    {
-      "sha": "c83089d7a5d0b6ebfc6fc3ba6c596db772c0028a",
-      "subject": "Window buttons blend into every title bar: per-row colour, re-read while settling, parity matrix",
-      "date": "2026-11-24T16:26:36-07:00",
-      "files": [
-        ".github/workflows/e2e.yml",
-        "docs/WINDOW_STYLING.md",
-        "docs/brain/generated/loc.md",
-        "docs/brain/generated/prs.md",
-        "src-tauri/src/caption_paint.rs",
-        "src-tauri/src/lib.rs",
-        "src-tauri/src/win_caption_engine.rs",
-        "src/__tests__/windowButtons.test.ts",
-        "src/guide/index.json",
-        "src/guide/indexData.ts",
-        "tools/parity/caption/.gitignore",
-        "tools/parity/caption/cli.rs"
-      ]
-    },
-    {
-      "sha": "3de27ec2dfdb9dc30064d169d968755b1f6ecbf5",
-      "subject": "Dock native: previews can't float or stay; nothing pins auto-hide; no bright bar while Settings moves",
-      "date": "2026-11-24T16:22:42-07:00",
-      "files": [
-        "docs/DOCK_SMOOTHNESS.md",
-        "docs/brain/generated/loc.md",
-        "docs/brain/generated/patterns.md",
-        "docs/brain/generated/prs.md",
+        "docs/features/dock.md",
+        "src-tauri/src/ai/intent.rs",
+        "src-tauri/src/ai/tools.rs",
+        "src-tauri/src/app/flyout_geom.rs",
         "src-tauri/src/app/watcher.rs",
-        "src-tauri/src/commands/dock.rs",
-        "src-tauri/src/win_previews.rs",
-        "src/guide/index.json",
-        "src/guide/indexData.ts",
-        "src/surfaces/DockSurface.tsx"
+        "src-tauri/src/config.rs"
       ]
     },
     {
-      "sha": "3aac5c50fb7d8edf2b76183bf18e4be8be55fb17",
-      "subject": "Merge pull request #78 from orionopenwow/release/v0.3.0",
-      "date": "2026-11-24T15:33:06-07:00",
-      "files": [],
-      "pr": 78
-    },
-    {
-      "sha": "80cc19ebbee94ea295f8c157364297c13ceffbf5",
-      "subject": "Changelog: Redline safety fixes in 0.3.0",
-      "date": "2026-11-24T15:19:29-07:00",
-      "files": [
-        "CHANGELOG.md"
-      ]
-    },
-    {
-      "sha": "8056e68210d3af4dd17c82e26b45f26a20cde872",
-      "subject": "Changelog: correct the 0.2.0 notes and the footer links",
-      "date": "2026-11-24T15:19:28-07:00",
-      "files": [
-        "CHANGELOG.md"
-      ]
-    },
-    {
-      "sha": "e0fefcdafac0cac0763c9c7c663b7720746662d0",
-      "subject": "Release 0.3.0: version, changelog, release doc",
-      "date": "2026-11-24T15:19:28-07:00",
+      "sha": "25de59dbe7d098eb86319b33ddf25c92e50340cb",
+      "subject": "Settings wave: B-41, B-40, Settings errors, halo switch, pop-out delay, contrast audit",
+      "date": "2026-11-26T13:46:27-07:00",
       "files": [
         "CHANGELOG.md",
-        "docs/RELEASING.md",
-        "package.json",
-        "src-tauri/Cargo.lock",
-        "src-tauri/Cargo.toml",
-        "src-tauri/tauri.conf.json"
+        "docs/THEMES_AUDIT.md",
+        "docs/brain/BUGS.md",
+        "docs/features/README.md",
+        "docs/features/settings.md",
+        "docs/features/themes.md",
+        "docs/features/topbar.md",
+        "docs/guide-for-users/commands-and-shortcuts.md",
+        "docs/guide-for-users/settings-reference.md",
+        "src-tauri/src/app/topbar_hit.rs",
+        "src-tauri/src/app/watcher.rs",
+        "src-tauri/src/config.rs"
       ]
     },
     {
-      "sha": "2138b0dd16c8e280f92efd45c0c2730ffff61fcd",
-      "subject": "Merge pull request #74 from orionopenwow/run/w4b-browser",
-      "date": "2026-11-24T15:18:53-07:00",
+      "sha": "4b675ccc6d4dbd1b1598046fdfcd3dd22457e877",
+      "subject": "Merge pull request #116 from orionopenwow/site/redo-dock-first",
+      "date": "2026-11-26T13:38:15-07:00",
       "files": [],
-      "pr": 74
+      "pr": 116
     },
     {
-      "sha": "954245c7193f135ccfb8a860211b20e9f8f86a58",
-      "subject": "Merge main (#76, #77 Redline fixes) into the browser branch",
-      "date": "2026-11-24T15:04:14-07:00",
-      "files": [],
-      "pr": 76
+      "sha": "06d4b91ad212d7796a58ba0618b3fa0838022726",
+      "subject": "Merge main; regenerate generated files",
+      "date": "2026-11-26T13:09:35-07:00",
+      "files": []
     },
     {
-      "sha": "c457fa52218a547bf1990d2ab609a0dfa83268ad",
-      "subject": "Merge pull request #77 from orionopenwow/fix/redline-docs",
-      "date": "2026-11-24T14:55:49-07:00",
-      "files": [],
-      "pr": 77
-    },
-    {
-      "sha": "547b87ed0b6ba1ce220fd07347d4404f3ddcfaef",
-      "subject": "Merge pull request #76 from orionopenwow/fix/redline-safety",
-      "date": "2026-11-24T14:55:41-07:00",
-      "files": [],
-      "pr": 76
-    },
-    {
-      "sha": "9eb1f57c43bd280b58b79c261a0e53854e409d5a",
-      "subject": "One build per window label; the renderer watchdog keeps no COM reference and retries a page that isn't ready",
-      "date": "2026-11-24T14:50:12-07:00",
+      "sha": "84210b97adbe9684d20817a5abb4edfdb06ceb99",
+      "subject": "Renumber this pass's bugs to B-52/B-53 (main already has B-43..B-51)",
+      "date": "2026-11-26T13:09:16-07:00",
       "files": [
-        "src-tauri/src/app/renderer.rs",
-        "src-tauri/src/app/setup.rs"
+        "docs/brain/BUGS.md",
+        "docs/features/README.md",
+        "docs/features/dock.md",
+        "docs/features/settings.md",
+        "docs/features/topbar.md"
       ]
     },
     {
-      "sha": "3b56e3c34f05c8a86df14a1284fdcd04fd39822f",
-      "subject": "Docs and site: true trust, status and install text for 0.3.0",
-      "date": "2026-11-24T14:39:10-07:00",
+      "sha": "a6a20277f8414b9e7f88c77f6e8901b8b48c1338",
+      "subject": "site: small-app tiles take their name from their visible text (axe label-content-name-mismatch)",
+      "date": "2026-11-26T12:52:51-07:00",
       "files": [
-        "README.md",
-        "tools/site/content/features.mjs",
-        "tools/site/gen-readme.mjs",
         "tools/site/pages.mjs"
       ]
     },
     {
-      "sha": "515275c9b61197ad81b795042083b9e28eb5fbc6",
-      "subject": "Control catalogue: Start with Windows now defaults to off",
-      "date": "2026-11-24T14:38:25-07:00",
-      "files": [
-        "src/control/catalogue.json"
-      ]
+      "sha": "da4b6234d11d08532adeaab1ee41c6b0097d2831",
+      "subject": "Merge pull request #114 from orionopenwow/fable/approvals-browser-ai",
+      "date": "2026-11-26T12:48:28-07:00",
+      "files": [],
+      "pr": 114
     },
     {
-      "sha": "9ba0a5fe69581120f6bd841e2547eb719115bb78",
-      "subject": "Session log: lazy window builds, ready time-outs and destroys (diagnostics for the duplicate Settings page)",
-      "date": "2026-11-24T14:35:21-07:00",
-      "files": [
-        "src-tauri/src/app/setup.rs"
-      ]
+      "sha": "29c9e7f155b30705095460dc1560d07acddc680c",
+      "subject": "Merge main; regenerate generated files",
+      "date": "2026-11-26T12:48:00-07:00",
+      "files": []
     },
     {
-      "sha": "bde456437b6491043151a60ef43412dd6e27aab3",
-      "subject": "Redline fixes: Windhawk mod opt-in and anti-cheat excludes, startup off by default, Remove all keeps data after a failed undo, in-app gate test",
-      "date": "2026-11-24T14:34:19-07:00",
+      "sha": "62d372158c05a88dc02e9e8f421e9604a62683a4",
+      "subject": "Renumber this pass's bugs to B-50/B-51 (B-43..B-49 are taken on main)",
+      "date": "2026-11-26T12:47:46-07:00",
       "files": [
         "docs/brain/BUGS.md",
-        "docs/brain/generated/loc.md",
-        "docs/brain/generated/prs.md",
-        "src-tauri/src/app/setup.rs",
-        "src-tauri/src/commands/backup.rs",
-        "src-tauri/src/commands/theme.rs",
-        "src-tauri/src/config.rs",
-        "src-tauri/src/control/tests.rs",
-        "src-tauri/src/tests/win_uninstall.rs",
-        "src-tauri/src/win_uninstall.rs",
-        "src-tauri/src/win_windhawk.rs",
-        "windhawk/lens-window-style.wh.cpp"
+        "docs/features/ai-agents.md",
+        "docs/features/browser.md"
       ]
     },
     {
-      "sha": "a072ac372a980ea2f0b982b6dacfddfa9fde9faa",
-      "subject": "Failsafe E2E: when Settings has two pages, also print the pages before opening it, Tauri's webview list and the session log",
-      "date": "2026-11-24T14:24:20-07:00",
-      "files": [
-        "tests/e2e/failsafe.mjs"
-      ]
-    },
-    {
-      "sha": "f14d75172755bbc16a9fc17b5b635807b18a49d0",
-      "subject": "Merge main (#75 polish) into the browser branch",
-      "date": "2026-11-24T14:22:45-07:00",
+      "sha": "90ccedfe93d8db0f4adc9df2f7341a47c2d04da5",
+      "subject": "Merge pull request #115 from orionopenwow/fable/windows-command-safety",
+      "date": "2026-11-26T12:45:18-07:00",
       "files": [],
-      "pr": 75
+      "pr": 115
+    },
+    {
+      "sha": "84a62eb9d9381a9870a66ef6fa5447613acb3571",
+      "subject": "Merge main; regenerate generated files",
+      "date": "2026-11-26T12:44:58-07:00",
+      "files": []
+    },
+    {
+      "sha": "a64702b458228631086a34612db5a28220160fc7",
+      "subject": "Merge pull request #107 from orionopenwow/feature/magic-m4-start-notes",
+      "date": "2026-11-26T12:40:56-07:00",
+      "files": [],
+      "pr": 107
+    },
+    {
+      "sha": "e9070b8ef67aec87c21a1c4c74c838cc04f7efb8",
+      "subject": "Merge main; regenerate generated files",
+      "date": "2026-11-26T12:40:36-07:00",
+      "files": []
+    },
+    {
+      "sha": "1e1f56f931b067b0d049c0d2dd0a7c36dea13371",
+      "subject": "Merge pull request #112 from orionopenwow/fable/core-music-cleaner",
+      "date": "2026-11-26T12:36:59-07:00",
+      "files": [],
+      "pr": 112
+    },
+    {
+      "sha": "9000af75ede88cd356c6292076eb9fd9fa8c42f8",
+      "subject": "site: Islands pop-out width, load the dock rail only on screen, settle before the drag check",
+      "date": "2026-11-26T12:31:45-07:00",
+      "files": [
+        "docs/site/js/desk.js",
+        "docs/site/js/home.js",
+        "tools/site/check.mjs"
+      ]
+    },
+    {
+      "sha": "6bdd272432dbe33562f19f42655c65790956fff7",
+      "subject": "Top Bar copy and media row, B-40 name, Lens Cloud backdrop, dossiers, BUGS, goldens",
+      "date": "2026-11-26T12:30:33-07:00",
+      "files": [
+        "docs/brain/BUGS.md",
+        "docs/features/README.md",
+        "docs/features/dock.md",
+        "docs/features/settings.md",
+        "docs/features/themes.md",
+        "docs/features/topbar.md",
+        "docs/guide-for-users/settings-reference.md",
+        "src/__tests__/lens-cloud.test.ts",
+        "src/guide/index.json",
+        "src/guide/indexData.ts",
+        "src/settings/pages/AccessibilityPage.tsx",
+        "src/studio/backdrop/engine/presets.ts"
+      ]
+    },
+    {
+      "sha": "e1c90b4b9917fce2d17ea23dbcba82b2e36013aa",
+      "subject": "Merge main; regenerate generated files",
+      "date": "2026-11-26T12:24:54-07:00",
+      "files": []
+    },
+    {
+      "sha": "d6448036d3d7ab13abba3c4dfe4490bed38d015e",
+      "subject": "Fix the update status call; Do-mode example chips; Teach me line as its own component",
+      "date": "2026-11-26T12:18:11-07:00",
+      "files": [
+        "docs/features/command.md",
+        "src-tauri/src/win_update.rs",
+        "src/__tests__/teach.test.ts",
+        "src/command/CommandSurface.tsx",
+        "src/command/cards/Cards.tsx",
+        "src/command/examples.ts"
+      ]
     }
   ],
   "latest": {

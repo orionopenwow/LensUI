@@ -1,6 +1,7 @@
 // Renders Lens Apps for screenshots: ?scene=…&preset=…
 //   home · hover · popover-winget · popover-release · run · installing · setup · detail · detail-suite ·
-//   search · category · settings
+//   search · category · settings · library · library-empty · library-error · update-all ·
+//   library-updated · detail-gallery · detail-freeware
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "../../../src/styles/tokens.css";
@@ -18,6 +19,15 @@ const catalog = catalogJson as unknown as Catalog;
 const p = new URLSearchParams(location.search);
 const scene = p.get("scene") || "home";
 const installed = { ollama: { version: "0.40.10", available: "0.40.16" }, krita: { version: "5.3.4.1", available: null }, "obs-studio": { version: "33.0.0", available: null } };
+// The Library: three updates waiting, four up to date (a mix of licences and of checked / unchecked).
+const shelf = {
+  ...installed,
+  blender: { version: "4.5.1", available: "4.5.3" },
+  "obs-studio": { version: "32.0.2", available: "33.0.0" },
+  libreoffice: { version: "25.8.2", available: null },
+  vlc: { version: "3.0.21", available: null },
+  obsidian: { version: "1.9.14", available: null },
+};
 
 const busyQueue: QueueState = {
   items: [
@@ -57,6 +67,29 @@ function props(): LensAppsProps {
       return { demo: base, initialQuery: "slides" };
     case "category":
       return { demo: { ...base, category: "markets" } };
+    case "library":
+      return { demo: { catalog, installed: shelf, view: "library" } };
+    case "library-empty":
+      return { demo: { catalog, installed: {}, view: "library" } };
+    case "library-error":
+      return { demo: { catalog, installed: {}, view: "library", installedError: "winget isn't installed. Get App Installer from the Microsoft Store." } };
+    case "update-all":
+      return { demo: { catalog, installed: shelf, view: "library", bulk: true } };
+    case "library-updated":
+      // One update just finished (the tick settles in), one is running, one is still waiting.
+      return {
+        demo: {
+          catalog,
+          installed: { ...shelf, blender: { version: "4.5.3", available: null } },
+          view: "library",
+          queue: { items: [{ appId: "blender", op: "upgrade", status: "done" }, { appId: "obs-studio", op: "upgrade", status: "running", jobId: "j2" }, { appId: "ollama", op: "upgrade", status: "queued" }] },
+          jobs: { "obs-studio": { jobId: "j2", appId: "obs-studio", op: "upgrade", stage: "downloading" as const, overall: 38, message: "58 MB of 150 MB", finished: false, ok: false } },
+        },
+      };
+    case "detail-gallery":
+      return { demo: { ...base, shot: 1 }, initialApp: "artcraft" };
+    case "detail-freeware":
+      return { demo: base, initialApp: "obsidian" };
     default:
       return { demo: base };
   }

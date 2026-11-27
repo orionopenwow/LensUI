@@ -64,6 +64,13 @@ const STATES = [
   // Full motion (not reduced) so the pressed depth (scale, travel, knob squash) is in the frame;
   // the screenshot's animation freeze lands every transition on its end state.
   { id: "feel", surface: "feel", page: "feel/index.html", forceHover: "[data-force-hover]", motion: true, sizes: [[960, 600]] },
+  // Lens Mission Control (dev builds only, docs/MISSION_CONTROL.md), every page on sample data.
+  ...["pulse", "prs", "bugs", "suggestions", "checks", "roadmap", "quality", "releases", "dev", "local", "agents", "brain", "setup"].map((p) => ({
+    id: `mission-${p}`,
+    surface: "missioncontrol",
+    params: `mcmock=1&page=${p}`,
+    sizes: [[1180, 760]],
+  })),
 ];
 
 /** Force :hover on every element matching `selector` (deterministic hover for a static frame). */

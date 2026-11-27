@@ -82,6 +82,10 @@ jobs:
 
       # The public key and createUpdaterArtifacts are injected only here, so local builds without a
       # key keep working. `tauri build` signs the updater bundles with TAURI_SIGNING_PRIVATE_KEY.
+      # Lens Mission Control (dev-only) must not be in a release: configs before, bundle after.
+      - name: Mission Control stays out (configs)
+        run: node tools/mission/guard.mjs
+
       - name: Build NSIS + MSI (signed updater artifacts)
         shell: pwsh
         env:
@@ -95,6 +99,9 @@ jobs:
           } | ConvertTo-Json -Depth 5 -Compress
           Set-Content -Path release-override.json -Value $override -Encoding utf8NoBOM
           bun run tauri build --bundles nsis,msi --config release-override.json
+
+      - name: Mission Control stays out (bundle)
+        run: node tools/mission/guard.mjs dist
 
       - name: Collect assets and write latest.json
         shell: pwsh
