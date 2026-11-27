@@ -21,6 +21,36 @@ up and migrates `%APPDATA%\LensUI` where it can.
 - **The Dock presses like the rest of Lens.** Dock icons, the system area and the Dock's menu use
   the same weighted press as Settings; Settings and Quick settings grow out of the Dock button that
   opened them; the highlight in the Dock's search filters slides to the option you pick.
+- **Immersive: Now Playing full screen (learned from Cider).** Big artwork, its colours drifting
+  slowly behind it as soft gradients, and big synced lyrics with the line being sung bright. Open
+  it from Now Playing (or F11 there), the Dock music card, or by typing "immersive" in Lens
+  Command; Esc leaves. The cursor and controls hide after a few seconds without the mouse moving.
+  It opens on the monitor you're using and never over a full-screen game or film, stays still
+  when motion is reduced, and stops drawing while it's hidden. An optional sound glow is in
+  Settings › Music › Tweaks.
+- **Now Playing takes its colours from the artwork**, and only where they read: every accent is
+  checked at 4.5:1 against the background it sits on, otherwise your theme accent is used. The
+  window is matte now (no blurred copy of the cover, no glass panels).
+- **Lyric timing per song.** −0.5 s / +0.5 s (or `[` / `]`) when a song's lyrics run early or
+  late; Lens remembers it for that song.
+- **Lyric translation (opt-in).** Settings › Music › Synced lyrics › Offer translations. Lens AI
+  translates the lyric lines: your local model when one is running, otherwise the AI you chose,
+  under its privacy mode ("Ask each time" asks first). It says who translated, keeps the result on
+  this PC, and you can show the original, the translation or both.
+- **Show what you're listening to on Discord (opt-in).** Through the Discord app on this PC only;
+  Lens itself sends nothing over the internet. Needs your own Discord application ID; Private
+  listening hides it.
+- **Equalizer, the honest way.** Lens has no audio engine of its own, so Settings › Music ›
+  Equalizer works with Equalizer APO (free, by Jonas Thedering): pick Flat, More bass, Clear
+  voices, More treble or Late night and Lens switches its preset with one marked line; Off and
+  Remove all Lens changes take it out again. Not installed? Get it from Lens Apps. Spatial sound
+  opens Windows' Sound settings, because apps can't switch it.
+- **Lens Remote (Tester mode preview).** Control the music from your phone on the same home
+  network after scanning a one-time code. Off by default, home network only, stops by itself after
+  10 minutes without use, with a "Remote on" pill in the Top Bar. It's plain HTTP on your network
+  (no certificate is possible there), which is why it's a preview; Settings explains the limits.
+- **Music setup and Tweaks.** A short three-step setup at the top of Settings › Music (skip it any
+  time) and a Tweaks section that groups the advanced options.
 - **Controls you can feel.** Buttons, tiles, chips, switches and rows in Settings, setup, Quick
   settings and Search now press like a well-made key: they sink the moment you press (mouse, touch
   or Space/Enter), stay visibly pressed for at least 90 ms even on the fastest click, and spring

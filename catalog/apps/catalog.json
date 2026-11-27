@@ -3968,6 +3968,53 @@
           ]
         }
       ]
+    },
+    {
+      "id": "equalizer-apo",
+      "name": "Equalizer APO",
+      "category": "media",
+      "collections": [],
+      "status": "stable",
+      "pitch": "A system-wide equalizer for Windows.",
+      "why": "Lens Music's Equalizer switches its presets; Lens has no audio engine of its own.",
+      "replaces": [],
+      "openSource": true,
+      "license": "GPL-2.0",
+      "licenseVerified": false,
+      "publisher": "Jonas Thedering",
+      "homepage": "https://sourceforge.net/projects/equalizerapo/",
+      "repo": "https://sourceforge.net/p/equalizerapo/code/",
+      "install": {
+        "method": "officialSite",
+        "url": "https://sourceforge.net/projects/equalizerapo/"
+      },
+      "media": {
+        "icon": null,
+        "screenshots": [],
+        "loop": null,
+        "credit": "sourceforge.net/projects/equalizerapo",
+        "sourceUrl": "https://sourceforge.net/projects/equalizerapo/",
+        "noMedia": "No icon or screenshots in a repo Lens can link; Lens shows a lettered tile.",
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [],
+        "mcp": false,
+        "cli": null,
+        "voice": [],
+        "urlScheme": null
+      },
+      "notes": "The installer asks which sound devices to attach to and needs a restart. Lens only edits one marked line in its config (Settings › Music › Equalizer).",
+      "sources": [
+        "https://sourceforge.net/projects/equalizerapo/"
+      ],
+      "stars": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": []
     }
   ]
 }

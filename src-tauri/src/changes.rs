@@ -281,6 +281,17 @@ pub const CHANGES: &[Change] = &[
         undo: undo_spicetify,
     },
     Change {
+        id: "equalizer-apo-preset",
+        label: "Equalizer APO preset (Lens Music)",
+        scope: Scope::Persistent,
+        writes: &[
+            "%ProgramFiles%\\EqualizerAPO\\config\\config.txt",
+            "%ProgramFiles%\\EqualizerAPO\\config\\lens-music.txt",
+        ],
+        sources: &["music/eq.rs", "commands/music.rs"],
+        undo: undo_equalizer_apo,
+    },
+    Change {
         id: "print-screen",
         label: "Print Screen key",
         scope: Scope::Persistent,
@@ -535,6 +546,10 @@ fn undo_spicetify(_: &mut LensConfig) -> Result<String, String> {
         Some(themes) => crate::music::spicetify::remove_installed_theme(&themes),
         None => Ok("Not exported to Spicetify.".to_string()),
     }
+}
+
+fn undo_equalizer_apo(_: &mut LensConfig) -> Result<String, String> {
+    crate::music::eq::undo()
 }
 
 fn undo_print_screen(_: &mut LensConfig) -> Result<String, String> {
