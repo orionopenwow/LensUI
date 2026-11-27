@@ -534,7 +534,24 @@
     "publisher": "Lens contributors",
     "copyright": "MIT \u00a9 2026 Lens contributors",
     "shortDescription": "Calm, themeable desktop shell for Windows 10 and 11",
-    "homepage": "https://orionopenwow.github.io/LensUI/"
+    "homepage": "https://orionopenwow.github.io/LensUI/",
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper",
+        "silent": true
+      },
+      "nsis": {
+        "installMode": "currentUser",
+        "installerIcon": "icons/icon.ico",
+        "headerImage": "windows/nsis-header.bmp",
+        "sidebarImage": "windows/nsis-sidebar.bmp",
+        "installerHooks": "windows/hooks.nsh"
+      },
+      "wix": {
+        "bannerPath": "windows/wix-banner.bmp",
+        "dialogImagePath": "windows/wix-dialog.bmp"
+      }
+    }
   },
   "plugins": {
     "updater": {

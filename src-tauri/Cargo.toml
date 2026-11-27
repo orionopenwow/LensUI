@@ -7,7 +7,10 @@ edition = "2021"
 
 [lib]
 name = "lens_ui_lib"
-crate-type = ["staticlib", "cdylib", "rlib"]
+# rlib only. Tauri's template also lists staticlib and cdylib, which only mobile builds use: on
+# Windows each one made the release build link and LTO-optimise all of Lens again, tripling the
+# long, quiet "lens-ui (530/532)" step and its memory use.
+crate-type = ["rlib"]
 
 [features]
 # Lens Mission Control (docs/MISSION_CONTROL.md): the maintainer's dev-only admin window.
