@@ -76,6 +76,8 @@ up and migrates `%APPDATA%\LensUI` where it can.
 - **The Top Bar no longer stays up after Lens was briefly busy.** If Lens's window watcher was held up
   for a couple of seconds (most often right after start-up), an auto-hidden Top Bar could stay on
   screen until the pointer touched the top edge; it now hides as soon as the watcher runs again.
+- **A click outside the Launcher closes it even when Windows didn't give it the focus.** It used to
+  stay open behind your apps until you opened and closed it again.
 - **Alarms keep their time when the clocks change.** A Lens Timer alarm set for 07:00 rang at 06:00
   or 08:00 after daylight saving started or ended, or after a move to another time zone. Alarms now
   follow the PC's local time. A timer or alarm that comes due while the PC is asleep says it is

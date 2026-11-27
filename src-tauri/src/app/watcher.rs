@@ -546,6 +546,8 @@ pub(crate) fn spawn_watcher(
         let mut topbar_restated_at = Instant::now();
         // Why the Top Bar is in its current state (logged when it changes; read by the E2E).
         let mut topbar_reason_logged: &'static str = "";
+        // When the Launcher was last seen appear (for closing an unfocused one on a click outside).
+        let mut launcher_shown_since: Option<Instant> = None;
         let mut qs_idle_since: Option<Instant> = None;
         let mut palette_idle_since: Option<Instant> = None;
         let mut dock_pointer_seen: Option<Instant> = None;
@@ -669,6 +671,38 @@ pub(crate) fn spawn_watcher(
                             w.is_visible().unwrap_or(false) && !w.is_minimized().unwrap_or(false)
                         })
                         .unwrap_or(false);
+
+                    // Launcher: it closes itself on blur, but a Launcher that never got the focus
+                    // (Windows refused to bring it forward) gets no blur, and a click outside it
+                    // left it open behind everything (B-128, seen in topbar-quicksettings-dismiss).
+                    // A click outside an unfocused Launcher closes it, as for Search.
+                    // Only once it has been up for a moment, so the click that opened it can't close it.
+                    let launcher_up = watcher_handle
+                        .get_webview_window("launcher")
+                        .map(|w| w.is_visible().unwrap_or(false) && !w.is_minimized().unwrap_or(false))
+                        .unwrap_or(false);
+                    if !launcher_up {
+                        launcher_shown_since = None;
+                    } else if launcher_shown_since.is_none() {
+                        launcher_shown_since = Some(Instant::now());
+                    }
+                    let launcher_settled = launcher_shown_since.map(|t| t.elapsed() >= Duration::from_millis(400)).unwrap_or(false);
+                    if clicked && launcher_settled {
+                        if let Some(lau) = watcher_handle.get_webview_window("launcher") {
+                            if !is_foreground(&lau) {
+                                let inside = match (lau.outer_position(), lau.outer_size(), cursor) {
+                                    (Ok(p), Ok(sz), Some((cx, cy))) => {
+                                        cx >= p.x && cx < p.x + sz.width as i32 && cy >= p.y && cy < p.y + sz.height as i32
+                                    }
+                                    _ => true,
+                                };
+                                if !inside {
+                                    crate::tester::log("info", "surface", "Launcher closed: a click outside it while it did not have the focus");
+                                    crate::commands::surfaces::glide_hide_surface(&watcher_handle, "launcher");
+                                }
+                            }
+                        }
+                    }
 
                     // --- TOP BAR AUTO-HIDE ON OVERLAP ---
                     if let Some(topbar_win) = watcher_handle
