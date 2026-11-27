@@ -57,6 +57,19 @@ the headless parity harness or CI's Windows runner, not yet by hand on a real PC
   sleeps. Not run on a real PC.
 - Glance (peek a link) — works, Alt+click (`host.rs`).
 - Horizontal tab strip (Make it yours) — works: close button, arrows, loading mark.
+- Tab position + five horizontal styles — works (unit, harness, visual rig) **[tab modes]**:
+  Make it yours › Tab position (Vertical | Horizontal) and a thumbnail picker drawn by Lens
+  (`CustomisePanel.tsx TabModePicker`, `tabModes.ts`, `TabStrip.tsx`): **Curved** (strip on top,
+  open tab flows into the toolbar with curved feet), **Joined** (one shape with the toolbar, flat,
+  no seam), **Compact** (one row: address, icon tabs, the open tab titled, +), **Dynamic** (toolbar,
+  then tabs: the old horizontal look and the default style), **Merged** (the open tab is the
+  address box). Every style: spaces chip, pinned tabs as icons, folders as a dropdown chip, split
+  marks, drag a tab to split, AI panel, Left/Right/Home/End/Enter/Delete, tablist/tab roles.
+  The chrome heights come from `tabModes.geometry` (CSS variables), so the page rectangle that
+  `host.rs` gets is exact per mode and snapped to device pixels (tested at 1–3× scale); mode
+  changes apply in one step, no width/height animation. Saved in `appearance.tabStyle` per
+  profile. The frame keeps Windows' own caption (Lens's caption rules paint its buttons); strips
+  are drag regions. Not run on a real PC.
 
 ### 2.2 Sidebar customisation
 - Full / Icons (« toggles) — works (harness). In icons mode the Lens menu floats beside the rail
@@ -148,6 +161,16 @@ the headless parity harness or CI's Windows runner, not yet by hand on a real PC
 - Saved per origin in `state.json → sitePermissions`; WebView2 told not to save, so Forget works.
 - Site button beside the star lists the current site's answers with Forget; Settings › AI &
   Command › Lens Browser lists every site.
+
+### 2.8b First-open setup **[setup]**
+- Lens Browser setup — works (unit, harness, E2E `browser-setup`): Welcome → Bring your stuff
+  (pick a browser, see counts, imported on Done with the usual receipt) → Look (tab position and
+  style with thumbnails) → Privacy (ad and tracker blocking, search engine from an alphabetical
+  list with no recommendation, what Lens Browser sends) → AI (panel on/off, provider, approvals in
+  one sentence, MCP for your own Claude Code/Codex) → Done (summary). Nothing changes until Done;
+  Skip (any step, Esc) writes only `setupSeen`. Shows on a fresh install only (`repair` marks it
+  seen when tabs exist); re-run from Settings › Lens Browser › Run setup again. Keyboard-complete
+  (Enter, Alt+←/→, Esc), focus moves to each step's heading, 6 px directional crossfade.
 
 ### 2.9 Import (and undo)
 - Detect Chrome, Edge, Brave, Vivaldi, Opera, Firefox, Arc — works (`import/mod.rs`); **[ardia]**

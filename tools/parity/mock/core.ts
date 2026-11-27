@@ -467,6 +467,59 @@ if (params.get("music") === "1") {
   };
 }
 
+// Lens Browser (visual rig: tab modes and the setup). A small, invented sample: no real data.
+// `window.__lensBrowserAppearance` / `__lensBrowserSetup` pick the look before the surface loads.
+{
+  const NOW = Date.UTC(2026, 0, 15, 10, 30);
+  const tab = (id: string, url: string, title: string, o: any = {}) => ({ id, spaceId: "s1", folderId: null, url, title, favicon: null, pinned: false, muted: false, audible: false, life: "live", lastActiveMs: NOW - 60_000, order: 0, zoom: 1, scrollY: 0, badge: null, ...o });
+  const view = () => ({
+    bookmarked: false,
+    live: ["t1", "t3"],
+    downloads: [],
+    unlocked: [],
+    glance: null,
+    state: {
+      version: 1,
+      spaces: [{ id: "s1", name: "Work", profile: "space-s1" }, { id: "s2", name: "Home", profile: "space-s2" }],
+      folders: [{ id: "f1", spaceId: "s1", name: "Errands", collapsed: false }],
+      tabs: [
+        tab("t1", "https://mail.example/inbox", "Inbox – Mail", { pinned: true, order: 0 }),
+        tab("t2", "https://news.example/", "Morning news", { order: 1 }),
+        tab("t3", "https://docs.example/plan", "Q1 plan – Docs", { order: 2 }),
+        tab("t4", "https://code.example/lens", "Lens – Code", { order: 3, life: "sleeping" }),
+        tab("t5", "https://shop.example/returns", "Returns", { order: 4, folderId: "f1" }),
+      ],
+      activeSpace: "s1",
+      activeTab: "t3",
+      bookmarks: [],
+      settings: {
+        sleepAfterMin: 15, maxLiveTabs: 6, searchUrl: "https://duckduckgo.com/?q={q}", blockTrackers: true, lensContextMenu: true, defaultZoom: 1,
+        appearance: { scheme: "auto", accent: null, dither: 40, grain: 20, tabsLayout: "vertical", tabStyle: "dynamic", density: "comfortable", typeface: "lens", ...(W.__lensBrowserAppearance ?? {}) },
+        setupSeen: !W.__lensBrowserSetup,
+      },
+      nextId: 9,
+      closed: [],
+      splits: [],
+    },
+  });
+  Object.assign(handlers, {
+    browser_state: () => view(),
+    browser_set_viewport: () => null,
+    browser_set_overlay: () => null,
+    browser_events: () => [],
+    browser_page: () => ({ canBack: true, canForward: false, ready: "complete", error: "", hasVideo: false }),
+    browser_history_search: () => [],
+    browser_downloads: () => [],
+    browser_permissions_waiting: () => [],
+    browser_permissions_list: () => ({}),
+    browser_shield: () => ({ on: true, site: "docs.example", allowed: false, blocked: 12 }),
+    browser_favicons: () => ({}),
+    browser_archived: () => [],
+    browser_import_detect: () => [{ browser: "chrome", label: "Google Chrome", engine: "chromium", profiles: [{ id: "Default", label: "Default" }] }],
+    browser_import_receipts: () => [],
+  });
+}
+
 // Desktop widgets (docs/features/desktop-widgets.md). An in-memory layout for the `deskwidgets`
 // surface. ?desk=sample starts with one widget of each local kind (and a Weather widget from the
 // Dashboard sample when ?widgets=sample is set too); ?desk=edit opens edit mode as well. Notes and

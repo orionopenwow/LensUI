@@ -615,6 +615,62 @@ const SCENARIOS = [
     },
   },
   {
+    id: "browser-setup",
+    title: "Lens Browser greets a fresh profile with its setup; Skip leaves it usable; Done applies the choices",
+    async run(s) {
+      const dock = surfaces(s).dock;
+      const st0 = await invoke(dock, "browser_state");
+      if (st0.state.settings.setupSeen !== false) throw new Error(`a fresh profile should not have seen the browser setup: ${JSON.stringify(st0.state.settings).slice(0, 300)}`);
+      const before = st0.state.settings;
+      await invoke(dock, "browser_open", { url: null });
+      let br = await waitForSurface(s, "browser", 30000);
+      const take = watchErrors(br);
+      await br.waitForSelector(".lb-setup[role=dialog]", { timeout: 15000 }).catch(() => { throw new Error("the browser setup did not show on first open"); });
+      await shot(br, "browser-setup-welcome");
+      // Skip: only "seen" changes, the browser is usable.
+      await domClick(br.locator(".lb-setup-foot button", { hasText: "Skip" }));
+      await br.waitForSelector(".lb-setup", { state: "detached", timeout: 10000 }).catch(() => { throw new Error("Skip did not close the setup"); });
+      const st1 = (await invoke(dock, "browser_state")).state.settings;
+      if (!st1.setupSeen) throw new Error("Skip did not mark the setup as seen");
+      for (const k of ["blockTrackers", "searchUrl"]) if (st1[k] !== before[k]) throw new Error(`Skip changed ${k}`);
+      if ((st1.appearance?.tabsLayout ?? "vertical") !== (before.appearance?.tabsLayout ?? "vertical")) throw new Error("Skip changed the tab layout");
+      await br.waitForSelector(".lb-addr", { timeout: 5000 }).catch(() => { throw new Error("no address bar after Skip"); });
+      await shot(br, "browser-setup-skipped");
+      // Run it again and choose: horizontal compact tabs, no blocking, Startpage, AI kept.
+      await invoke(br, "browser_settings_set", { settings: { ...st1, setupSeen: false } });
+      await br.reload();
+      br = await waitForSurface(s, "browser", 20000);
+      await br.waitForSelector(".lb-setup[role=dialog]", { timeout: 15000 });
+      const next = () => domClick(br.locator(".lb-setup-foot .lb-btn-primary"));
+      await next(); // welcome → import
+      await br.waitForSelector(".lb-setup-option", { timeout: 5000 });
+      await next(); // import (start fresh) → look
+      await domClick(br.locator(".lb-setup-mode[aria-label^='Compact']"));
+      await shot(br, "browser-setup-look");
+      await next(); // look → privacy
+      await domClick(br.locator(".lb-setup-toggle[aria-label='Block ads and trackers']"));
+      await domClick(br.locator(".lb-setup-engine", { hasText: "Startpage" }).locator("input"));
+      await next(); // privacy → ai
+      await next(); // ai → done
+      await shot(br, "browser-setup-done");
+      await domClick(br.locator(".lb-setup-foot button", { hasText: "Done" }));
+      await br.waitForSelector(".lb-setup", { state: "detached", timeout: 10000 });
+      await sleep(600);
+      const st2 = (await invoke(dock, "browser_state")).state.settings;
+      const want = { setupSeen: true, blockTrackers: false, searchUrl: "https://www.startpage.com/do/search?q={q}", tabsLayout: "horizontal", tabStyle: "compact" };
+      const got = { setupSeen: st2.setupSeen, blockTrackers: st2.blockTrackers, searchUrl: st2.searchUrl, tabsLayout: st2.appearance?.tabsLayout, tabStyle: st2.appearance?.tabStyle };
+      if (JSON.stringify(got) !== JSON.stringify(want)) throw new Error(`Done did not apply the choices: ${JSON.stringify(got)}`);
+      await br.waitForSelector(".lb-top-compact .lb-strip", { timeout: 5000 }).catch(() => { throw new Error("the compact tab row did not appear"); });
+      await shot(br, "browser-setup-applied");
+      // Put things back for the scenarios after this one.
+      await invoke(br, "browser_settings_set", { settings: { ...before, setupSeen: true } });
+      const errs = take().filter((e) => !/favicon|ERR_|net::/.test(e));
+      // Close the browser window so later scenarios start from the usual desktop.
+      await br.evaluate(() => window.__TAURI_INTERNALS__.invoke("plugin:window|close", { label: "browser" }).catch(() => null)).catch(() => {});
+      if (errs.length) throw new Error(errs.join("\n"));
+    },
+  },
+  {
     id: "magic-dashboard",
     title: "Magic Dashboard: off by default, opens from Command when on, shows its lanes, closes every way",
     async run(s) {

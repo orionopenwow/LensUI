@@ -43,7 +43,10 @@ export function BrowserCard() {
             sign-ins, separate from your main browser, and nothing syncs.
           </div>
         </div>
-        <button className="cc-btn" onClick={() => void browserOpen().catch((e) => setMsg(String(e)))}>Open</button>
+        <span className="cc-btn-row">
+          <button className="cc-btn-ghost" data-weight="medium" onClick={() => { const next = { ...s, setupSeen: false }; setS(next); void settingsSet(next).then(() => browserOpen()).catch((e) => setMsg(String(e))); }}>Run setup again</button>
+          <button className="cc-btn" data-weight="medium" onClick={() => void browserOpen().catch((e) => setMsg(String(e)))}>Open</button>
+        </span>
       </div>
       <div className="cc-row" style={{ marginTop: 12 }}>
         <div>
