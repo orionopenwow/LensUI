@@ -6,7 +6,8 @@ use crate::*;
 pub(crate) fn get_config(state: State<AppState>) -> LensConfig {
     let mut guard = state.config.lock().unwrap_or_else(|e| e.into_inner());
     if config::merge_windows_taskbar_pins(&mut guard) {
-        let _ = save_config(&guard);
+        // Lens's own housekeeping: not a change for "Recently changed".
+        let _ = crate::settings_history::quietly(|| save_config(&guard));
     }
     guard.clone()
 }
@@ -268,6 +269,38 @@ pub(crate) fn save_config_cmd(
     }
     let _ = app.emit("lens://config-updated", &new_config);
     Ok(())
+}
+
+/// Settings › Quick settings › Recently changed: the last few settings changes, newest first
+/// (local only; `settings_history.rs`).
+#[tauri::command]
+pub(crate) fn settings_history_cmd() -> Vec<crate::settings_history::SettingsHistoryEntry> {
+    crate::settings_history::load()
+}
+
+/// Undo one "Recently changed" entry: its old values go back through the same save as a click in
+/// Settings, so the taskbar, startup and window-button side effects follow. A setting changed
+/// again since is left as it is. Returns the list without the entry.
+#[tauri::command]
+pub(crate) fn settings_undo_cmd(
+    app: AppHandle,
+    state: State<AppState>,
+    id: u64,
+) -> Result<Vec<crate::settings_history::SettingsHistoryEntry>, String> {
+    use crate::settings_history as history;
+    let Some(entry) = history::load().into_iter().find(|e| e.id == id) else {
+        return Err("That change is no longer in the list.".into());
+    };
+    let current = state.config.lock().unwrap_or_else(|e| e.into_inner()).clone();
+    let mut doc = serde_json::to_value(&current).map_err(|e| e.to_string())?;
+    if history::revert(&mut doc, &entry) == 0 {
+        // Everything in it has changed again since: nothing to put back.
+        return history::forget(id).and(Err("That setting has changed since, so there is nothing to undo.".into()));
+    }
+    let reverted: LensConfig =
+        serde_json::from_value(doc).map_err(|e| format!("Couldn't undo that change: {e}"))?;
+    history::quietly(|| save_config_cmd(app, state, reverted))?;
+    history::forget(id)
 }
 
 /// The experimental in-app styling hook: whether its switch is on and whether it is installed

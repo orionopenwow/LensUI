@@ -165,3 +165,4 @@ src/snip/Studio.tsx
 src/snip/StudioPopover.tsx
 src/snip/Tip.tsx
 src/snip/studioShapes.tsx
+src/settings/RecentlyChanged.tsx

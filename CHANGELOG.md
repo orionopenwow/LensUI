@@ -8,6 +8,19 @@ up and migrates `%APPDATA%\LensUI` where it can.
 ## [Unreleased]
 
 ### Added
+- **Recently changed, with Undo.** Settings › Quick settings lists the last five settings that
+  changed, by you or by an agent ("Opacity · 0.96 → 0.8 · 2 min ago"), each with Undo. Undo puts
+  the old values back through the normal save, so the taskbar, startup and window buttons follow,
+  and it never overwrites a setting you changed again since. A slider drag is one change. The list
+  is a small file in the Lens data folder (`settings-history.json`); it never leaves this PC and
+  never holds keys, tokens or passwords.
+- **Copy a wallpaper's colours.** In the Wallpaper Switcher, click a palette chip on the front card
+  (or the colour buttons under the fan, which the keyboard reaches with Tab) to copy its hex.
+  Lens says "Copied #4A6B8C" and ticks the chip.
+- **Two more rows in the Dock's right-click menus**: "Next wallpaper" in the Dock's own menu, and
+  "Don't style this app" in an app's menu while Lens draws window buttons or borders. It writes the
+  same per-app rule as Settings › Per-app window rules (Lens leaves that app as Windows draws it),
+  with Undo on the notice; "Style this app again" turns it back. Protected apps never show it.
 - **Lens Apps updates: manual by default, automatic if you want it.** An app with a newer version
   shows "Update available" with a one-click Update. A new **Update apps automatically** switch in
   Settings › Apps (off by default) lets each check also update the apps Lens installed; apps you
@@ -196,6 +209,8 @@ up and migrates `%APPDATA%\LensUI` where it can.
   "Media controls in the Top Bar" moved from the pop-out to the same page.
 
 ### Fixed
+- Wallpaper Switcher: Enter on a focused button (Favourite, Hide, Fit…) also set the focused
+  wallpaper on the desktop. Now it only presses the button (B-145).
 - "Theme follows music" no longer leaves white in place of your accent when the music stops; it
   puts your own accent back (B-140).
 - Alt+drag, Magic and App hotkeys: the options under each switch can be clicked while the feature
@@ -294,6 +309,8 @@ up and migrates `%APPDATA%\LensUI` where it can.
   now drawn over other apps too.
 
 ### Changed
+- After you pick a page in the Settings sidebar, keyboard focus moves to the page's heading, so a
+  screen reader reads the new page. ↑/↓ there still walk the sidebar; Tab goes on into the page.
 - **Lens Apps licences checked.** 49 of 53 catalogue licences are now read from each project's own
   repository (the ArtCraft apps are MIT OR Apache-2.0; Blender and Kdenlive GPL-3.0; OBS, VLC
   GPL-2.0-or-later; Zed GPL-3.0-or-later; Joplin AGPL-3.0-or-later; 7-Zip LGPL-2.1-or-later), so

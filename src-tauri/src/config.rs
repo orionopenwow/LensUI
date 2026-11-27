@@ -771,7 +771,7 @@ pub fn load_config() -> LensConfig {
                 Ok(mut cfg) => {
                     let migrated = from < crate::win_backup::CURRENT_CONFIG_VERSION;
                     if merge_windows_taskbar_pins(&mut cfg) || migrated {
-                        let _ = save_config(&cfg);
+                        let _ = crate::settings_history::quietly(|| save_config(&cfg));
                     }
                     return cfg;
                 }
@@ -788,7 +788,7 @@ pub fn load_config() -> LensConfig {
                         notify_once("config-repaired", "info", &config_check::repair_message(&repaired.reset));
                         let mut cfg = repaired.config;
                         let _ = merge_windows_taskbar_pins(&mut cfg);
-                        let _ = save_config(&cfg);
+                        let _ = crate::settings_history::quietly(|| save_config(&cfg));
                         return cfg;
                     }
                     eprintln!("[Lens Config] config.json could not be repaired ({}); kept a copy, using defaults.", e);
@@ -805,7 +805,7 @@ pub fn load_config() -> LensConfig {
     }
     let mut default_cfg = LensConfig::default();
     let _ = merge_windows_taskbar_pins(&mut default_cfg);
-    let _ = save_config(&default_cfg);
+    let _ = crate::settings_history::quietly(|| save_config(&default_cfg));
     default_cfg
 }
 
@@ -869,6 +869,9 @@ pub fn write_config_file(path: &Path, json: &[u8]) -> Result<(), String> {
     // Same test as loading: readable as written, or after the per-setting repair. (A restored
     // backup may hold a value this version no longer accepts; loading repairs exactly that.)
     let defaults = serde_json::to_value(LensConfig::default()).unwrap_or(serde_json::Value::Null);
+    // Kept for the settings history (Recently changed): the check below consumes `doc`.
+    let is_settings_file = path == config_path().as_path();
+    let new_doc = if is_settings_file { Some(doc.clone()) } else { None };
     if crate::failsafe::config_check::load_repaired::<LensConfig>(doc, &defaults).is_none() {
         return Err("Settings were not saved: Lens could not read them back.".into());
     }
@@ -876,7 +879,12 @@ pub fn write_config_file(path: &Path, json: &[u8]) -> Result<(), String> {
         fs::create_dir_all(dir).map_err(|e| e.to_string())?;
     }
     let _one_at_a_time = WRITING.lock().unwrap_or_else(|p| p.into_inner());
-    crate::win_backup::write_atomic(path, json)
+    let old_bytes = if is_settings_file { fs::read(path).ok() } else { None };
+    crate::win_backup::write_atomic(path, json)?;
+    if let Some(new_doc) = new_doc {
+        crate::settings_history::record(old_bytes.as_deref(), &new_doc);
+    }
+    Ok(())
 }
 
 impl LensConfig {
