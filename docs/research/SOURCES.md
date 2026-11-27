@@ -68,6 +68,7 @@ Use web search with `site:reddit.com/r/<sub>` plus recent terms. If fetching is 
 | Product Hunt | `site:producthunt.com <terms> windows` | Polished consumer tools, launch copy that works |
 | GitHub Trending | `https://github.com/trending?since=daily` and by language (Rust, TypeScript, C#, C++) | Fast-rising repos (combinator leads) |
 | GitHub search API | `search/repositories?q=topic:windows-customization+pushed:>DATE&sort=stars` (also `topic:dock`, `topic:tiling-window-manager`, `topic:mcp-server`, `topic:local-llm`, `topic:screenshot`, `topic:launcher`) | Rising projects by topic |
+| GitHub issue search for competitors | `gh api -X GET search/issues -f q='repo:ShareX/ShareX is:issue created:>DATE' ` (also greenshot/greenshot, flameshot-org/flameshot, microsoft/PowerToys) | Fresh, countable demand and regression signals when Reddit and X return nothing (added 2026-11-27: it carried the whole Snip-day social section) |
 | Mastodon (fosstodon.org) | `https://fosstodon.org/tags/opensource`, `/tags/rust` | Open-source maintainers' announcements |
 | Bluesky | web search `site:bsky.app <terms>` | Design and dev community chatter |
 | YouTube | search "windows 11 customization 2026", "best windows apps"; channels that review Windows tools | What reaches non-developers; which features demo well |
@@ -109,4 +110,20 @@ Every day also gets a quick pass over HN front page, GitHub Trending and the X s
 
 | Source | Last useful | Hits (30 days) | Reachable? | Note |
 |---|---|---|---|---|
-| (filled in by runs) | | | | |
+| GitHub issue search (competitor repos) | 2026-11-27 | 1 | Yes (public search API) | ShareX 22 regression wave, Greenshot #1792, Flameshot #5064 |
+| ShareX releases (GitHub) | 2026-11-27 | 1 | Partly: the releases endpoint was refused for this session; news sites (tutkit, AlternativeTo) covered it | 22.4 HDR tone mapping |
+| ElevenForum | 2026-11-27 | 1 | Partly (some thread fetches fail) | ShareX user feedback, PowerToys 0.102 notes |
+| CleanShot X changelog | 2026-11-27 | 1 | Yes | 5.0.3/5.0.4 |
+| RustSec advisories index | 2026-11-27 | 3 | Yes | url RUSTSEC-2026-0592; chrono; rustls |
+| Microsoft support KB pages | 2026-11-27 | 2 | Yes | KB5132265, KB5127936 |
+| Windows Insider blog | 2026-11-26 | 2 | Yes | No post found 13–27 Nov |
+| Raycast for Windows changelog | 2026-11-26 | 1 | Yes | 2.12–2.14 |
+| Dia changelog | 2026-11-26 | 1 | Partly (page cut off) | Windows 1.5–1.7.4 |
+| releasebot.io (Ollama) | 2026-11-27 | 1 | Yes | 0.40.17/0.40.18 |
+| MCP blog | 2026-11-27 | 1 | Yes | Six-month spec cycle |
+| Chrome Releases blog | 2026-11-27 | 1 | Yes | 158 critical fix |
+| Reddit via `site:reddit.com` search | — | 0 | Search returns SEO roundups, not threads | Try direct `/top/?t=week` fetches next run |
+| X via `site:x.com` search | — | 0 | No posts returned | Unread; look for quotes on HN/news instead |
+| GitHub Trending | — | 0 | Fetch timed out 2026-11-27 | Retry next run |
+| Hacker News front page | — | 0 | Fetch returned an undated page 8 | Fetch `news.ycombinator.com/front` with a date |
+| Product Hunt | 2026-11-27 | 1 | Yes | Only months-old screenshot launches |
