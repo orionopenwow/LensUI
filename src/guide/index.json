@@ -16190,7 +16190,7 @@
    "id": "lesson.keyboard-map",
    "kind": "lesson",
    "title": "Keyboard map",
-   "text": "The shortcuts worth remembering. Open things. Windows. Pointer and effects. Everywhere",
+   "text": "The shortcuts worth remembering. Open things. The Dock. Windows. Pointer and effects. Everywhere",
    "path": [
     "Guide",
     "Lessons",
@@ -16758,6 +16758,15 @@
     },
     {
      "n": 2,
+     "title": "The Dock",
+     "text": "With a Dock icon focused (Alt+Space, then Tab, or after a click), the arrow keys move along the Dock and typing a name finds an app. The arrow that points into the screen opens that app's windows: Up and Down choose, Enter switches, Delete closes one, Esc goes back. Alt+1–9 opens the first nine apps when that shortcut is on.",
+     "show": "dock",
+     "target": {
+      "surface": "dock"
+     }
+    },
+    {
+     "n": 3,
      "title": "Windows",
      "text": "Hold Alt and drag to move a window; Alt+right-drag to resize. In Overview, Shift+←/→ or Shift+1–9 moves the selected window to another workspace.",
      "show": "settings:system:Drag Windows",
@@ -16768,7 +16777,7 @@
      }
     },
     {
-     "n": 3,
+     "n": 4,
      "title": "Pointer and effects",
      "text": "Ctrl+Shift+F8 toggles the pointer spotlight when pointer effects are on.",
      "show": "settings:theme:Mouse pointer",
@@ -16779,7 +16788,7 @@
      }
     },
     {
-     "n": 4,
+     "n": 5,
      "title": "Everywhere",
      "text": "Esc always steps back one level. Ask the Guide \"what's the shortcut for…\" any time.",
      "show": "guide",

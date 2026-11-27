@@ -59,3 +59,43 @@ export function cardBox(edge: CardEdge, pos: { left: number; top: number }, w: n
       return { left: pos.left - w / 2, top: pos.top - h, right: pos.left + w / 2, bottom: pos.top };
   }
 }
+
+/** The right-click menu's size before it has been measured. */
+const MENU_GUESS = { w: 212, h: 320 };
+
+export interface MenuPlacementInput {
+  edge: CardEdge;
+  /** Where the menu was asked for: the icon's centre x and top y (or the pointer's x and the pill's top). */
+  x: number;
+  y: number;
+  /** The Dock pill's box, and the icon size in use. */
+  pill: { left: number; right: number };
+  icon: number;
+  /** Measured menu size (0 until known). */
+  w: number;
+  h: number;
+  viewW: number;
+  viewH: number;
+  topInset?: number;
+}
+
+/**
+ * Where the Dock's right-click menu goes (`left` / `top`; its CSS translates it per edge exactly
+ * like the hover card). Same anchors as before; what changed (B-110) is that it is kept on screen
+ * from its measured size and below the Top Bar, where it used to assume a 340 px tall menu and
+ * could open partly above the screen on a left or right Dock.
+ */
+export function placeDockMenu(p: MenuPlacementInput): { left: number; top: number } {
+  const size = { w: p.w > 0 ? p.w : MENU_GUESS.w, h: p.h > 0 ? p.h : MENU_GUESS.h };
+  const common = { ...size, viewW: p.viewW, viewH: p.viewH, topInset: p.topInset };
+  switch (p.edge) {
+    case "left":
+      return placeHoverCard({ ...common, edge: "left", x: p.pill.right, y: p.y + p.icon / 2, gap: 12 });
+    case "right":
+      return placeHoverCard({ ...common, edge: "right", x: p.pill.left, y: p.y + p.icon / 2, gap: 12 });
+    case "top":
+      return placeHoverCard({ ...common, edge: "top", x: p.x, y: p.y + p.icon, gap: 18 });
+    default:
+      return placeHoverCard({ ...common, edge: "bottom", x: p.x, y: p.y, gap: 12 });
+  }
+}
