@@ -80,6 +80,7 @@
     "Magic (preview)": 9,
     "Pointer effects": 11,
     "Quick settings": 5,
+    "Selection bar": 25,
     "Sessions": 2,
     "Summon keys": 2,
     "Testing": 1,
@@ -92,7 +93,7 @@
     "Window styling": 9,
     "Workspaces & tiling": 10
   },
-  "count": 195,
+  "count": 220,
   "entries": [
     {
       "capability": "change_settings",
@@ -1994,6 +1995,411 @@
       "path": "onboardingCompleted",
       "reversible": true,
       "risk": "blocked",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Selection bar",
+      "default": [
+        "ask",
+        "translate",
+        "explain",
+        "shelf_add"
+      ],
+      "description": "The actions on the selection bar, in order (ids from the action catalogue).",
+      "example": "{\"args\":{\"changes\":{\"selectionBar.actions\":[\"ask\",\"translate\",\"explain\",\"shelf_add\"]}},\"tool\":\"lens_set\"}",
+      "label": "Your actions",
+      "path": "selectionBar.actions",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "maxItems": 9,
+        "type": "array"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Selection bar",
+      "default": 4000,
+      "description": "The bar hides on its own after this many milliseconds (0 = never).",
+      "example": "{\"args\":{\"changes\":{\"selectionBar.autoHideMs\":15000}},\"tool\":\"lens_set\"}",
+      "label": "Auto-hide",
+      "path": "selectionBar.autoHideMs",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "maximum": 30000,
+        "minimum": 0,
+        "type": "integer"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Selection bar",
+      "default": 120,
+      "description": "How long after you let go of the mouse the bar appears, in milliseconds.",
+      "example": "{\"args\":{\"changes\":{\"selectionBar.delayMs\":300}},\"tool\":\"lens_set\"}",
+      "label": "Selection bar delay",
+      "path": "selectionBar.delayMs",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "maximum": 600,
+        "minimum": 0,
+        "type": "integer"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Selection bar",
+      "default": false,
+      "description": "Shows the Magic selection bar after you select text: Cut, Copy, Paste, Magic Search and your actions. Off by default.",
+      "example": "{\"args\":{\"changes\":{\"selectionBar.enabled\":true}},\"tool\":\"lens_set\"}",
+      "label": "Selection bar",
+      "path": "selectionBar.enabled",
+      "reversible": true,
+      "risk": "confirm",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Selection bar",
+      "default": 120,
+      "description": "The bar hides when the pointer moves this many pixels away.",
+      "example": "{\"args\":{\"changes\":{\"selectionBar.hideDistancePx\":320}},\"tool\":\"lens_set\"}",
+      "label": "Hide distance",
+      "path": "selectionBar.hideDistancePx",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "maximum": 600,
+        "minimum": 40,
+        "type": "integer"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Selection bar",
+      "default": {},
+      "description": "A global hotkey per selection-bar action (none by default); checked against Windows, Lens and app keys.",
+      "example": "{\"args\":{\"changes\":{\"selectionBar.hotkeys\":{}}},\"tool\":\"lens_set\"}",
+      "label": "Action hotkeys",
+      "path": "selectionBar.hotkeys",
+      "reversible": true,
+      "risk": "confirm",
+      "schema": {
+        "type": "object"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Selection bar",
+      "default": "hover",
+      "description": "Icons only, labels on hover, or always labels on the selection bar.",
+      "example": "{\"args\":{\"changes\":{\"selectionBar.labels\":\"off\"}},\"tool\":\"lens_set\"}",
+      "label": "Button labels",
+      "path": "selectionBar.labels",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "enum": [
+          "off",
+          "hover",
+          "always"
+        ],
+        "maxLength": 400,
+        "type": "string"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Selection bar",
+      "default": false,
+      "description": "Floats the actions you use most up the bar, from counts kept on this PC.",
+      "example": "{\"args\":{\"changes\":{\"selectionBar.learn\":true}},\"tool\":\"lens_set\"}",
+      "label": "Learn from use",
+      "path": "selectionBar.learn",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Selection bar",
+      "default": true,
+      "description": "Magic Search also looks in your Shelf, clipboard history, notes and recent files, on this PC only.",
+      "example": "{\"args\":{\"changes\":{\"selectionBar.localResults\":false}},\"tool\":\"lens_set\"}",
+      "label": "Results from my files",
+      "path": "selectionBar.localResults",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Selection bar",
+      "default": 4,
+      "description": "How many of your actions the bar shows before More.",
+      "example": "{\"args\":{\"changes\":{\"selectionBar.maxActions\":6}},\"tool\":\"lens_set\"}",
+      "label": "Actions before More",
+      "path": "selectionBar.maxActions",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "maximum": 9,
+        "minimum": 3,
+        "type": "integer"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Selection bar",
+      "default": 2,
+      "description": "Shorter selections don't open the bar.",
+      "example": "{\"args\":{\"changes\":{\"selectionBar.minChars\":26}},\"tool\":\"lens_set\"}",
+      "label": "Minimum characters",
+      "path": "selectionBar.minChars",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "maximum": 50,
+        "minimum": 1,
+        "type": "integer"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Selection bar",
+      "default": {},
+      "description": "An action set of its own for some apps (app → actions).",
+      "example": "{\"args\":{\"changes\":{\"selectionBar.perApp\":{}}},\"tool\":\"lens_set\"}",
+      "label": "Per-app actions",
+      "path": "selectionBar.perApp",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "object"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Selection bar",
+      "default": "below",
+      "description": "Below the selection, above it, or at the pointer.",
+      "example": "{\"args\":{\"changes\":{\"selectionBar.placement\":\"above\"}},\"tool\":\"lens_set\"}",
+      "label": "Bar placement",
+      "path": "selectionBar.placement",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "enum": [
+          "below",
+          "above",
+          "pointer"
+        ],
+        "maxLength": 400,
+        "type": "string"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Selection bar",
+      "default": {},
+      "description": "Which AI answers each action: local, default or Claude.",
+      "example": "{\"args\":{\"changes\":{\"selectionBar.providers\":{}}},\"tool\":\"lens_set\"}",
+      "label": "AI per action",
+      "path": "selectionBar.providers",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "object"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Selection bar",
+      "default": "",
+      "description": "A global hotkey for Magic Search on the current selection (none by default).",
+      "example": "{\"args\":{\"changes\":{\"selectionBar.searchHotkey\":\"\"}},\"tool\":\"lens_set\"}",
+      "label": "Magic Search hotkey",
+      "path": "selectionBar.searchHotkey",
+      "reversible": true,
+      "risk": "confirm",
+      "schema": {
+        "maxLength": 40,
+        "type": "string"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Selection bar",
+      "default": true,
+      "description": "Shows Copy on the selection bar.",
+      "example": "{\"args\":{\"changes\":{\"selectionBar.showCopy\":false}},\"tool\":\"lens_set\"}",
+      "label": "Copy button",
+      "path": "selectionBar.showCopy",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Selection bar",
+      "default": true,
+      "description": "Shows Cut on the selection bar when the text can be edited.",
+      "example": "{\"args\":{\"changes\":{\"selectionBar.showCut\":false}},\"tool\":\"lens_set\"}",
+      "label": "Cut button",
+      "path": "selectionBar.showCut",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Selection bar",
+      "default": true,
+      "description": "Shows Paste on the selection bar when the text can be edited and there is text to paste.",
+      "example": "{\"args\":{\"changes\":{\"selectionBar.showPaste\":false}},\"tool\":\"lens_set\"}",
+      "label": "Paste button",
+      "path": "selectionBar.showPaste",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Selection bar",
+      "default": true,
+      "description": "Shows Magic Search on the selection bar.",
+      "example": "{\"args\":{\"changes\":{\"selectionBar.showSearch\":false}},\"tool\":\"lens_set\"}",
+      "label": "Magic Search button",
+      "path": "selectionBar.showSearch",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Selection bar",
+      "default": true,
+      "description": "Recognises links, e-mail addresses, sums, units, colours, paths and code, and shows a one-line preview. Local only.",
+      "example": "{\"args\":{\"changes\":{\"selectionBar.smart\":false}},\"tool\":\"lens_set\"}",
+      "label": "Smart actions",
+      "path": "selectionBar.smart",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Selection bar",
+      "default": [],
+      "description": "Smart kinds that are turned off.",
+      "example": "{\"args\":{\"changes\":{\"selectionBar.smartOff\":[]}},\"tool\":\"lens_set\"}",
+      "label": "Smart kinds off",
+      "path": "selectionBar.smartOff",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "maxItems": 12,
+        "type": "array"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Selection bar",
+      "default": true,
+      "description": "Double-clicking a word opens the bar.",
+      "example": "{\"args\":{\"changes\":{\"selectionBar.triggerDoubleClick\":false}},\"tool\":\"lens_set\"}",
+      "label": "Open after a double click",
+      "path": "selectionBar.triggerDoubleClick",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Selection bar",
+      "default": true,
+      "description": "A drag that selects text opens the bar.",
+      "example": "{\"args\":{\"changes\":{\"selectionBar.triggerDrag\":false}},\"tool\":\"lens_set\"}",
+      "label": "Open after a drag",
+      "path": "selectionBar.triggerDrag",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Selection bar",
+      "default": true,
+      "description": "Triple-clicking a line or paragraph opens the bar.",
+      "example": "{\"args\":{\"changes\":{\"selectionBar.triggerTripleClick\":false}},\"tool\":\"lens_set\"}",
+      "label": "Open after a triple click",
+      "path": "selectionBar.triggerTripleClick",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Selection bar",
+      "default": true,
+      "description": "Magic Search shows web results from your search engine; the selection is sent to it only when you press Magic Search.",
+      "example": "{\"args\":{\"changes\":{\"selectionBar.webResults\":false}},\"tool\":\"lens_set\"}",
+      "label": "Web results",
+      "path": "selectionBar.webResults",
+      "reversible": true,
+      "risk": "confirm",
       "schema": {
         "type": "boolean"
       },

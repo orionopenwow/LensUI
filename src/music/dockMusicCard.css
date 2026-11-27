@@ -294,3 +294,7 @@
 .dmc-play:active {
   transform: scale(0.94);
 }
+
+/* Immersive (only while Lens Music is on): opens Now Playing full screen on this monitor. */
+.dmc-imm { width: 28px; height: 28px; flex: 0 0 auto; align-self: flex-start; }
+.dmc-note { font-size: 11px; line-height: 1.35; color: var(--lens-fg-secondary); padding: 0 2px; }

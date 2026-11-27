@@ -23,7 +23,7 @@ export const ModePill: React.FC<{ mode: SettingsMode; onChange: (m: SettingsMode
     >
       <span className="ss-pill-thumb" aria-hidden />
       {opts.map((o) => (
-        <button
+        <button data-weight="light"
           key={o.id}
           type="button"
           role="radio"
@@ -45,19 +45,19 @@ export const ModeHint: React.FC<{ mode: SettingsMode; onChoose: (m: SettingsMode
     {mode === "simple" ? (
       <>
         <span>New here? Simple shows the essentials.</span>
-        <button type="button" className="ss-hint-btn" onClick={() => onChoose("advanced")}>
+        <button data-weight="medium" type="button" className="ss-hint-btn" onClick={() => onChoose("advanced")}>
           Show everything
         </button>
       </>
     ) : (
       <>
         <span>Too much? Simple shows just the essentials, with previews.</span>
-        <button type="button" className="ss-hint-btn" onClick={() => onChoose("simple")}>
+        <button data-weight="medium" type="button" className="ss-hint-btn" onClick={() => onChoose("simple")}>
           Try Simple
         </button>
       </>
     )}
-    <button type="button" className="ss-hint-x" aria-label="Dismiss" onClick={() => onChoose(mode)}>
+    <button data-weight="medium" type="button" className="ss-hint-x" aria-label="Dismiss" onClick={() => onChoose(mode)}>
       ×
     </button>
   </div>

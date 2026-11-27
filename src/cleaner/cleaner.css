@@ -1916,11 +1916,15 @@
 :root[data-shape="expressive"] .cl-btn {
   border-radius: 999px;
 }
-:root[data-shape="expressive"] :is(.cl-caticon, .cl-drive-icon, .cl-empty-icon) {
+:root[data-shape="expressive"] .cl-caticon,
+:root[data-shape="expressive"] .cl-drive-icon,
+:root[data-shape="expressive"] .cl-empty-icon {
   position: relative;
   background: none;
 }
-:root[data-shape="expressive"] :is(.cl-caticon, .cl-drive-icon, .cl-empty-icon)::before {
+:root[data-shape="expressive"] .cl-caticon::before,
+:root[data-shape="expressive"] .cl-drive-icon::before,
+:root[data-shape="expressive"] .cl-empty-icon::before {
   content: "";
   position: absolute;
   inset: -2px;

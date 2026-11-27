@@ -50,6 +50,11 @@
 /* The browser's one box, ringed as when it has focus. */
 .lb-newtab-search { box-shadow: 0 0 0 1px color-mix(in srgb, var(--lens-accent) 55%, transparent), 0 0 24px -6px color-mix(in srgb, var(--lens-accent) 45%, transparent) !important; }
 
+/* The accent as the lab set it on this surface's root. A surface may re-tint --lens-accent for its own
+   part of the page (Lens Music's Now Playing takes its accent from the artwork, NowPlaying.tsx); the
+   primary buttons below read this copy so they still show the pick. */
+:root { --lab-accent: var(--lens-accent); }
+
 /* Switches that are on, and primary buttons: filled with the accent. */
 [role="switch"][aria-checked="true"], input[type="checkbox"][role="switch"]:checked, .cc-toggle.on, .cl-switch.is-on {
   background: var(--lens-accent) !important;
@@ -57,7 +62,7 @@
 }
 input[type="range"], input[type="checkbox"], input[type="radio"], progress { accent-color: var(--lens-accent); }
 .lm-pill-primary, .lens-btn-primary, .cc-btn-primary, .ap-btn-primary, .cl-btn-primary, .btn-primary {
-  background: var(--lens-accent) !important;
+  background: var(--lab-accent, var(--lens-accent)) !important;
   color: var(--lab-on-accent, #09090b) !important;
   border-color: transparent !important;
 }

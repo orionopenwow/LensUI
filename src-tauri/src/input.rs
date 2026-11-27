@@ -43,7 +43,7 @@ pub enum Feature {
     Magic = 2,
     /// Hold-to-talk on Right Ctrl / Right Alt (`voice::keyhold`).
     VoiceHold = 3,
-    /// The selection bubble's "a drag just ended" detector (`clip::uia`).
+    /// The Magic selection bar: "a selection just ended" and, while it shows, what closes it (`clip::uia`).
     ClipBubble = 4,
     /// Clicks on the bare desktop for living wallpapers (`win_desktop_input`).
     DesktopInput = 5,
@@ -78,7 +78,7 @@ impl Feature {
             Feature::AltDrag => "Alt+drag",
             Feature::Magic => "Magic menu",
             Feature::VoiceHold => "Voice hold-to-talk",
-            Feature::ClipBubble => "Selection bubble",
+            Feature::ClipBubble => "Selection bar",
             Feature::DesktopInput => "Desktop input",
             Feature::CursorFx => "Pointer effects",
             Feature::AgentStop => "Esc stops an agent",
@@ -270,11 +270,15 @@ mod rt {
         WH_MOUSE_LL, WM_APP, WM_QUIT,
     };
 
-    /// Keyboard dispatch order. Only the Win key / Alt+Tab machine ever swallows a key.
-    const KEY_TABLE: [(Feature, KeyHandler, WhenPaused); 4] = [
+    /// Keyboard dispatch order. Only the Win key / Alt+Tab machine swallows keys, plus the
+    /// selection bar's Esc while the bar is on screen.
+    const KEY_TABLE: [(Feature, KeyHandler, WhenPaused); 5] = [
         // First, so it sees Esc whatever the others do. It observes only, also while paused:
         // a run must be stoppable with a fullscreen app in front.
         (Feature::AgentStop, crate::presence::esc::input_key, WhenPaused::Observe),
+        // The selection bar, claimed only while it shows: Esc hides it (and is the one key it
+        // swallows); any other key hides it and goes on to the app.
+        (Feature::ClipBubble, crate::clip::uia::input_key, WhenPaused::Skip),
         (Feature::Keyhook, crate::win_keyhook::input_key, WhenPaused::Observe),
         (Feature::VoiceHold, crate::voice::keyhold::input_key, WhenPaused::Observe),
         (Feature::CursorFx, crate::win_cursor_fx::input_key, WhenPaused::Skip),
@@ -368,7 +372,7 @@ mod rt {
         BENCHED_UNTIL[f as usize].load(Ordering::Relaxed) > now
     }
 
-    fn key_slots(now: u64) -> [Slot<KeyEvent>; 4] {
+    fn key_slots(now: u64) -> [Slot<KeyEvent>; 5] {
         KEY_TABLE.map(|(f, handler, when_paused)| Slot {
             handler: (KEY_CLAIMED[f as usize].load(Ordering::Relaxed) && !benched(f, now)).then_some(handler),
             when_paused,

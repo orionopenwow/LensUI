@@ -235,10 +235,10 @@
       },
       {
         "label": "bubble",
-        "title": "Lens Selection",
+        "title": "Lens Selection bar",
         "url": "index.html?surface=bubble",
-        "width": 32,
-        "height": 32,
+        "width": 360,
+        "height": 48,
         "decorations": false,
         "transparent": true,
         "alwaysOnTop": true,
@@ -247,6 +247,22 @@
         "shadow": false,
         "visible": false,
         "focus": false,
+        "create": false
+      },
+      {
+        "label": "magicsearch",
+        "title": "Lens Magic Search",
+        "url": "index.html?surface=magicsearch",
+        "width": 420,
+        "height": 520,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "visible": false,
+        "focus": true,
         "create": false
       },
       {

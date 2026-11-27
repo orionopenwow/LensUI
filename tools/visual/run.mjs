@@ -62,10 +62,22 @@ const STATES = [
     sizes: [[1280, 800], [1024, 700]],
   })),
   { id: "browser-setup", surface: "browser", init: "window.__lensBrowserSetup = true;", sizes: [[1280, 800], [1024, 700]] },
+  // Lens Music (?music=1 in the mock): Now Playing tinted by the artwork, and Immersive.
+  { id: "nowplaying", surface: "nowplaying", params: "music=1", sizes: [[1280, 800], [1024, 700]] },
+  { id: "nowplaying-immersive", surface: "nowplaying", params: "music=1&immersive=1", sizes: [[1440, 860], [1024, 700]] },
+  // The Magic selection bar and the Magic Search pop-out (docs/plans/SELECTION_BAR.md).
+  { id: "selection-bar", surface: "bubble", sizes: [[520, 88], [640, 88]] },
+  { id: "magic-search", surface: "magicsearch", sizes: [[420, 520], [440, 640]] },
   // Desktop widgets (docs/features/desktop-widgets.md): the host with one widget of each local
   // kind, and edit mode with the gallery (URL params pick the mock's sample layout).
   { id: "deskwidgets", surface: "deskwidgets", params: "magic=desktopWidgets&desk=sample", sizes: [[1600, 900], [1366, 768]] },
   { id: "deskwidgets-edit", surface: "deskwidgets", params: "magic=desktopWidgets&desk=edit", sizes: [[1600, 900], [1366, 768]] },
+  // The feel scene (DESIGN.md §5.5, tools/parity/feel): each press weight at rest / hover / pressed /
+  // pending / disabled, toggles mid-press and the segmented indicator. Pressed and pending are
+  // forced by attribute, hover through DevTools' forced pseudo-state.
+  // Full motion (not reduced) so the pressed depth (scale, travel, knob squash) is in the frame;
+  // the screenshot's animation freeze lands every transition on its end state.
+  { id: "feel", surface: "feel", page: "feel/index.html", forceHover: "[data-force-hover]", motion: true, sizes: [[960, 600]] },
   // Lens's own app icons (src/icons/lensApps.ts, DESIGN.md §3.7): the whole set at 16/24/32/48 px.
   { id: "iconsheet", surface: "iconsheet", sizes: [[420, 1080]] },
   // Lens Mission Control (dev builds only, docs/MISSION_CONTROL.md), every page on sample data.
@@ -76,6 +88,17 @@ const STATES = [
     sizes: [[1180, 760]],
   })),
 ];
+
+/** Force :hover on every element matching `selector` (deterministic hover for a static frame). */
+async function forceHover(page, selector) {
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("DOM.enable");
+  await cdp.send("CSS.enable");
+  const { root } = await cdp.send("DOM.getDocument", { depth: -1 });
+  const { nodeIds } = await cdp.send("DOM.querySelectorAll", { nodeId: root.nodeId, selector });
+  for (const nodeId of nodeIds) await cdp.send("CSS.forcePseudoState", { nodeId, forcedPseudoClasses: ["hover"] });
+  return nodeIds.length;
+}
 
 /** In-browser image diff (no native dependencies): counts pixels whose largest channel delta
  * exceeds `threshold` and paints them red over a faded copy of the expected image. */
@@ -123,13 +146,14 @@ for (const preset of PRESET_LIST) {
     if (ONLY.length && !ONLY.includes(st.surface) && !ONLY.includes(st.id)) continue;
     for (const [width, height] of st.sizes) {
       const name = `${st.id}-${preset}-${width}x${height}`;
-      const page = await openSurface(browser, server.base, { surface: st.surface, query: st.params ?? "", preset, width, height, reducedMotion: true, fixedTime: FIXED_TIME, settle: 900, colorScheme: preset.includes("daylight") ? "light" : "dark", init: st.init });
+      const page = await openSurface(browser, server.base, { surface: st.surface, page: st.page, query: st.params ?? "", preset, width, height, reducedMotion: !st.motion, fixedTime: FIXED_TIME, settle: 900, colorScheme: preset.includes("daylight") ? "light" : "dark", init: st.init });
       if (st.config) {
         await page.evaluate((src) => { const c = JSON.parse(JSON.stringify(window.__lensConfig())); new Function("c", src)(c); window.__lensSetConfig(c); window.__lensEmit("lens://config-updated", c); }, st.config);
       }
       if (st.open) await page.evaluate((o) => window.__lensEmit("lens://command/open", o), st.open);
       if (st.tab) await settingsTabs(page).filter({ hasText: st.tab }).first().click();
       if (st.hover) await page.locator(st.hover).hover();
+      if (st.forceHover) await forceHover(page, st.forceHover);
       if (st.click) await page.locator(st.click).first().click();
       // The palette's search field lives in the Top Bar / Dock, which send lens://palette-query.
       if (st.query) await page.evaluate((q) => window.__lensEmit("lens://palette-query", q), st.query);

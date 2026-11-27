@@ -84,6 +84,8 @@ mod snip;
 mod studio;
 // Magic waves scaffold (docs/plans/MAGIC_WAVES.md): pure state only, every flag off.
 mod magic_waves;
+// Magic Search's web results (docs/plans/SELECTION_BAR.md §3.4).
+mod magic_search;
 // Lens Mission Control: the maintainer's dev-only admin window (docs/MISSION_CONTROL.md).
 // Compiled only with `--features admin` (Launch-Lens-UI.bat's dev build); never in a release.
 #[cfg(feature = "admin")]
@@ -375,6 +377,18 @@ pub fn run() {
             commands::clip::selection_read,
             commands::clip::selection_take,
             commands::clip::selection_to_shelf,
+            // The Magic selection bar and Magic Search (docs/plans/SELECTION_BAR.md)
+            commands::selection_bar::selection_bar_fit,
+            commands::selection_bar::selection_bar_state,
+            commands::selection_bar::selection_bar_hide,
+            commands::selection_bar::selection_bar_paste_preview,
+            commands::selection_bar::selection_bar_run,
+            commands::magic_search::magic_search_open,
+            commands::magic_search::magic_search_last,
+            commands::magic_search::magic_search_hide,
+            commands::magic_search::magic_search_layout,
+            commands::magic_search::magic_search_web,
+            commands::magic_search::magic_search_replace,
             commands::clip::context_foreground,
             commands::clip::context_remember,
             commands::clip::command_layout,
@@ -872,6 +886,22 @@ pub fn run() {
             commands::music::music_sleep,
             commands::music::music_lyrics,
             commands::music::music_lyrics_clear_cache,
+            commands::music::music_lyrics_offset,
+            commands::music::music_lyrics_nudge,
+            commands::music::music_lyrics_offset_reset,
+            commands::music::music_translation_get,
+            commands::music::music_translation_put,
+            commands::music::music_discord_status,
+            commands::music::music_immersive_open,
+            commands::music::music_immersive_close,
+            commands::music::music_immersive_pending,
+            commands::music::music_remote_start,
+            commands::music::music_remote_stop,
+            commands::music::music_remote_status,
+            commands::music::music_remote_pair,
+            commands::music::music_eq_status,
+            commands::music::music_eq_set,
+            commands::music::music_eq_open_editor,
             commands::music::music_history,
             commands::music::music_history_clear,
             commands::music::music_level,

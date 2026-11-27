@@ -27,6 +27,7 @@ export const FlyoutClose: React.FC<{
     className={`lens-flyout-close${pinned ? " is-pinned" : ""}${inline ? " is-inline" : ""} ${className ?? ""}`}
     aria-label={label}
     data-flyout-close=""
+    data-weight="medium"
     onPointerDown={(e) => e.stopPropagation()}
     onClick={(e) => {
       e.stopPropagation();
