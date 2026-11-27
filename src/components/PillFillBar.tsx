@@ -89,7 +89,10 @@ export const PillFillBar: React.FC<PillFillBarProps> = ({
   return (
     <div
       className={`lens-pill-bar ${isDragging ? "is-dragging" : ""}`}
+      data-grab="y"
+      data-grabbed={isDragging || undefined}
       style={{
+        ["--lens-grab-size" as string]: 42,
         position: "relative",
         height: 42,
         borderRadius: 11,

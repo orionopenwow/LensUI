@@ -18,6 +18,7 @@ export const Chip: React.FC<{
       className={`lens-chip ${selected ? "is-selected" : ""} ${className ?? ""}`}
       aria-label={label}
       aria-pressed={selected}
+      data-weight="light"
       style={style}
       onClick={onClick}
     >

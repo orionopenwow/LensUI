@@ -315,6 +315,7 @@ export const TopBarSurface: React.FC = () => {
         </button>
         <div
           className={`topbar-search-well ${searchOpen ? "is-open" : ""}`}
+          data-opens="palette"
           onClick={() => {
             if (!searchOpen) {
               setSearchQuery("");
@@ -397,6 +398,7 @@ export const TopBarSurface: React.FC = () => {
 
             <button
               type="button"
+              data-opens="quicksettings"
               className="topbar-util-icon"
               onClick={() =>
                 invoke("open_quicksettings_tab_cmd", { tab: "notifications", section: "notifications" })
@@ -413,6 +415,7 @@ export const TopBarSurface: React.FC = () => {
 
             <button
               type="button"
+              data-opens="quicksettings"
               className="topbar-util-icon"
               onClick={() =>
                 invoke("open_quicksettings_tab_cmd", { tab: "network", section: "network" })
@@ -424,6 +427,7 @@ export const TopBarSurface: React.FC = () => {
 
             <button
               type="button"
+              data-opens="quicksettings"
               className="topbar-util-icon"
               onClick={() =>
                 invoke("open_quicksettings_tab_cmd", { tab: "audio", section: "audio" })
@@ -435,6 +439,7 @@ export const TopBarSurface: React.FC = () => {
 
             <button
               type="button"
+              data-opens="quicksettings"
               className="topbar-util-icon"
               onClick={() =>
                 invoke("open_quicksettings_tab_cmd", { tab: "quick", section: "quick" })
@@ -447,6 +452,7 @@ export const TopBarSurface: React.FC = () => {
 
           <button
             type="button"
+              data-opens="quicksettings"
             className="topbar-clock"
             onClick={() =>
               invoke("open_quicksettings_tab_cmd", { tab: "calendar", section: "calendar" })

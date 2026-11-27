@@ -67,7 +67,7 @@ export const TimePage: React.FC<PageProps> = ({ section }) => {
             {l.id === k.activeId ? (
               <span className="sh-pill live">In use</span>
             ) : (
-              <button
+              <button data-weight="medium"
                 type="button"
                 className="cc-btn"
                 onClick={() =>
