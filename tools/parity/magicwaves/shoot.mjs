@@ -120,6 +120,80 @@ for (const preset of PRESETS) {
     await pg.close();
   }
 }
+// Desktop widgets (docs/features/desktop-widgets.md): the host with the sample layout, the widget
+// menu, a resize to Large, edit mode with the gallery, adding from the gallery, removing, and Esc.
+// The page must report every widget's rectangle to Lens (that's what keeps the rest click-through).
+const deskCount = (pg) => pg.locator(".dwg-item:not(.is-preview)").count();
+const DESK_SCENES = [
+  { id: "desk", desk: "sample", run: async (pg, errors) => {
+    if ((await deskCount(pg)) < 6) errors.push(`only ${await deskCount(pg)} widgets`);
+    const hits = await pg.evaluate(() => window.__deskHits?.rects?.length ?? 0);
+    if (hits < (await deskCount(pg))) errors.push(`reported ${hits} hit rects for ${await deskCount(pg)} widgets`);
+    if (await pg.evaluate(() => window.__deskHits?.hold)) errors.push("holds the pointer with nothing open");
+  } },
+  { id: "desk-menu", desk: "sample", run: async (pg, errors) => {
+    await pg.locator('.dwg-item[data-kind="today"]').first().click({ button: "right" });
+    await pg.waitForTimeout(250);
+    for (const t of ["Small", "Medium", "Large", "Remove Widget", "Edit Widgets…"]) if (!(await pg.locator(".dwg-menu-row", { hasText: t }).count())) errors.push(`menu misses ${t}`);
+    if (!(await pg.evaluate(() => window.__deskHits?.hold))) errors.push("an open menu doesn't hold the pointer");
+  } },
+  { id: "desk-large", desk: "sample", run: async (pg, errors) => {
+    await pg.locator('.dwg-item[data-kind="today"]').first().click({ button: "right" });
+    await pg.waitForTimeout(200);
+    await pg.locator(".dwg-menu-row", { hasText: "Large" }).first().click();
+    await pg.waitForTimeout(120);
+    await pg.screenshot({ path: join(shots, "desk-reflow-mid.png") });
+    await pg.waitForTimeout(400);
+    if ((await pg.locator('.dwg-item[data-kind="today"]').getAttribute("data-size")) !== "large") errors.push("Today didn't become Large");
+    const saved = await pg.evaluate(() => window.__lensCallLog.filter((c) => c.cmd === "desktop_widgets_save").pop()?.args?.items ?? []);
+    if (!saved.some((i) => i.kind === "today" && i.size === "large")) errors.push("the new size wasn't saved");
+    const boxes = await pg.evaluate(() => [...document.querySelectorAll(".dwg-item")].map((e) => e.getBoundingClientRect()).map((r) => [r.left, r.top, r.right, r.bottom]));
+    for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) { const [a, b] = [boxes[i], boxes[j]]; if (a[0] < b[2] - 1 && b[0] < a[2] - 1 && a[1] < b[3] - 1 && b[1] < a[3] - 1) errors.push(`widgets ${i} and ${j} overlap after the resize`); }
+  } },
+  { id: "desk-edit", desk: "edit", run: async (pg, errors) => {
+    if (!(await pg.locator(".dwg-panel").count())) errors.push("no gallery panel in edit mode");
+    for (const k of ["batteries", "clock", "music", "notes", "today", "weather"]) if (!(await pg.locator(`.dwg-kind[data-kind="${k}"]`).count())) errors.push(`gallery misses ${k}`);
+    await pg.locator(".dwg-search input").fill("remind");
+    await pg.waitForTimeout(150);
+    if ((await pg.locator(".dwg-kind").count()) !== 1) errors.push("search for 'remind' didn't narrow to Today");
+    await pg.locator(".dwg-search input").fill("");
+    await pg.locator('.dwg-kind[data-kind="batteries"]').click();
+    const n0 = await deskCount(pg);
+    await pg.locator('[data-preview="batteries:medium"]').click();
+    await pg.waitForTimeout(400);
+    if ((await deskCount(pg)) !== n0 + 1) errors.push("clicking a preview didn't add the widget");
+    await pg.locator('.dwg-kind[data-kind="weather"]').click();
+    await pg.waitForTimeout(150);
+    if (!(await pg.locator(".dwg-needs").count())) errors.push("Weather without a Dashboard widget should ask for one first");
+  } },
+  { id: "desk-remove-done", desk: "edit", run: async (pg, errors) => {
+    const n0 = await deskCount(pg);
+    await pg.locator('.dwg-item[data-kind="notes"] .dwg-remove').first().click();
+    await pg.waitForTimeout(400);
+    if ((await deskCount(pg)) !== n0 - 1) errors.push("remove didn't remove");
+    await pg.keyboard.press("Escape");
+    await pg.waitForTimeout(250);
+    const calls = await pg.evaluate(() => window.__lensCallLog.filter((c) => c.cmd === "desktop_widgets_edit").map((c) => c.args.on));
+    if (!calls.includes(false)) errors.push("Esc didn't leave edit mode");
+    if (await pg.locator(".dwg-panel").count()) errors.push("the gallery stayed after Esc");
+  } },
+];
+for (const preset of PRESETS) {
+  for (const sc of DESK_SCENES) {
+    const pg = await browser.newPage({ viewport: { width: 1600, height: 900 } });
+    const errors = [];
+    pg.on("pageerror", (e) => errors.push(e.message));
+    pg.on("console", (m) => m.type() === "error" && !/Failed to load resource/.test(m.text()) && errors.push(m.text().slice(0, 200)));
+    await pg.goto(`${base}/harness.html?surface=deskwidgets&preset=${preset}&magic=desktopWidgets&desk=${sc.desk}`);
+    await pg.waitForTimeout(1100);
+    await sc.run(pg, errors).catch((e) => errors.push(`run: ${e.message.slice(0, 120)}`));
+    await pg.screenshot({ path: join(shots, `${preset}-${sc.id}.png`) });
+    report.push({ preset, scene: sc.id, ok: errors.length === 0, errors });
+    console.log(`${errors.length ? "FAIL" : "ok  "} ${preset} ${sc.id}${errors.length ? " " + errors.join(" | ") : ""}`);
+    await pg.close();
+  }
+}
+
 await browser.close();
 srv.close();
 await writeFile(join(shots, "report.json"), JSON.stringify(report, null, 2));
