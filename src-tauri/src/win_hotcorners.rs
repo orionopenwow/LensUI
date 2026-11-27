@@ -298,10 +298,17 @@ mod rt {
 
     pub fn user_is_busy() -> bool {
         unsafe {
-            matches!(
-                SHQueryUserNotificationState(),
-                Ok(s) if s == QUNS_BUSY || s == QUNS_RUNNING_D3D_FULL_SCREEN || s == QUNS_PRESENTATION_MODE
-            )
+            match SHQueryUserNotificationState() {
+                Ok(s) if s == QUNS_RUNNING_D3D_FULL_SCREEN || s == QUNS_PRESENTATION_MODE => true,
+                // "A window covers the screen": a maximised window does too once the taskbar is
+                // hidden, so only a non-maximised (borderless fullscreen) window counts as busy.
+                Ok(s) if s == QUNS_BUSY => {
+                    use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, IsZoomed};
+                    let fg = GetForegroundWindow();
+                    fg.0.is_null() || !IsZoomed(fg).as_bool()
+                }
+                _ => false,
+            }
         }
     }
 
