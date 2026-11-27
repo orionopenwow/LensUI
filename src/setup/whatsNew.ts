@@ -13,6 +13,167 @@ export interface WhatsNewRelease {
 
 export const WHATS_NEW: WhatsNewRelease[] = [
   {
+    "version": "0.4.0",
+    "date": "2026-11-27",
+    "sections": [
+      {
+        "title": "Installing",
+        "items": [
+          "Download and install, no building needed",
+          "Uninstall puts Windows back",
+          "Building from source is faster and explains itself"
+        ]
+      },
+      {
+        "title": "Added",
+        "items": [
+          "Lens Apps updates: manual by default, automatic if you want it",
+          "Website: icons on the tour tabs, drawn like Lens's own app icons (a bold white glyph on a plain dark tile",
+          "Link rules in Lens Browser",
+          "lens on the command line, for your own Claude Code or Codex",
+          "Published Lens Browser benchmarks (cold open, memory with 1 and 10 tabs, tab switch), measured on every pull request…",
+          "What Lens Browser sends, spelled out: filter lists, site icons and the update check, nothing else",
+          "Your accent, where it counts",
+          "Your accent in Lens's own apps too",
+          "Lens Browser presses like the rest of Lens",
+          "The Dock presses like the rest of Lens",
+          "Lens Browser tab styles",
+          "A short Lens Browser setup on first open",
+          "Lens Browser blocks ads and trackers inside pages",
+          "Split view in Lens Browser",
+          "Real site icons in Lens Browser",
+          "A fuller import from Arc and Zen",
+          "Immersive: Now Playing full screen (learned from Cider)",
+          "Now Playing takes its colours from the artwork, and only where they read: every accent is checked at 4.5:1 against…",
+          "Lyric timing per song",
+          "Lyric translation (opt-in)",
+          "Show what you're listening to on Discord (opt-in)",
+          "Equalizer, the honest way",
+          "Lens Remote (Tester mode preview)",
+          "Music setup and Tweaks",
+          "Controls you can feel",
+          "Things come from somewhere",
+          "Magic selection bar and Magic Search (off by default)",
+          "Lens Apps has a Library",
+          "Credits and licences in plain words",
+          "A real screenshot gallery on app pages",
+          "Remind me, on any to-do in Lens Notes",
+          "\"Make stickies clickable\" is a button in Lens Notes, not only Ctrl+Shift+U, so a click-through sticky always has a…",
+          "Live text in Lens Snip",
+          "Undo when you remove a snip from history or an item from the Shelf",
+          "The Menu key and Shift+F10 open a Shelf item's menu with \"Lens ›\" focused, and focus returns to the item when the…",
+          "Dock keys: the Dock works from the keyboard",
+          "The Dock says when something didn't work",
+          "Small touches on the Dock: a newly pinned app drops into place and settles",
+          "Desktop widgets (preview, off by default)",
+          "The Dock's music pop-out, redone (hover Spotify in the Dock)"
+        ]
+      },
+      {
+        "title": "Fixed",
+        "items": [
+          "\"Theme follows music\" no longer leaves white in place of your accent when the music stops",
+          "Alt+drag, Magic and App hotkeys: the options under each switch can be clicked while the feature is off (they were…",
+          "Text on an accent-coloured button or pill is always readable, the Night light switch keeps its knob on light themes…",
+          "Settings buttons no longer sink twice on a press (B-114)",
+          "The Top Bar no longer stays up after Lens was briefly busy",
+          "A click outside the Launcher closes it even when Windows didn't give it the focus",
+          "Alarms keep their time when the clocks change",
+          "An alarm that is only waiting no longer wakes Lens every second",
+          "Apps Lens keeps itself can be removed from Lens Apps",
+          "Two Lens Apps settings that did nothing are gone",
+          "Lens Apps keeps the keyboard",
+          "Failures in the Lens apps no longer pass silently",
+          "Text you cropped out of a snip no longer goes with it",
+          "Cropping in the Snip studio no longer stretches the picture or misplaces new marks",
+          "Enter on a focused Snip studio button no longer also runs Copy, and typing in the language list no longer triggers…",
+          "Snip history shows the newest search when answers arrive out of order, and says so when Keep, Remove or opening a…",
+          "Voice conversation no longer leaves a listener behind when interrupted, and its hidden window no longer redraws every…",
+          "Failures in Snip, voice, Magic Start and the Shelf no longer pass silently",
+          "Magic Start keeps the selected row in view and announces it to screen readers",
+          "\"Snip this window\" and \"Open in Lens Browser\" now appear in the Magic window (Snip while Lens Snip is on",
+          "Windows on the wrong Dock icon",
+          "The Dock's right-click menu could open partly off the screen on a Dock at the left or right edge, and under the Top Bar",
+          "Icon sizes in the Dock's right-click menu did nothing on some styles (Slim, Taskbar, Studio, Islands, Unified, or any…",
+          "Top Bar buttons could stay click-through after a refused report",
+          "The Launcher closed before it could say an app didn't open",
+          "The Top Bar redrew itself every second to show a clock that changes once a minute",
+          "Plainer names on the Dock",
+          "The hot-corner picker couldn't be clicked while Hot corners was off",
+          "Some Settings switches vanished or stopped responding after one click (Animated backdrop, startup apps, Animation…",
+          "Failures in Settings no longer pass silently",
+          "Contrast in every theme pack",
+          "The Dock could fail to show on another monitor",
+          "Pop-outs from a Dock on the left or right edge now open on the Dock's own monitor with \"Follow the pointer\", never…",
+          "Settings and Search could cover the Dock on small, highly scaled screens (1280×720 at 150 %)",
+          "After Explorer restarts, apps asking for attention still show on the Dock",
+          "A refused window call no longer leaves the Dock or a pop-out stuck",
+          "Lens's window buttons could be drawn over anti-cheat games",
+          "Apps on the window-button exclusion list still got buttons",
+          "Window button styles did nothing outside Lens's own windows"
+        ]
+      },
+      {
+        "title": "Changed",
+        "items": [
+          "Lens Apps licences checked",
+          "Lens's own app icons are simpler and bolder",
+          "Lens Apps, the core apps, Cleaner, Feeds and Messages feel like the rest of Lens",
+          "Sentence case for the Top Bar's button names (\"Previous desktop\", \"Wi-Fi and network\") and the remaining Title Case…",
+          "Top Bar buttons are named in sentence case for screen readers (\"Previous track\", \"Volume and audio mixer\")",
+          "Snip's shortcut is Ctrl+Alt+X (was Ctrl+Shift+S, which is Save As in most apps)",
+          "The Updates card says so when updates can't run",
+          "Lens no longer changes Windows' accent colour on its own"
+        ]
+      },
+      {
+        "title": "Added",
+        "items": [
+          "Magic Mouse (M3, off by default): turning it on (Settings asks first) gives you the Lens Magic pointer, the Lens…",
+          "Unified Dock style",
+          "Window carousel",
+          "Window-count marks on every Dock style",
+          "The Dock reflows smoothly when apps are pinned, unpinned, reordered, opened or closed (instant with reduced motion)",
+          "Pin glyphs in the Launcher",
+          "Pointer halo switch (Settings › Dock & Bar › Top Bar)",
+          "How long pop-outs wait before closing (Settings › Dock & Bar › Advanced › Close after): Short, Normal (the old 1.5 s…",
+          "Safety card (Settings › About & Testing › Safety net): what Lens changes on this PC, from the same list Remove all walks",
+          "Window buttons on the left (Apps and window buttons › Buttons on the): used where a window's title bar is free on the…",
+          "Command teaches where settings live",
+          "Magic Start and Shelf to Notes (M4, off by default): with the Magic button on, a Windows-key tap opens Lens Magic…",
+          "Dashboard widgets and X (M2, off by default): with Magic Dashboard and Widgets on, the Dashboard's Widgets lane takes…",
+          "Magic Dashboard (M1, off by default): with Magic Dashboard on, \"dashboard\" in Command or the Top Bar button opens a…",
+          "Magic previews (off by default): the groundwork for the Magic Dashboard, Magic Mouse, the Magic button, Shelf to…",
+          "ThumbDesk in Lens: the controller companion from the makers of Lens (use the whole PC from an Xbox or PlayStation…",
+          "Lens Apps supports portable apps (\"portable\": true): kept in Lens's apps folder, removed by deleting that folder"
+        ]
+      },
+      {
+        "title": "Changed",
+        "items": [
+          "Themes change colours only",
+          "Settings and the Dock search keep their own size on every Dock style (Slim and Minimal no longer squeeze them…",
+          "Picking Dock styles quickly restyles the Dock once, when the clicks stop",
+          "Lens Browser sidebar, simpler: open tabs come first in quiet Today / Earlier sections (or by site, or one list)",
+          "Make it yours › Sidebar: full or icons only, left or right, width, grouping, and whether chats, now playing and…",
+          "Lens row in the sidebar: Tidy (also Ctrl+Shift+K), Close duplicates and Group by site now show what they will change…"
+        ]
+      },
+      {
+        "title": "Added",
+        "items": [
+          "Lens setup on the first launch and after every new version: pick a Dock (floating is the default), colours and…",
+          "Launch-Lens-UI.bat says \"Lens\", installs dependencies only when bun.lock changed, offers the dev build or your last…",
+          "Lens › in right-click menus",
+          "Shelf items have a right-click menu: Use as context, Copy, Pin, Remove, and Lens ›",
+          "The File Explorer \"Lens ›\" menu (off until you add it in Settings › Connections) now also appears inside folders and…",
+          "Restart to update: when a Lens update is available or downloaded, the Top Bar shows a pill and you get one notification",
+          "Report a problem: Settings › About & Testing, the tray menu, /report in Command and the card a crashed window shows"
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.3.0",
     "date": "2026-11-24",
     "sections": [
