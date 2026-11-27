@@ -32,6 +32,19 @@ export function planReflow(before: ReadonlyMap<string, number>, after: ReadonlyM
   return { moves, entered };
 }
 
+export type ReflowEdge = "bottom" | "top" | "left" | "right";
+
+/**
+ * Where a new icon starts from. A pin drops onto the Dock from the screen side and settles with
+ * the spring (it has weight: you put it there); an app that simply opened grows in, as before.
+ */
+export function enterPose(key: string, edge: ReflowEdge): { from: { x?: number; y?: number; scale: number; opacity: number }; spring: boolean } {
+  if (!key.startsWith("pin-")) return { from: { scale: 0.6, opacity: 0 }, spring: false };
+  const d = 12;
+  const offset = edge === "top" ? { y: d } : edge === "left" ? { x: d } : edge === "right" ? { x: -d } : { y: -d };
+  return { from: { ...offset, scale: 0.86, opacity: 0 }, spring: true };
+}
+
 const keyOf = (el: Element) => (el as HTMLElement).dataset?.dockDragKey || (el as HTMLElement).dataset?.reflowKey || "";
 
 /** Positions of the row's keyed children along the axis (centre, viewport px). */
@@ -54,7 +67,7 @@ export interface DockReflow {
    * in order). When it changed, the old layout (still on screen) is read once. `enabled` false
    * (dragging, searching, hidden) skips the animation but keeps tracking.
    */
-  render(signature: string, getRow: () => Element | null | undefined, axis: Axis, enabled: boolean): void;
+  render(signature: string, getRow: () => Element | null | undefined, axis: Axis, enabled: boolean, edge?: ReflowEdge): void;
 }
 
 /**
@@ -67,14 +80,16 @@ export function useDockReflow(): DockReflow {
     before: Map<string, number> | null;
     getRow: () => Element | null | undefined;
     axis: Axis;
+    edge: ReflowEdge;
     pending: boolean;
     running: GlideHandle[];
-  }>({ sig: null, before: null, getRow: () => null, axis: "x", pending: false, running: [] });
+  }>({ sig: null, before: null, getRow: () => null, axis: "x", edge: "bottom", pending: false, running: [] });
   const api = useRef<DockReflow>({
-    render(signature, getRow, axis, enabled) {
+    render(signature, getRow, axis, enabled, edge = axis === "x" ? "bottom" : "left") {
       const st = state.current;
       st.getRow = getRow;
       st.axis = axis;
+      st.edge = edge;
       if (st.sig === null) {
         st.sig = signature; // first render: nothing to animate from
         return;
@@ -106,7 +121,8 @@ export function useDockReflow(): DockReflow {
       if (d !== undefined) {
         st.running.push(glide(el, st.axis === "x" ? { x: d } : { y: d }, {}, { duration: "base", ease: "out" }));
       } else if (plan.entered.includes(k)) {
-        st.running.push(glide(el, { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1 }, { duration: "base", ease: "out" }));
+        const pose = enterPose(k, st.edge);
+        st.running.push(glide(el, pose.from, { x: 0, y: 0, scale: 1, opacity: 1 }, pose.spring ? { duration: "slow", ease: "spring" } : { duration: "base", ease: "out" }));
       }
     }
   });

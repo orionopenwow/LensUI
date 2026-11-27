@@ -6,6 +6,8 @@
 >
 > **Settings wave (2026-11-26):** halo switch done (Dock & Bar › Top Bar › Pointer halo, `topBar.pointerHalo`); the halo is never drawn while Windows' transparency effects are off (Lens Core already re-reads `EnableTransparency` every ~2 s with the theme; `topbar_hit::halo_for` and the page's `haloAllowed` apply the rule). The bar's aria-labels are sentence case. Pop-out close delay is a setting (Short / Normal / Long). Left: focus strip, icon refresh.
 
+> **Fable pass (Dock family, 2026-11-26):** B-108 fixed (a refused hit-rect report was remembered as sent); the bar's clock wakes on the minute and not while hidden (it redrew every second); the bar's remaining swallowed errors are logged with what was being done (one line left for PR #130, which is changing it); Search open/close is retried. Not done here: `QuickSettingsSurface.tsx` and `src/quicksettings/LiveRows.tsx` (PR #131 is changing them throughout), the focus strip.
+
 ## Rundown
 
 The Top Bar is Lens's slim bar along the top of the screen. It holds the launcher, virtual desktops, the active app, media, search, the clock and calendar, notifications, network, volume, Quick Settings and (opt-in) the Magic Dashboard button. It auto-hides so it never covers browser tabs or title bars, and since #102 it lets clicks pass through anywhere that isn't one of its controls.
@@ -82,7 +84,7 @@ The Top Bar is Lens's slim bar along the top of the screen. It holds the launche
 - **Copy:** the Top Bar's own aria-labels are sentence case (robustness wave); the settings section was done in #113.
 - **Visual parity:** the Top Bar has goldens for the default height; floating and per-monitor variants don't.
 - **A11y:** every icon button is named; the halo has no reduced-transparency alternative (users with "transparency effects off" in Windows still get it).
-- **Perf:** hit-rect reporting runs on layout change only; good. Media polling every few seconds while playing — fine.
+- **Perf:** hit-rect reporting runs on layout change only; good. The clock wakes once a minute (`src/hooks/useMinuteClock.ts`), not every second, and not while hidden. Media polling every 2 s while the bar's own media controls are on; the 1.5 s hit-rect look still runs while the bar is hidden (cheap: one layout read, nothing sent unless it changed).
 - **Consistency:** Quick Settings tiles got richer icons (#89) but the Top Bar's own icons are older outline icons with different stroke widths.
 
 ## Bug assessment
@@ -90,7 +92,8 @@ The Top Bar is Lens's slim bar along the top of the screen. It holds the launche
 |---|---|---|---|
 | B-52 (fixed) | Med | Two enable flags could disagree (`topBar.enabled` vs `dock.showTopBar`) | config v4 migration, `topbarEnabled.test.ts`, `win_backup` tests |
 | suspected | Low | Halo ignores Windows' "Transparency effects: off" | `TopBarSurface.css:449` |
-| suspected | Low | Clicks on the Dashboard button while the flag flips off mid-session leave a stale hit rect until the next layout | `clickThrough.ts` reports on layout change only |
+| B-108 (fixed) | Med | A hit-rect report Lens Core refused was remembered as sent and never retried | `clickThrough.ts` (`createHitReporter`), `topbarClickThrough.test.ts` |
+| closed | Low | ~~Stale hit rect when the Dashboard flag flips~~: the bar watches its own children (MutationObserver) and looks again every 1.5 s, so a removed button is reported within a frame; the real fault on that path was B-108 | `clickThrough.ts` |
 | B-14 | — | Approval pill hotkey text (fixed) | #72 |
 | B-36, B-42 | — | Bar popping back up / missed clicks (fixed) | #94 |
 
@@ -130,7 +133,9 @@ POLISH
  - search bubble open via FLIP/scale, not width; respect Windows transparency-off for the halo
  - refresh Top Bar icons to the Quick Settings chip style
 CHECK
- - stale hit rect when the Dashboard flag flips
+ - DONE fable/dock-20261126  stale hit rect: not reproducible (MutationObserver); B-108 was the real fault
+ - LEFT (ranked): focus strip; Quick settings feel/a11y pass once #131 has merged; search bubble via FLIP;
+   icon refresh; extra bars' own auto-hide and click-through
  - DONE #113 per-monitor bars keep one bar per display (B-53); two-display real-PC check still needed
 TESTS  bun test src; E2E topbar-* (tests/e2e/autohide.mjs); add tab-strip click-through E2E
 OWNER CHECK  7-step list in this file

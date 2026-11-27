@@ -6,8 +6,8 @@ Status words: **works** (built and tested), **partly** (built with gaps), **brok
 
 | Feature | File | Status | Top quick win | Top bug | Idea to push |
 |---|---|---|---|---|---|
-| Dock | [dock.md](dock.md) | works (robustness wave: left/right E2E, B-18 Dock share, B-62–B-65) | Split `DockSurface.tsx` (left/right E2E done) | B-62 multi-monitor DPI fix needs a two-display real-PC check | "Dock in 10 seconds" ghost tour after a style change |
-| Top Bar | [topbar.md](topbar.md) | works | Focus strip (halo switch and transparency-off rule done in the Settings wave) | Stale hit rect when the Dashboard flag flips (suspected) | Focus strip under the clock |
+| Dock | [dock.md](dock.md) | works (Fable pass `fable/dock-20261126`: split, B-106–B-110, Dock keys, notice) | Drop the Dock's own `:active` rules once #131 merges (split done) | Pinned folders are not drawn on the Dock; B-62 still needs a two-display real-PC check | A "focus the Dock" hotkey for Dock keys; then the ghost tour |
+| Top Bar | [topbar.md](topbar.md) | works (Fable pass: B-108, minute clock, errors logged) | Focus strip (halo switch and transparency-off rule done in the Settings wave) | none open (B-108 fixed; the stale-rect suspicion is closed) | Focus strip under the clock |
 | Settings | [settings.md](settings.md) | works | "Recently changed" strip (B-41, B-40, Settings swallowed errors fixed in the Settings wave) | B-58 `.pi-off` dead clicks on three cards | "Recently changed" strip with Undo |
 | Themes & backdrops | [themes.md](themes.md) | works | Wallpaper folder dialog (every-pack contrast audit done in the Settings wave) | B-19 hard-coded colours (B-38 closed, B-39 fixed in #113) | "Lens Cloud" featured look (Backdrop preset done in #113) |
 | Window styling | [windows-styling.md](windows-styling.md) | works (Fable pass, #115) | "Don't style this app" in the Dock menu | Left-side buttons not yet seen on a real PC | Per-app window rules page with locked "Protected" badge (first cut built, #115) |
@@ -35,7 +35,7 @@ Quick wins still open in those four dossiers, ranked by value for the effort:
 7. **Done (Settings wave).** ~~**A delay setting for closing pop-outs** (the switch exists; the 1.5 s / 1.8 s are fixed in `watcher.rs`).~~
 8. **Done** (robustness and Settings waves). ~~**Sentence-case the Top Bar's own aria-labels**~~.
 9. **Wallpaper**: folder picker dialog, palette chip copies hex, Next wallpaper in the Dock and Top Bar menus.
-10. **Split `DockSurface.tsx`** (context menu first). No behaviour change, goldens unchanged.
+10. **Done (Fable pass, `fable/dock-20261126`).** ~~**Split `DockSurface.tsx`**~~: 2,916 → about 1,500 lines, rendered output byte-identical before the intended changes.
 
 Ideas not built in this pass: Settings "Recently changed" strip with Undo; the "Lens Cloud" featured look (its Backdrop Lab preset is in); Dock "in 10 seconds" tour; Top Bar focus strip.
 
