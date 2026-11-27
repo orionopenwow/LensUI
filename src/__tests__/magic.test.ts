@@ -211,3 +211,14 @@ describe("requests", () => {
     expect(model.appName(target("window"))).toBe("WINWORD");
   });
 });
+
+describe("desktop widgets on the desktop target", () => {
+  test("Edit widgets… comes first on the desktop only while desktop widgets are on", () => {
+    const desk = target("desktop");
+    expect(ids(model.rowsFor(desk, cfg).top)).not.toContain("desk:widgets");
+    const on = model.rowsFor(desk, cfg, DEFAULT_PREFS, {}, { ...model.NO_CAPS, desktopWidgets: true });
+    expect(on.top[0]).toMatchObject({ id: "desk:widgets", windowAction: "desktop-widgets" });
+    expect(model.localKind(on.top[0])).toBe("window");
+    expect(ids(model.rowsFor(target("window"), cfg, DEFAULT_PREFS, {}, { ...model.NO_CAPS, desktopWidgets: true }).top)).not.toContain("desk:widgets");
+  });
+});
