@@ -409,6 +409,22 @@
         "visible": false,
         "focus": false,
         "create": false
+      },
+      {
+        "label": "magic",
+        "title": "Lens",
+        "url": "index.html?surface=magic",
+        "width": 360,
+        "height": 440,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "visible": false,
+        "focus": false,
+        "create": false
       }
     ],
     "security": {
