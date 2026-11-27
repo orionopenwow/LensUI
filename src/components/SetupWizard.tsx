@@ -55,7 +55,7 @@ const PAGE_LABEL: Record<Page, string> = {
 };
 
 /** The Dock layouts offered here; the rest are one click away in Settings › Dock & Bar. Swatch colours live in CSS (.wiz-swatch-N). */
-const SETUP_DOCKS = ["floating", "slim", "taskbar", "split"];
+const SETUP_DOCKS = ["floating", "slim", "taskbar", "split", "unified"];
 const EDGES = [
   { id: "bottom", label: "Bottom" },
   { id: "left", label: "Left" },

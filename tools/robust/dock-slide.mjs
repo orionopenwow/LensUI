@@ -7,7 +7,7 @@
 import { serve, launch, openSurface } from "./lib.mjs";
 
 const CASES = [
-  ...["floating", "slim", "taskbar", "studio", "minimal", "split", "islands"].map((style) => ({ style, edge: "bottom" })),
+  ...["floating", "slim", "taskbar", "studio", "minimal", "split", "islands", "unified"].map((style) => ({ style, edge: "bottom" })),
   { style: "floating", edge: "top" },
   { style: "floating", edge: "left" },
   { style: "taskbar", edge: "right" },

@@ -13,6 +13,7 @@ renders pixel-identically to the Dock before this change (verified: 0 differing 
 | `studio`   | Full-width bar with apps on the left and the system area on the right.                          | 36        |
 | `minimal`  | Icons only; the Dock background fades in while you point at it, during search and menus.       | 40        |
 | `split`    | The centred app Dock plus a separate small pill on the right with Quick Settings, clock and notifications. | 40 |
+| `unified`  | One floating pill, 8 px off its edge: Launcher first, apps, a hairline, tray and Quick Settings, a bell with a count, and a two-line clock (time; short weekday, day and month). Pop-outs keep Floating's width. | 38 (cap 40) |
 
 On the left/right edges Taskbar and Studio become full-height vertical bars (apps from the top,
 starting below the Top Bar; system area at the bottom). Auto-hide slides any style fully off its edge.
