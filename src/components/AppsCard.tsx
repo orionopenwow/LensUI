@@ -1,10 +1,12 @@
-// Settings › Apps: catalogue updates, auto-update (off by default), thumbnails, the audit log and
-// "Remove everything Lens installed". Mount snippet: docs/LENS_APPS.md §1.
+// Settings › Apps: the catalogue, how updates work, thumbnails, the audit log and "Remove
+// everything Lens installed". (The two update switches that did nothing are gone: B-122.) Mount snippet: docs/LENS_APPS.md §1.
 import { useEffect, useState } from "react";
+import { toast } from "../ui/toastBus";
 import { auditLog, checkForNewApps, lensInstalled, loadCatalog, loadSettings, runAndWait, saveSettings } from "../apps/api";
 import type { AppsSettings, Catalog } from "../apps/types";
 import { DEFAULT_SETTINGS } from "../apps/types";
 import "../apps/apps.css";
+import "../apps/apps-settings.css";
 
 function fmt(ms: number): string {
   try {
@@ -47,30 +49,19 @@ export function AppsCard({ demo }: { demo?: { settings?: AppsSettings; installed
             The catalogue ships with Lens{catalog ? ` (${catalog.apps.length} apps, ${catalog.updated})` : ""}. Nothing installs without your click.
           </span>
         </div>
-        <button className="la-btn" onClick={async () => setRefresh((await checkForNewApps()).message)}>
+        <button className="la-btn" data-weight="medium" onClick={async () => setRefresh((await checkForNewApps()).message)}>
           Check for new apps
         </button>
       </div>
       {refresh && <div className="la-fine">{refresh}</div>}
 
-      <label className="la-setting">
-        <span className="la-setting-text">
-          <span>Update apps Lens installed automatically</span>
-          <span className="la-fine">Off by default. When off, Lens only shows an Update button.</span>
-        </span>
-        <input type="checkbox" checked={settings.autoUpdate} onChange={(e) => update({ autoUpdate: e.target.checked })} />
-      </label>
       <div className="la-setting">
         <span className="la-setting-text">
-          <span>Check for updates</span>
+          <span>Updates</span>
+          <span className="la-fine">
+            Lens checks when you open Lens Apps or press Check again in the Library above. Nothing updates by itself: Update, or Update all, asks once and shows each source.
+          </span>
         </span>
-        <div className="la-filters">
-          {(["never", "weekly", "daily"] as const).map((v) => (
-            <button key={v} className={`la-filter${settings.checkUpdates === v ? " active" : ""}`} aria-pressed={settings.checkUpdates === v} onClick={() => update({ checkUpdates: v })}>
-              {v[0].toUpperCase() + v.slice(1)}
-            </button>
-          ))}
-        </div>
       </div>
       <label className="la-setting">
         <span className="la-setting-text">
@@ -107,20 +98,23 @@ export function AppsCard({ demo }: { demo?: { settings?: AppsSettings; installed
           <span className="la-fine">{removable.length ? `${removable.map(nameOf).join(", ")}.` : "Lens hasn't installed any apps."} Apps you had before Lens are never touched.</span>
         </span>
         {!confirmRemove ? (
-          <button className="la-btn" disabled={!removable.length} onClick={() => setConfirmRemove(true)}>
+          <button className="la-btn" data-weight="medium" disabled={!removable.length} onClick={() => setConfirmRemove(true)}>
             Review…
           </button>
         ) : (
           <div className="la-actions">
-            <button className="la-btn" onClick={() => setConfirmRemove(false)}>
+            <button className="la-btn" data-weight="medium" onClick={() => setConfirmRemove(false)}>
               Cancel
             </button>
             <button
               className="la-btn la-btn-primary la-btn-danger"
+              data-weight="heavy"
               onClick={async () => {
                 setConfirmRemove(false);
                 // One at a time; each runs the app's own uninstaller and waits for it to finish.
-                for (const id of removable) await runAndWait(id, "uninstall");
+                const left: string[] = [];
+                for (const id of removable) if (!(await runAndWait(id, "uninstall"))) left.push(nameOf(id));
+                if (left.length) toast.error(`Couldn't uninstall ${left.join(", ")}. ${left.length === 1 ? "It's" : "They're"} still installed.`);
                 lensInstalled().then(setMine);
                 auditLog(50).then(setAudit);
               }}

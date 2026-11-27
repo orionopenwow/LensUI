@@ -1,0 +1,562 @@
+/* Lens Apps: view tabs, the Library, the screenshot gallery, credits and licence, and the feel
+   layer (hit targets, flows). Lens tokens only; transform and opacity only; every animation is
+   one-shot, ≤ --lens-dur-slow, and collapses with reduced motion through the tokens. */
+
+/* Head: title on the left, Discover | Library on the right */
+.la-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.la-head-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.la-view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* Segmented tabs: the indicator slides (transform only), it never jumps */
+.la-tabs {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 2px;
+  border-radius: 10px;
+  background: rgb(var(--lens-ink) / 0.06);
+  border: 1px solid var(--lens-border);
+  flex-shrink: 0;
+}
+.la-tabs-ind {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 2px;
+  width: calc(50% - 2px);
+  border-radius: 8px;
+  background: var(--lens-fg);
+  transition: transform var(--lens-dur-base) var(--lens-ease-out);
+}
+.la-tabs[data-view="library"] .la-tabs-ind {
+  transform: translateX(100%);
+}
+.la-tab {
+  position: relative;
+  min-width: 96px;
+  height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--lens-fg-secondary, var(--lens-fg-muted));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: color var(--lens-dur-fast) var(--lens-ease-out);
+}
+.la-tab:hover {
+  color: var(--lens-fg);
+}
+.la-tab[aria-selected="true"] {
+  color: var(--lens-on-fg, var(--lens-pack-base));
+}
+.la-tab-badge {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  /* The one earned colour here: something is waiting for you. */
+  color: var(--lens-on-fg, var(--lens-pack-base));
+  background: var(--lens-link);
+}
+.la-tab[aria-selected="true"] .la-tab-badge {
+  /* On the selected (filled) tab the badge is an outline in the tab's own text colour. */
+  color: var(--lens-on-fg, var(--lens-pack-base));
+  background: none;
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+/* A count that rolls: only the digit that changed is replaced, and it rises into place */
+.la-roll {
+  display: inline-flex;
+  overflow: hidden;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.la-roll-digit {
+  display: inline-block;
+  animation: la-roll-in var(--lens-dur-slow) var(--lens-ease-out) both;
+}
+@keyframes la-roll-in {
+  from {
+    opacity: 0;
+    transform: translateY(70%);
+  }
+}
+
+/* Content swaps: a short crossfade with a 6px slide in the direction of travel */
+.la-swap-fwd {
+  animation: la-swap-fwd var(--lens-dur-base) var(--lens-ease-out) both;
+}
+.la-swap-back {
+  animation: la-swap-back var(--lens-dur-base) var(--lens-ease-out) both;
+}
+@keyframes la-swap-fwd {
+  from {
+    opacity: 0;
+    transform: translateX(6px);
+  }
+}
+@keyframes la-swap-back {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+}
+
+/* The detail page grows from the card that opened it */
+.la-detail {
+  transform-origin: var(--la-origin-x, 50%) var(--la-origin-y, 0%);
+  animation: la-detail-in var(--lens-dur-slow) var(--lens-ease-out) both;
+}
+@keyframes la-detail-in {
+  from {
+    opacity: 0;
+    transform: scale(var(--lens-enter-scale));
+  }
+}
+.la-detail-name {
+  margin: 0;
+}
+.la-detail-by {
+  font-size: 12px;
+  color: var(--lens-fg-muted);
+  margin-top: -4px;
+}
+
+/* Library */
+.la-lib {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.la-lib-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.la-lib-summary {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.la-lib-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.la-lib-actions .la-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  /* Fixed width, so "Checking" never moves its neighbour. */
+  min-width: 112px;
+  justify-content: center;
+}
+.la-spin-slow {
+  animation: la-spin var(--lens-spin-period, 700ms) linear infinite;
+}
+.la-lib-list {
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  border: 1px solid var(--lens-border);
+  background: rgb(var(--lens-ink) / 0.03);
+}
+.la-lib-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 8px 10px 8px 12px;
+  box-sizing: border-box;
+  cursor: pointer;
+  outline: none;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out);
+  /* Rows arrive in order: the first six stagger, the rest come with the sixth. */
+  animation: la-row-in var(--lens-dur-base) var(--lens-ease-out) both;
+  animation-delay: calc(var(--la-i, 0) * var(--lens-stagger));
+}
+@keyframes la-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+.la-lib-row + .la-lib-row {
+  box-shadow: inset 0 1px 0 var(--lens-border);
+}
+.la-lib-row:first-child {
+  border-radius: 11px 11px 0 0;
+}
+.la-lib-row:last-child {
+  border-radius: 0 0 11px 11px;
+}
+.la-lib-row:only-child {
+  border-radius: 11px;
+}
+.la-lib-row:hover {
+  background: rgb(var(--lens-ink) / 0.05);
+}
+.la-lib-row:focus-visible,
+.la-tab:focus-visible,
+.la-shots:focus-visible,
+.la-shots-nav:focus-visible,
+.la-shots-dot:focus-visible,
+.la-suite-lead:focus-visible {
+  outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring);
+  outline-offset: 2px;
+}
+.la-lib-row:focus-visible {
+  outline-offset: -2px;
+}
+.la-lib-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+.la-lib-name {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.la-lib-by {
+  font-weight: 400;
+  font-size: 11.5px;
+  color: var(--lens-fg-muted);
+}
+.la-lib-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.la-lib-version {
+  color: var(--lens-fg-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.la-lib-version.has-update {
+  color: var(--lens-fg);
+}
+/* An update that just finished: a tick settles in next to the pill, once */
+.la-lib-done {
+  width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lens-positive);
+  background: color-mix(in srgb, var(--lens-positive) 14%, transparent);
+  animation: la-done-in var(--lens-dur-slow) var(--lens-ease-spring) both;
+}
+@keyframes la-done-in {
+  from {
+    opacity: 0;
+    transform: scale(var(--lens-enter-scale)) translateY(2px);
+  }
+}
+.la-lib-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: 460px;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px dashed var(--lens-border-strong, var(--lens-border));
+}
+.la-lib-empty-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+.la-lib-foot {
+  max-width: 640px;
+}
+.la-note {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--lens-border);
+  background: rgb(var(--lens-ink) / 0.04);
+  line-height: 17px;
+}
+
+/* "Update all": the one confirmation, anchored to its button */
+.la-pop-bulk::before {
+  right: 44px;
+}
+.la-bulk-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  overflow: auto;
+}
+.la-bulk-list li {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2px 8px;
+}
+.la-bulk-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.la-bulk-list .la-mono {
+  font-variant-numeric: tabular-nums;
+}
+.la-bulk-src {
+  grid-column: 2 / -1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Licence chip, credits and the plain-words line */
+.la-licence {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.la-licence-unchecked {
+  width: 12px;
+  height: 12px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--lens-fg-muted);
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+.la-licence-plain {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgb(var(--lens-ink) / 0.05);
+  line-height: 17px;
+  color: var(--lens-fg-2, var(--lens-fg));
+}
+.la-licence-caveat {
+  color: var(--la-caution);
+}
+
+/* Screenshot gallery */
+.la-shots {
+  position: relative;
+  border-radius: 12px;
+  border: 1px solid var(--lens-border);
+  overflow: hidden;
+  outline: none;
+}
+.la-shots-stage {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  max-height: 420px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(70% 90% at 50% 45%, hsl(var(--la-hue) 45% 30% / 0.55), transparent 70%),
+    linear-gradient(160deg, hsl(var(--la-hue) 28% 14%), hsl(var(--la-hue) 22% 9%));
+}
+:root[data-scheme="light"] .la-shots-stage {
+  background:
+    radial-gradient(70% 90% at 50% 45%, hsl(var(--la-hue) 70% 85% / 0.8), transparent 70%),
+    linear-gradient(160deg, hsl(var(--la-hue) 40% 95%), hsl(var(--la-hue) 30% 90%));
+}
+.la-shot {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: rgb(0 0 0 / calc(0.4 * var(--lens-shade-k, 1)));
+}
+.la-shot.from-right {
+  animation: la-swap-fwd var(--lens-dur-slow) var(--lens-ease-out) both;
+}
+.la-shot.from-left {
+  animation: la-swap-back var(--lens-dur-slow) var(--lens-ease-out) both;
+}
+.la-shots-nav {
+  position: absolute;
+  top: calc(50% - 34px);
+  width: 32px;
+  height: 32px;
+  border-radius: 16px;
+  border: 1px solid var(--lens-border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lens-fg);
+  background: var(--lens-pack-elevated, var(--lens-surface-solid));
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--lens-dur-fast) var(--lens-ease-out), background var(--lens-dur-fast) var(--lens-ease-out);
+}
+.la-shots-nav.prev {
+  left: 10px;
+}
+.la-shots-nav.next {
+  right: 10px;
+}
+.la-shots:hover .la-shots-nav,
+.la-shots:focus-within .la-shots-nav,
+.la-shots:focus-visible .la-shots-nav {
+  opacity: 1;
+}
+.la-shots-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 36px;
+  padding: 0 12px;
+  border-top: 1px solid var(--lens-border);
+  background: rgb(var(--lens-ink) / 0.03);
+}
+.la-shots-credit {
+  flex: 1;
+  min-width: 0;
+  color: var(--lens-fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.la-shots-dots {
+  display: inline-flex;
+}
+.la-shots-dot {
+  /* A 6px dot in a 20×32 target. */
+  width: 20px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.la-shots-dot::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background: rgb(var(--lens-ink) / 0.28);
+  transition: background var(--lens-dur-fast) var(--lens-ease-out), transform var(--lens-dur-fast) var(--lens-ease-out);
+}
+.la-shots-dot:hover::before {
+  background: rgb(var(--lens-ink) / 0.5);
+}
+.la-shots-dot.on::before {
+  background: var(--lens-fg);
+  transform: scale(1.3);
+}
+.la-shots-count {
+  color: var(--lens-fg-muted);
+  font-variant-numeric: tabular-nums;
+  min-width: 28px;
+  text-align: right;
+}
+
+/* Hit targets: small controls keep their look and get a 32px target */
+.la-pill,
+.la-pill-more,
+.la-icon-btn,
+.la-filter,
+.la-back,
+.la-link {
+  position: relative;
+}
+.la-pill::after,
+.la-pill-more::after,
+.la-icon-btn::after,
+.la-filter::after,
+.la-back::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 32px;
+  transform: translateY(-50%);
+}
+.la-pill-more::after,
+.la-icon-btn::after {
+  left: 50%;
+  right: auto;
+  width: 32px;
+  transform: translate(-50%, -50%);
+}
+.la-suite-lead {
+  border-radius: 10px;
+  outline: none;
+}
+/* Disabled: no press, no hover, 40 % and the not-allowed cursor (DESIGN §5.2) */
+.la-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.la-btn[data-pending]:disabled {
+  /* Waiting for its own work is not "disabled": it stays sunk and readable. */
+  opacity: 0.8;
+  cursor: progress;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion="full"]) :is(.la-spin-slow) {
+    animation: none;
+  }
+}
+:root[data-motion="reduce"] .la-spin-slow {
+  animation: none;
+}
