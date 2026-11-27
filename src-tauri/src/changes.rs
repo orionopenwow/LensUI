@@ -462,8 +462,11 @@ fn undo_windhawk_mod(_: &mut LensConfig) -> Result<String, String> {
     }
 }
 
-fn undo_cursors(_: &mut LensConfig) -> Result<String, String> {
+fn undo_cursors(config: &mut LensConfig) -> Result<String, String> {
     crate::win_cursor_fx::stop();
+    // Magic Mouse first: its flag goes off and its pointer set comes down, then the backup below
+    // puts the person's own pointers back.
+    crate::commands::magic_mouse::remove_all(config);
     // Restored from the backup Lens took before its first change.
     let mut done: Vec<String> = Vec::new();
     let mut failed: Vec<String> = Vec::new();

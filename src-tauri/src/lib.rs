@@ -298,6 +298,8 @@ pub fn run() {
             commands::magic::magic_hide,
             commands::magic::magic_window_action,
             commands::magic::magic_report_open,
+            commands::magic_mouse::magic_mouse_status,
+            commands::magic_mouse::magic_mouse_preview,
             commands::coreapps::coreapp_list,
             commands::coreapps::coreapp_open,
             commands::coreapps::coreapp_sticky_open,

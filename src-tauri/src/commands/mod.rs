@@ -28,6 +28,7 @@ pub(crate) mod messages;
 pub(crate) mod media;
 pub(crate) mod clip;
 pub(crate) mod magic;
+pub(crate) mod magic_mouse;
 pub(crate) mod shelf;
 pub(crate) mod rightclick;
 pub(crate) mod keys;

@@ -1,6 +1,7 @@
 // Magic Mouse grab gesture (docs/plans/MAGIC_WAVES.md §4, owner decision: hold the left button
 // about 400 ms, then drag). A short click stays a normal click; moving before the hold time
-// passes is a normal drag (selecting text, moving a window). Pure state machine: the native
+// passes is a normal drag (selecting text, moving a window); holding still and releasing opens
+// the Magic menu at the pointer. The Rust twin is src-tauri/src/magic_waves/gesture.rs. Pure state machine: the native
 // side feeds it pointer events and acts on the result. Nothing here captures the screen.
 
 export type GesturePhase = "idle" | "pressed" | "armed" | "grabbing" | "passthrough";
@@ -29,6 +30,8 @@ export type GestureResult =
   | { kind: "passthrough" }
   /** Held long enough: show the "magic ready" pointer. */
   | { kind: "armed" }
+  /** Held still and released: open the Magic menu at the press point. */
+  | { kind: "hold"; x: number; y: number }
   | { kind: "grab"; rect: { x: number; y: number; w: number; h: number } };
 
 export interface GestureOptions {
@@ -74,7 +77,8 @@ export function step(state: GestureState, ev: GestureEvent, opts: GestureOptions
     }
     case "armed": {
       const o = state.origin!;
-      if (ev.type === "up") return [IDLE, { kind: "click" }];
+      // The app already had its button-up when the hold armed; this up opens Magic.
+      if (ev.type === "up") return [IDLE, { kind: "hold", x: o.x, y: o.y }];
       if (ev.type === "move" && Math.hypot(ev.x - o.x, ev.y - o.y) > opts.slopPx) {
         return [{ ...state, phase: "grabbing", rect: rectFrom(o, ev) }, { kind: "none" }];
       }
