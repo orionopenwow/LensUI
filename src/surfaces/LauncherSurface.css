@@ -168,6 +168,7 @@
 }
 
 .ln-tile {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -440,4 +441,26 @@
 :root:not([data-scheme="light"]) .ln-result.armed .ln-result-sub,
 :root:not([data-scheme="light"]) .ln-result.armed .ln-result-badge {
   color: #fbbf24;
+}
+
+/* Pinned to the Dock: a small pin in the tile's corner (and after the name in results). */
+.ln-pin {
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lens-fg-secondary);
+  background: rgb(var(--lens-ink) / 0.08);
+  pointer-events: none;
+}
+
+.ln-pin.ln-pin-inline {
+  position: static;
+  margin-left: 6px;
+  vertical-align: -3px;
 }

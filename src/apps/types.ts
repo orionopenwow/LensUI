@@ -33,6 +33,10 @@ export interface CatalogApp {
   publisher: string;
   homepage: string;
   repo: string | null;
+  /** Who makes it (maintainer or organisation), for credits: "by <author>", linked to `repo`. */
+  author?: string;
+  /** One real screenshot for cards, from the project's own repo (pinned), or null when it has none. */
+  thumb?: AppThumb | null;
   stars: string | null;
   lastRelease: string | null;
   size: string | null;
@@ -43,6 +47,12 @@ export interface CatalogApp {
   recipe: RecipeStep[];
   notes: string | null;
   sources: string[];
+}
+
+/** A card thumbnail: `src` is the pinned original, `site` the 640x400 copy the website serves. */
+export interface AppThumb {
+  src: string;
+  site: string;
 }
 
 /** Official media, loaded at runtime from the project's own repo (pinned commit). */

@@ -10,7 +10,7 @@ import { mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { serve, launch, openSurface, here } from "./lib.mjs";
 
-const STYLES = ["floating", "slim", "taskbar", "studio", "minimal", "split", "islands"];
+const STYLES = ["floating", "slim", "taskbar", "studio", "minimal", "split", "islands", "unified"];
 const EDGES = ["bottom", "top", "left", "right"];
 const SIZES = { bottom: [1920, 760], top: [1920, 760], left: [760, 1080], right: [760, 1080] };
 /** Default size, the smallest and largest the Dock menu offers, and a crowded Dock (14 pins). */

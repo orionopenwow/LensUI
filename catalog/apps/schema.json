@@ -29,6 +29,14 @@
           "publisher": { "type": "string" },
           "homepage": { "type": "string", "pattern": "^https://" },
           "repo": { "type": ["string", "null"], "pattern": "^https://" },
+          "author": { "type": "string", "description": "Who makes it (maintainer or organisation), for credits: \"by <author>\", linked to repo." },
+          "thumb": {
+            "description": "One real screenshot for cards (the website's Lens Apps grid), or null when the repo has none. src: a pinned raw.githubusercontent.com URL in the project's own repos; site: the 640x400 copy tools/site/app-thumbs.mjs makes.",
+            "oneOf": [
+              { "type": "null" },
+              { "type": "object", "required": ["src", "site"], "properties": { "src": { "type": "string", "pattern": "^https://raw\\.githubusercontent\\.com/" }, "site": { "type": "string", "pattern": "^docs/media/apps/[a-z0-9-]+\\.webp$" } } }
+            ]
+          },
           "stars": { "type": ["string", "null"] },
           "install": {
             "oneOf": [

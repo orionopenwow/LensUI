@@ -12,6 +12,7 @@ import {
   RotateCcw,
   LogOut,
   Pin,
+  PinOff,
   ShieldCheck,
   Folder,
   FileText,
@@ -364,7 +365,14 @@ export const LauncherSurface: React.FC = () => {
                       <ResultIcon item={item} size={18} />
                     </span>
                     <span className="ln-result-text">
-                      <span className="ln-result-title">{item.title}</span>
+                      <span className="ln-result-title">
+                        {item.title}
+                        {item.kind === "app" && item.path && isPinned(item.path) && (
+                          <span className="ln-pin ln-pin-inline" role="img" aria-label="Pinned to Dock">
+                            <Pin size={10} strokeWidth={2.6} />
+                          </span>
+                        )}
+                      </span>
                       <span className="ln-result-sub">{armed && item.confirm ? item.confirm : item.subtitle}</span>
                     </span>
                     <span className="ln-result-badge">{armed ? "Confirm ↵" : resultBadge(item)}</span>
@@ -443,6 +451,11 @@ export const LauncherSurface: React.FC = () => {
                 >
                   <LazyIcon path={app.path} size={36} />
                   <span className="ln-tile-label">{app.name}</span>
+                  {isPinned(app.path) && (
+                    <span className="ln-pin" role="img" aria-label="Pinned to Dock">
+                      <Pin size={10} strokeWidth={2.6} />
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -503,7 +516,8 @@ export const LauncherSurface: React.FC = () => {
               className="ln-menu-item"
               onClick={() => togglePin(menu.name, menu.path)}
             >
-              <Pin size={13} strokeWidth={2.3} /> {isPinned(menu.path) ? "Unpin from Dock" : "Pin to Dock"}
+              {isPinned(menu.path) ? <PinOff size={13} strokeWidth={2.3} /> : <Pin size={13} strokeWidth={2.3} />}{" "}
+              {isPinned(menu.path) ? "Unpin from Dock" : "Pin to Dock"}
             </button>
           </div>
         )}

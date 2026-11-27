@@ -136,7 +136,7 @@ export async function buildGuide(outRoot = join(root, "docs/site/live")) {
 //   live/app/<gallery>.html?scene=… the parity galleries, which render the real components with
 //                                   scripted demo data (browser, command, cleaner, coreapps, music, approval)
 //   live/app/magic.html?scene=…     the real magic right-click window on its own
-const CHAIN = ["cleaner", "music", "command", "browser", "apps"];
+const CHAIN = ["cleaner", "music", "command", "browser", "apps", "snip"];
 const chainPlugin = {
   name: "lens-mock-chain",
   setup(b) {
@@ -150,7 +150,7 @@ const chainPlugin = {
     b.onLoad({ filter: /__tests__[\\/]fixtures[\\/].*\.json$/ }, (a) => ({ contents: readFileSync(a.path, "utf8"), loader: "text" }));
   },
 };
-export const APP_SURFACES = ["shell", "browser", "command", "cleaner", "coreapps", "music", "approval", "magic", "presence"];
+export const APP_SURFACES = ["shell", "browser", "command", "cleaner", "coreapps", "music", "approval", "magic", "presence", "voice", "snip"];
 export async function buildApp(outRoot = join(root, "docs/site/live")) {
   const out = fresh(join(outRoot, "app"));
   const entryPoints = Object.fromEntries(APP_SURFACES.map((n) => [n, join(here, "surfaces", existsSync(join(here, "surfaces", `${n}.tsx`)) ? `${n}.tsx` : `${n}.ts`)]));
