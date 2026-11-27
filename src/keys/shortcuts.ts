@@ -3,7 +3,7 @@
 // own keys, the other Lens shortcuts and the shortcuts most apps rely on. Pure (tested).
 import type { LensConfig } from "../types/lens";
 
-export type ShortcutId = "palette" | "command" | "widgets" | "magic" | "snip" | "pause" | "dock-n" | "tiling";
+export type ShortcutId = "palette" | "command" | "widgets" | "magic" | "snip" | "pause" | "dock-n" | "tiling" | "magic-search" | `bar:${string}`;
 
 export interface Shortcut {
   id: ShortcutId;
@@ -53,7 +53,21 @@ export function shortcutsFor(c: LensConfig, other: OtherShortcuts = {}): Shortcu
     { id: "pause", name: "Pause Lens's AI", keys: "Ctrl+Alt+Pause", simple: "Ctrl+Alt+Pause", editable: false, where: "Settings › AI › Presence" },
     { id: "dock-n", name: "Open Dock app 1–9", keys: "Alt+1 … Alt+9", simple: "Alt+1 … Alt+9", editable: false, when: "Dock number keys are on" },
     { id: "tiling", name: "Snap and tile windows", keys: "Ctrl+Alt+Arrows", simple: "Ctrl+Alt+Arrows", editable: false, when: "Tiling keys are on" },
+    ...selectionBarShortcuts(c),
   ];
+}
+
+/** The selection bar's own hotkeys (none by default): Magic Search and each action's direct key. */
+function selectionBarShortcuts(c: LensConfig): Shortcut[] {
+  const bar = (c as { selectionBar?: { searchHotkey?: string; hotkeys?: Record<string, string> } }).selectionBar;
+  const where = "Settings › AI & Command › Selection bar";
+  const when = "The selection bar is on";
+  const out: Shortcut[] = [];
+  if (bar?.searchHotkey?.trim()) out.push({ id: "magic-search", name: "Magic Search on the selection", keys: bar.searchHotkey, simple: "", editable: false, where, when });
+  for (const [action, keys] of Object.entries(bar?.hotkeys ?? {})) {
+    if (typeof keys === "string" && keys.trim()) out.push({ id: `bar:${action}`, name: `Selection: ${action.replace(/^custom:/, "").replace(/[_-]/g, " ")}`, keys, simple: "", editable: false, where, when });
+  }
+  return out;
 }
 
 /** "alt + SPACE" → "Alt+Space"; "ctrl+alt+w" → "Ctrl+Alt+W". */

@@ -242,15 +242,16 @@ fn oversized_frames_are_refused_before_allocating() {
 fn candidate() -> impl Strategy<Value = Candidate> {
     (
         prop::sample::select(vec!["winword.exe", "notepad.exe", "code.exe", "chrome.exe", "1password.exe", "lens-ui.exe", "C:\\X\\Excel.EXE", "", "evil.exe"]),
-        any::<bool>(), any::<bool>(), any::<bool>(), any::<bool>(), any::<bool>(),
+        any::<bool>(), any::<bool>(), any::<bool>(), any::<bool>(), any::<bool>(), any::<bool>(),
     )
-        .prop_map(|(p, pw, inacc, fs, tp, own)| Candidate {
+        .prop_map(|(p, pw, inacc, fs, tp, own, game)| Candidate {
             process: p.to_string(),
             is_password: pw,
             inaccessible: inacc,
             fullscreen: fs,
             has_text_pattern: tp,
             own_process: own,
+            game,
         })
 }
 
@@ -262,6 +263,7 @@ fn policy() -> impl Strategy<Value = SelectionPolicy> {
             mode: if allow { ListMode::Allow } else { ListMode::Deny },
             apps: apps.into_iter().map(String::from).collect(),
             max_chars: 50_000,
+            version: 2,
         })
 }
 
@@ -275,7 +277,7 @@ proptest! {
         let excluded = vec!["1password.exe".to_string(), "bitwarden.exe".to_string()];
         let t = if bubble { Trigger::Bubble } else { Trigger::Request };
         let r = may_read(&c, &p, &excluded, t);
-        if c.is_password || c.own_process || c.inaccessible || c.fullscreen {
+        if c.is_password || c.own_process || c.inaccessible || c.fullscreen || c.game {
             prop_assert!(r.is_err(), "read {:?} under {:?}", c, p);
         }
         if c.process.eq_ignore_ascii_case("1password.exe") {

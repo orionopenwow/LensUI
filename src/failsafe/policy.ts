@@ -33,6 +33,7 @@ export const OVERLAY_SURFACES: ReadonlySet<string> = new Set([
   "presencebar",
   "voicehud",
   "bubble",
+  "magicsearch",
   "edgeshelf",
   "notifications",
   "snip",

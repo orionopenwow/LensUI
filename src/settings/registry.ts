@@ -173,6 +173,7 @@ export const PAGES: PageDef[] = [
       { id: "agents", label: "Agents", keywords: ["automations", "macros"] },
       { id: "voice", label: "Voice", keywords: ["voice", "speech", "hold to talk", "wake word", "lens", "dictation", "conversation"] },
       { id: "magic", label: "Magic right-click", keywords: ["magic menu", "ctrl alt right click", "context window"] },
+      { id: "selectionbar", label: "Selection bar", keywords: ["selection bar", "select text", "cut copy paste", "magic search", "selection bubble", "popclip", "mini menu"] },
       { id: "rightclick", label: "Right-click menu", keywords: ["context menu", "actions", "custom actions", "explorer verbs"] },
       { id: "packs", label: "Context packs & clipper", keywords: ["packs", "micro save", "obsidian", "clipper", "templates"] },
       { id: "snip", label: "Lens Snip", keywords: ["screenshot", "snipping", "capture", "redact", "ocr", "record", "pin"] },

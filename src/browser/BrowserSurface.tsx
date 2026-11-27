@@ -355,11 +355,19 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
         return xs.filter((x) => x.id !== e.payload.id);
       })
     );
+    // Lens Magic Search while the browser is in front: the browser's own agentic side panel answers.
+    const un5 = listen<{ query: string; action?: string | null }>("lens://browser/magic-search", (e) => {
+      const q = e.payload?.query?.trim();
+      if (!q) return;
+      setPanel("ask");
+      setQuick({ prompt: e.payload.action ? `${e.payload.action.replace(/_/g, " ")} this` : "Search for this and give a short, cited answer.", selection: q, page: false });
+    });
     return () => {
       un1.then((u) => u());
       un2.then((u) => u());
       un3.then((u) => u());
       un4.then((u) => u());
+      un5.then((u) => u());
     };
   }, [live]);
 
