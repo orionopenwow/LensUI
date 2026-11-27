@@ -71,6 +71,8 @@ const running = [
   win(103, "Spotify Premium", "Spotify.exe", "C:\\x\\Spotify.exe"),
   win(104, "Downloads - File Explorer", "explorer.exe", "C:\\Windows\\explorer.exe"),
 ];
+// ?multi=1: Chrome has three windows (the Dock's window-count dots and window carousel).
+if (params.get("multi")) running.push(win(105, "Lens docs — Google Chrome", "chrome.exe", "C:\\x\\chrome.exe"), win(106, "Pull request #120 — Google Chrome", "chrome.exe", "C:\\x\\chrome.exe"));
 const apps = ["Blender 5.1", "Audacity", "Android Studio", "7-Zip File Manager", "Adobe Photoshop 2023", "Google Chrome", "Notepad", "Spotify", "Steam", "Visual Studio Code", "Discord", "OBS Studio"].map((n) => ({ name: n, path: `C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\${n}.lnk`, category: "App" }));
 // ?ws=groups: Lens workspaces in groups mode, so the Overview shows its workspace strip.
 const wsGroups = params.get("ws") === "groups";

@@ -75,7 +75,12 @@ import {
   normalizeDockStyle,
   resolveDockAlignment,
   resolveSystemArea,
+  dockShowsLauncher,
 } from "../dock/styles";
+import { DockWindowCarousel } from "../dock/DockWindowCarousel";
+import { windowMarkClass } from "../dock/marks";
+import { placeHoverCard } from "../dock/placement";
+import { useDockReflow } from "../dock/reflow";
 import { topBarEnabled } from "../topbar/enabled";
 import { DockSystemArea } from "../dock/DockSystemArea";
 import { hideSurface, logFail, quiet, retryOnce, setDockMenuOpen } from "../failsafe/calls";
@@ -483,7 +488,7 @@ export const DockSurface: React.FC = () => {
       const padL = parseFloat(getComputedStyle(pillRef.current).paddingLeft) || 0;
       if (row) setLockedRowOffset(Math.max(0, Math.round(row.getBoundingClientRect().left - pr.left - padL)));
     } else if (pillRef.current && !dockSearchOpenRef.current && horizontalDock) {
-      const startW = Math.round(pillRef.current.getBoundingClientRect().width);
+      let startW = Math.round(pillRef.current.getBoundingClientRect().width);
       // The text box spreads out of the search icon; every other icon moves right. Icons may shrink a
       // little to make room, never below ~80 % of their size (tiny icons and a cramped field made the
       // Settings gear and the search field hard to hit). When that isn't enough the Dock widens just
@@ -493,16 +498,24 @@ export const DockSurface: React.FC = () => {
       const others = row
         ? Array.from(row.children).filter((el) => !el.classList.contains("dock-search-slot"))
         : [];
-      const iconCount = others.filter((el) => !el.classList.contains("dock-divider")).length;
-      const dividerCount = others.length - iconCount;
+      // The system area in the row (Unified, or tray and clock in the Dock) steps aside while
+      // searching (DockSurface.css), so search gets Floating's room and the panel its own width.
+      const rowItems = others.filter((el) => !el.classList.contains("dock-sys") && (el as HTMLElement).dataset.reflowKey !== "sys-divider");
+      const asideW = others
+        .filter((el) => !rowItems.includes(el))
+        .reduce((w, el) => w + el.getBoundingClientRect().width + parseFloat(getComputedStyle(el).marginLeft || "0") + parseFloat(getComputedStyle(el).marginRight || "0"), 0);
+      const iconCount = rowItems.filter((el) => !el.classList.contains("dock-divider")).length;
+      const dividerCount = rowItems.length - iconCount;
       const slim = searchStyle === "slim";
+      // What the pill is without the parts that step aside (their widths and the row gaps).
+      startW = Math.round(startW - asideW - (others.length - rowItems.length) * (slim ? 4 : 6));
       // The whole search slot: glass + field + Ask toggle + ESC. 280 px leaves ~170 px to type in.
       const MIN_FIELD = slim ? 256 : 280;
       const chrome = slim ? 22 : 30; // pill padding + border while open
       const gap = slim ? 4 : 6;
       const dividerW = slim ? 5 : 9;
       const floorIcon = Math.max(slim ? 24 : 28, Math.round(effectiveIconSize * 0.8));
-      const fixed = others.length * gap + dividerCount * dividerW;
+      const fixed = rowItems.length * gap + dividerCount * dividerW;
       const fit = Math.floor((startW - chrome - MIN_FIELD - fixed) / Math.max(1, iconCount));
       const icon = Math.max(floorIcon, Math.min(effectiveIconSize, fit));
       const needW = chrome + MIN_FIELD + fixed + icon * iconCount;
@@ -600,6 +613,26 @@ export const DockSurface: React.FC = () => {
   // before they are removed (docs/SMOOTHNESS.md, G-06).
   const hoverLinger = useLingering(hoverCard && !ctxMenu && !settingsOpen && !dockSearchOpen ? hoverCard : null, { animateEnter: false, exit: { scale: 0.98, opacity: 0 }, exitOptions: { additive: true }, enterOptions: { additive: true }, enter: { scale: 0.98, opacity: 0 } });
   const shownCard = hoverLinger.value;
+  // Apps with two or more windows get the window carousel (live previews on); one window keeps
+  // today's card.
+  const cardMode: "spotify" | "carousel" | "strip" | "list" | null = !shownCard
+    ? null
+    : shownCard.isSpotify
+      ? "spotify"
+      : (config?.dock as DockExtras | undefined)?.livePreviews === true && shownCard.windows.length >= 2
+        ? "carousel"
+        : (config?.dock as DockExtras | undefined)?.livePreviews === true
+          ? "strip"
+          : "list";
+  // The card's measured size, so it can be kept on screen (read once per change, before paint).
+  const [cardSize, setCardSize] = useState({ w: 0, h: 0 });
+  useLayoutEffect(() => {
+    const el = hoverLinger.ref.current as HTMLElement | null;
+    if (!el) return;
+    const w = el.offsetWidth;
+    const h = el.offsetHeight;
+    setCardSize((p) => (Math.abs(p.w - w) < 1 && Math.abs(p.h - h) < 1 ? p : { w, h }));
+  }, [shownCard?.key, shownCard?.windows.length, cardMode, hoverLinger.mounted]);
   const menuLinger = useLingering(ctxMenu, { animateEnter: false, exit: { scale: 0.98, opacity: 0 }, exitOptions: { additive: true }, enterOptions: { additive: true }, enter: { scale: 0.98, opacity: 0 } });
   const shownMenu = menuLinger.value;
 
@@ -1070,6 +1103,8 @@ export const DockSurface: React.FC = () => {
     limit: 40,
   });
 
+  // Pin / unpin / reorder / open / close glide instead of jumping (src/dock/reflow.ts).
+  const reflow = useDockReflow();
   if (!config) return null;
 
   const pinnedApps = dragPinOrder
@@ -1091,7 +1126,7 @@ export const DockSurface: React.FC = () => {
   const isBar = dockStyleInfo(dockStyle).fullWidth;
   const alignment = resolveDockAlignment(dockStyle, dockExtras.alignment);
   const systemInDock = resolveSystemArea(config.dock, config.topBar) === "dock";
-  const showLauncherButton = dockStyle === "taskbar" || dockStyle === "studio" || dockStyle === "islands";
+  const showLauncherButton = dockShowsLauncher(dockStyle);
   // Magic button (wave M4): with the Taskbar style, the start button opens Lens Magic Start.
   const startOpensMagic = dockStyle === "taskbar" && !!(config as { magicWaves?: { startButton?: boolean } } | null)?.magicWaves?.startButton;
   const unreadTotal = Object.values(notifCounts).reduce((a, b) => a + b, 0);
@@ -1224,6 +1259,19 @@ export const DockSurface: React.FC = () => {
     return ia - ib;
   });
 
+  reflow.render(
+    [
+      showLauncherButton ? "L" : "",
+      ...pinnedRows.map((r) => r.app.id + (separatorsAfter.includes(r.app.id) ? "|" : "")),
+      "~",
+      ...extraGroups.map((g) => g.key),
+      systemInDock && !isBar && dockStyle !== "split" ? "S" : "",
+    ].join(","),
+    () => pillRef.current?.querySelector(".dock-icons-row"),
+    isVertical ? "y" : "x",
+    !dragKey && !dragPinOrder && !dockSearchOpen && !dockSearchClosing && dockVisible
+  );
+
   const captureReorderFlip = () => {
     reorderFlip.current = captureFlip(pillRef.current?.querySelectorAll(".dock-icons-row > [data-dock-drag-key]"));
   };
@@ -1347,7 +1395,8 @@ export const DockSurface: React.FC = () => {
   const searchBudget = 0; // the Dock keeps its width while searching
   const dockAxisLength = isVertical ? window.innerHeight : window.innerWidth;
   // Bars keep both sides of the row free for the system area so icons stay centred on the screen.
-  const systemBudget = systemInDock && dockStyle !== "split" ? (isBar ? (isVertical ? 400 : 560) : 200) : 0;
+  // Unified carries the tray, bell and a two-line clock in the same pill: a little more room.
+  const systemBudget = systemInDock && dockStyle !== "split" ? (isBar ? (isVertical ? 400 : 560) : dockStyle === "unified" ? 280 : 200) : 0;
   const maxAvailable = Math.max(isVertical ? 320 : 480, dockAxisLength - 28 - searchBudget - systemBudget);
   const gapBudget = totalItems * 6 + 34;
   const rawFit = Math.floor((maxAvailable - gapBudget) / Math.max(1, totalItems));
@@ -1983,21 +2032,42 @@ export const DockSurface: React.FC = () => {
           inert={hoverLinger.leaving}
           className={`dock-hover-card dock-hover-edge-${edge} ${shownCard.isSpotify ? "is-music" : ""} ${
             livePreviews && !shownCard.isSpotify && shownCard.windows.length > 0 ? "has-previews" : ""
-          }`}
-          style={
-            edge === "left"
-              ? { left: shownCard.x + 12, top: Math.max(150, Math.min(window.innerHeight - 150, shownCard.y)) }
-              : edge === "right"
-                ? { left: shownCard.x - 12, top: Math.max(150, Math.min(window.innerHeight - 150, shownCard.y)) }
-                : edge === "top"
-                  ? { left: Math.max(135, Math.min(window.innerWidth - 135, shownCard.x)), top: shownCard.y + 12 }
-                  : { left: Math.max(135, Math.min(window.innerWidth - 135, shownCard.x)), top: shownCard.y - 12 }
-          }
+          } ${cardMode === "carousel" ? "has-carousel" : ""}`}
+          // Kept inside the usable area on every edge and style, from the card's measured size.
+          style={placeHoverCard({
+            edge,
+            x: shownCard.x,
+            y: shownCard.y,
+            w: cardSize.w,
+            h: cardSize.h,
+            viewW: window.innerWidth,
+            viewH: window.innerHeight,
+            topInset: edge !== "top" && topBarEnabled(config) ? (config.topBar?.height ?? 34) : 0,
+          })}
           onMouseEnter={cancelHoverClose}
           onMouseLeave={scheduleHoverClose}
         >
           {shownCard.isSpotify ? (
             <DockMusicCard edge={edge} fallbackTitle={shownCard.windows[0]?.title || "Spotify"} />
+          ) : cardMode === "carousel" ? (
+            <DockWindowCarousel
+              key={shownCard.key}
+              title={shownCard.title}
+              active={!hoverLinger.leaving}
+              windows={shownCard.windows}
+              iconUrl={shownCard.iconUrl}
+              onFocus={(hwnd) => {
+                setHoverCard(null);
+                void setDockMenuOpen(false);
+                invoke("focus_window_cmd", { hwnd }).catch(logFail("Dock", "switch to that window"));
+              }}
+              onClose={(hwnd) => {
+                invoke("window_action_cmd", { hwnd, action: "close" });
+                setHoverCard((prev) =>
+                  prev ? { ...prev, windows: prev.windows.filter((x) => x.hwnd !== hwnd) } : null
+                );
+              }}
+            />
           ) : livePreviews ? (
             <DockPreviewStrip
               key={shownCard.key}
@@ -2352,7 +2422,7 @@ export const DockSurface: React.FC = () => {
         {isBar && <div className="dock-bar-spacer" aria-hidden="true" />}
         <div className="dock-icons-row">
           {showLauncherButton && (
-            <div className="dock-item-wrap dock-launcher-slot">
+            <div className="dock-item-wrap dock-launcher-slot" data-reflow-key="launcher">
               <span className="dock-tooltip">{startOpensMagic ? "Magic Start" : "Launcher"}</span>
               <button
                 type="button"
@@ -2372,7 +2442,7 @@ export const DockSurface: React.FC = () => {
               </button>
             </div>
           )}
-          <div className={`dock-item-wrap dock-search-slot ${dockSearchOpen ? "is-open" : ""} ${dockSearchClosing ? "is-closing" : ""}`}>
+          <div className={`dock-item-wrap dock-search-slot ${dockSearchOpen ? "is-open" : ""} ${dockSearchClosing ? "is-closing" : ""}`} data-reflow-key="search">
             {!dockSearchOpen && <span className="dock-tooltip">Lens Search (Alt+Space)</span>}
             <div
               className={`dock-search-inline ${dockSearchOpen ? "is-open" : ""}`}
@@ -2625,17 +2695,17 @@ export const DockSurface: React.FC = () => {
               </button>
               {showLabels && !isBar && <span className="dock-label">{app.name}</span>}
               {(wins.length > 0 || urgent) && (
-                <span className={`dock-indicator ${primaryWin?.isFocused ? "focused" : ""} ${urgent ? "attention" : ""}`} />
+                <span className={`dock-indicator ${windowMarkClass(wins.length)} ${primaryWin?.isFocused ? "focused" : ""} ${urgent ? "attention" : ""}`} />
               )}
               {urgent && <span className="dock-attention-sr">{app.name} needs your attention</span>}
             </div>
-            {separatorsAfter.includes(app.id) && <div className="dock-divider dock-user-sep" />}
+            {separatorsAfter.includes(app.id) && <div className="dock-divider dock-user-sep" data-reflow-key={`sep-${app.id}`} />}
             </React.Fragment>
           );
         })}
 
         {/* Running Non-Pinned Windows (drag to reorder, hover for windows/Spotify controls & X to close!) */}
-        {extraGroups.length > 0 && <div className="dock-divider" />}
+        {extraGroups.length > 0 && <div className="dock-divider" data-reflow-key="extras-divider" />}
         {extraGroups.map(({ key, primaryWin, wins }) => {
           const itemKey = `unpin-${key}`;
           const isSpotify = primaryWin.processName.toLowerCase().includes("spotify");
@@ -2727,13 +2797,13 @@ export const DockSurface: React.FC = () => {
                 {showLabels && isBar && <span className="dock-label">{wins.length === 1 ? primaryWin.title : cleanLabel}</span>}
               </button>
               {showLabels && !isBar && <span className="dock-label">{cleanLabel}</span>}
-              <span className={`dock-indicator ${primaryWin.isFocused ? "focused" : ""} ${urgent ? "attention" : ""}`} />
+              <span className={`dock-indicator ${windowMarkClass(wins.length)} ${primaryWin.isFocused ? "focused" : ""} ${urgent ? "attention" : ""}`} />
               {urgent && <span className="dock-attention-sr">{cleanLabel} needs your attention</span>}
             </div>
           );
         })}
 
-        <div className="dock-divider" />
+        <div className="dock-divider" data-reflow-key="tail-divider" />
 
         {/* Live Computer Stats & Obsidian Task Manager Graph Icon (left of Settings gear!) */}
         <PluginSlot slot="dock" />
@@ -2787,12 +2857,14 @@ export const DockSurface: React.FC = () => {
         </div>
         {systemInDock && !isBar && dockStyle !== "split" && (
           <>
-            <div className="dock-divider" />
+            <div className="dock-divider" data-reflow-key="sys-divider" />
             <DockSystemArea
               trayHost={config.func.trayHost ?? false}
               unread={unreadTotal}
               vertical={isVertical}
               variant="inline"
+              clock={dockStyle === "unified" ? "stacked" : "default"}
+              reflowKey="sys"
             />
           </>
         )}
@@ -2803,7 +2875,7 @@ export const DockSurface: React.FC = () => {
         {voiceDock.enabled && (
           <>
             <VoiceDockView
-              style={(dockStyle === "islands" ? "floating" : dockStyle) as VoiceDockStyle}
+              style={(dockStyle === "islands" || dockStyle === "unified" ? "floating" : dockStyle) as VoiceDockStyle}
               edge={edge as VoiceEdge}
               width={lockedDockWidth ?? pillRef.current?.getBoundingClientRect().width ?? 480}
               height={pillRef.current?.getBoundingClientRect().height ?? 56}

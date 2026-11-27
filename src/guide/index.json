@@ -6596,6 +6596,24 @@
    "source": "src/dock/styles.ts"
   },
   {
+   "id": "dock-style.unified",
+   "kind": "dock-style",
+   "title": "Unified dock style",
+   "text": "One floating pill: Launcher, apps, then tray, notifications and the clock with the date. A dock style.",
+   "path": [
+    "Settings",
+    "Dock & Top Bar",
+    "Dock style",
+    "Unified"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "label": "Dock style"
+   },
+   "source": "src/dock/styles.ts"
+  },
+  {
    "id": "scene.aurora",
    "kind": "scene",
    "title": "Aurora",

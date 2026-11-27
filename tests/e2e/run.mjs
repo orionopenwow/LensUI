@@ -240,12 +240,71 @@ const SCENARIOS = [
     async run(s) {
       const dock = surfaces(s).dock;
       const prev = (await invoke(dock, "get_config")).dock.style || "floating";
-      for (const style of ["taskbar", "slim", "split", "floating"]) {
+      for (const style of ["taskbar", "slim", "split", "unified", "floating"]) {
         await updateConfig(dock, (c) => { c.dock.style = style; });
         await dock.waitForSelector(`.dock-stage.dock-style-${style}`, { timeout: 5000 });
         await shot(dock, `dock-style-${style}`);
       }
       await updateConfig(dock, (c) => { c.dock.style = prev; });
+    },
+  },
+  {
+    id: "dock-unified",
+    title: "the Unified Dock is one floating pill with the Launcher first and a two-line clock; Settings keeps Floating's width",
+    async run(s) {
+      const dock = surfaces(s).dock;
+      const prev = await invoke(dock, "get_config");
+      const settingsWidth = async () => {
+        await invoke(dock, "open_dock_popout_tab_cmd", { tab: "quick" });
+        const st = await waitForSurface(s, "settings");
+        await sleep(1200);
+        const w = await st.evaluate(() => ({ w: window.innerWidth, sw: window.screen.width }));
+        await invoke(dock, "hide_surface", { label: "settings" }).catch(() => {});
+        await sleep(500);
+        return w;
+      };
+      try {
+        await updateConfig(dock, (c) => { c.dock.style = "floating"; c.dock.position = "bottom"; c.dock.autoHide = "never"; });
+        await dock.waitForSelector(".dock-stage.dock-style-floating", { timeout: 5000 });
+        const floating = await settingsWidth();
+        await updateConfig(dock, (c) => { c.dock.style = "unified"; c.dock.systemArea = "auto"; });
+        await dock.waitForSelector(".dock-stage.dock-style-unified", { timeout: 5000 });
+        await sleep(600);
+        await shot(dock, "dock-unified");
+        const m = await dock.evaluate(() => {
+          const row = document.querySelector(".dock-pill .dock-icons-row");
+          const pill = document.querySelector(".dock-pill")?.getBoundingClientRect();
+          const time = document.querySelector(".dock-sys-clock-stacked .dock-sys-time")?.textContent?.trim() ?? "";
+          const date = document.querySelector(".dock-sys-clock-stacked .dock-sys-date")?.textContent?.trim() ?? "";
+          return {
+            launcherFirst: !!row?.firstElementChild?.classList.contains("dock-launcher-slot"),
+            sysInPill: !!document.querySelector(".dock-pill .dock-sys-inline"),
+            time,
+            date,
+            pillW: pill?.width ?? 0,
+            vw: window.innerWidth,
+            noTitles: document.querySelectorAll(".dock-pill [title]").length,
+          };
+        });
+        const problems = [];
+        if (!m.launcherFirst) problems.push("the Launcher button is not first");
+        if (!m.sysInPill) problems.push("tray, bell and clock are not in the pill");
+        if (!/\d/.test(m.time)) problems.push(`clock time "${m.time}"`);
+        if (m.date.length < 5 || /\d{4}/.test(m.date)) problems.push(`clock date "${m.date}" (want a short weekday, day and month)`);
+        if (!(m.pillW > 100 && m.pillW < m.vw - 40)) problems.push(`pill is ${Math.round(m.pillW)} px wide on a ${m.vw} px Dock window (should float, not span)`);
+        if (m.noTitles) problems.push(`${m.noTitles} native title= tooltips in the Dock`);
+        const unified = await settingsWidth();
+        if (unified.w < floating.w - 2) problems.push(`Settings is narrower on Unified (${unified.w}) than on Floating (${floating.w})`);
+        if (unified.w > unified.sw - 20) problems.push(`Settings spans the screen on Unified (${unified.w} of ${unified.sw})`);
+        if (problems.length) throw new Error(problems.join("; "));
+      } finally {
+        await updateConfig(dock, (c) => {
+          c.dock.style = prev.dock.style;
+          c.dock.position = prev.dock.position;
+          c.dock.autoHide = prev.dock.autoHide;
+          c.dock.systemArea = prev.dock.systemArea;
+        });
+      }
     },
   },
   {

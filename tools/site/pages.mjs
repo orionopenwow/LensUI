@@ -6,17 +6,36 @@ import { THUMBDESK } from "./content/thumbdesk.mjs";
 import { REPO } from "./lib/layout.mjs";
 
 
-// Each exhibit plays three steps, slowly and on repeat: [scene of the real surface, caption].
+// The big hero demo desk (js/showcases.js tours) is off for now: the page opens on the Dock widget.
+// Set to true to bring it back; the code stays.
+export const HERO_DESK = false;
+// Each exhibit plays three steps, slowly and on repeat: [step id, step label, caption].
 const MAGIC_STEPS = [
-  ["link", "Right-click a link: the Lens menu opens where you clicked, with link actions."],
-  ["summary", "Pick Summarise: the answer appears in the same window."],
-  ["transcript", "On a video page, the same menu gets the transcript."],
+  ["hold", "Hold", "Hold the pointer still on anything, a link here: Magic opens right at the pointer, and knows what it is."],
+  ["drag", "Hold, then drag", "Hold the left button a moment, then drag: you grab an area of the screen, once, only when you do."],
+  ["grab", "Into Snip", "Let go: the area opens in Snip, ready to copy, copy its text, save, put on the Shelf or ask Claude."],
 ];
+// The agentic desktop: [step id, step label, caption].
+const AGENT_STEPS = [
+  ["voice", "Say it", "Hold the voice key and say what you want. The Lens cursor opens Lens Browser from the dock on its own."],
+  ["type", "It drives", "The Lens cursor clicks into the page and types. Every click and word lands in the trail beside it."],
+  ["ask", "Big steps wait", "Booking has a $25 no-show fee, so that step stops on “Needs your OK” until you say yes."],
+];
+// The Dock widget's pickers, drawn here so the section has its full height before js/home.js runs
+// (no layout shift); js/home.js wires them. Same order as its DOCKS, EDGES and the lab's ACCENTS.
+const DOCK_STYLE_NAMES = ["Floating", "Slim", "Taskbar", "Studio", "Minimal", "Split", "Islands", "Expressive", "Dot Matrix"];
+const DOCK_EDGES = [["bottom", "Bottom"], ["top", "Top"], ["left", "Left"], ["right", "Right"]];
+const PICK_ACCENTS = [["", "Theme's own"], ["#FAFAFA", "Snow"], ["#818CF8", "Iris"], ["#38BDF8", "Sky"], ["#34D399", "Mint"], ["#FBBF24", "Amber"], ["#FB923C", "Tangerine"], ["#FB7185", "Coral"], ["#C084FC", "Violet"]];
+const CHECK_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
+const inkOn = (h) => { const n = parseInt(h.slice(1, 7), 16); return (((n >> 16) & 255) * 299 + ((n >> 8) & 255) * 587 + (n & 255) * 114) / 1000 > 150 ? "#09090b" : "#fafafa"; };
+const radio = (i, inner, cls, extra = "") => `<button type="button" role="radio" class="${cls}" aria-checked="${i === 0}" tabindex="${i ? -1 : 0}"${extra}>${inner}</button>`;
+// The Dock widget's capabilities, as one short line of chips.
+const DOCK_CHIPS = ["Nine styles", "Any edge", "Live window previews", "Calm attention", "Magic from the dock", "Settings joined to the dock"];
 // Scenes of the real BrowserSurface (tools/parity/browser/entry.tsx).
 const BROWSER_STEPS = [
-  ["home", "One box for a search, an address or a question."],
-  ["agent", "Ask it to do something: the AI works beside the page and lists every step."],
-  ["results", "Then it shows what it found: a map, a table and its pick, with why."],
+  ["home", "One box", "One box for a search, an address or a question."],
+  ["agent", "AI beside the page", "Ask it to do something: the AI works beside the page and lists every step."],
+  ["results", "Its pick, with why", "Then it shows what it found: a map, a table and its pick, with why."],
 ];
 const S = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 // What Lens Browser does differently, true on main today (docs/BROWSER_AAA.md, docs/LENS_BROWSER.md,
@@ -28,8 +47,9 @@ const WHY_BROWSER = [
   [S('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'), "You decide what sites get", "Camera, mic, location and notifications ask under the address bar, once or per site."],
   [S('<path d="M12 4v10M8 10l4 4 4-4M5 19h14"/>'), "Light, and easy to move to", "Bring bookmarks and tabs from Chrome, Edge, Arc and more, item by item, never passwords."],
 ];
-// The Dock: what it does (docs/brain/FEATURES.md › Desktop shell and docks).
-const DOCK_CAPS = [
+// The Dock: what it does (docs/brain/FEATURES.md › Desktop shell and docks). Shown as tiles when the
+// hero desk is on; the Dock widget shows DOCK_CHIPS instead.
+export const DOCK_CAPS = [
   [S('<rect x="3" y="15" width="18" height="5" rx="2.5"/><rect x="6" y="5" width="12" height="6" rx="2"/>'), "Nine styles", "Floating by default; Taskbar, Slim, Studio, Minimal, Split, Islands and two with their own packs."],
   [S('<rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 21v-3h10v3M3 7h3v10H3"/>'), "Any edge", "Bottom, top, left or right, with auto-hide that always comes back."],
   [S('<rect x="4" y="4" width="16" height="10" rx="2"/><path d="M9 18h6M12 14v4"/>'), "Live window previews", "Hover a running app to see its windows, anchored to the icon."],
@@ -37,13 +57,13 @@ const DOCK_CAPS = [
   [S('<path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/>'), "Magic from the dock", "Right-click any icon: a new window, run as admin, window controls, and the Lens menu."],
   [S('<rect x="5" y="4" width="14" height="11" rx="2"/><rect x="8" y="16" width="8" height="4" rx="2"/>'), "Settings and Search, joined", "They open from the dock as one shape, each at its own size, with a × and Esc to close."],
 ];
-// The agentic-desktop exhibit's plan: what Claude Code does, and which steps wait for you.
+// The agentic exhibit's action trail: what the Lens cursor does, and which steps wait for you.
 const AGENT_PLAN = [
-  ["Search places near you in Lens Browser", "Reads only", "runs"],
-  ["Pick Harbor & Vine: free at 8:00, vegan mains for Maya", "Runs", "runs"],
-  ["Fill and book the reservation ($25 no-show fee)", "Asks first", "ask"],
-  ["Add the dinner to your calendar", "Asks first", "ask"],
-  ["Message Maya, Sam and Priya", "Asks first", "ask"],
+  ["Heard: “book Friday dinner for four near me”", "Voice", "runs"],
+  ["Open Lens Browser from the dock", "Click", "runs"],
+  ["Type the search in the one box", "Type", "runs"],
+  ["Pick Harbor & Vine: free at 8:00", "Reads only", "runs"],
+  ["Book the table ($25 no-show fee)", "Asks first", "ask"],
 ];
 // The small apps, all real Lens surfaces: [id, name, line, picture, opens on the desk?].
 const SMALL = [
@@ -76,10 +96,11 @@ export function home(o) {
   // A stage reserves its room before its frames load (no layout shift).
   return homeHtml(o).replace(/data-w="(\d+)" data-h="(\d+)"/g, (m, w, h) => `${m} style="aspect-ratio:${w}/${h}"`);
 }
-function homeHtml({ visionHref, apps = {}, packs = [], stars = null }) {
+function homeHtml({ visionHref, apps = {}, catalog = [], packs = [], stars = null }) {
   void packs;
   const PAUSE = `<button type="button" class="sb-btn x-pause" data-xpause aria-pressed="false"><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z"/></svg><span class="sr">Pause</span></button>`;
-  const xbar = (label, first) => `<div class="xbar"><p class="xcap" aria-live="off">${esc(first)}</p><span class="xdots" aria-hidden="true"><i class="on"></i><i></i><i></i></span>${PAUSE.replace('<span class="sr">Pause</span>', `<span class="sr">Pause ${esc(label)}</span>`)}</div>`;
+  // The caption strip under each exhibit: a solid matte bar, the step's label and one clear sentence.
+  const xbar = (label, [step, first]) => `<div class="xbar"><p class="xcap" aria-live="off"><span class="xcap-n"><span class="xcap-k">1 of 3</span><span class="xcap-l">${esc(step)}</span></span><span class="xcap-t">${esc(first)}</span></p><span class="xdots" aria-hidden="true"><i class="on"></i><i></i><i></i></span>${PAUSE.replace('<span class="sr">Pause</span>', `<span class="sr">Pause ${esc(label)}</span>`)}</div>`;
   return `
 <section class="hero" aria-labelledby="hero-h">
   <div class="inner hero-copy">
@@ -93,7 +114,7 @@ function homeHtml({ visionHref, apps = {}, packs = [], stars = null }) {
     <p class="dl-more" aria-label="Other ways to install"><a href="${REPO}/releases">Installer .exe &amp; .msi</a><a href="download.html#platforms">Build from source</a><span class="soon" title="Coming later">winget</span><span class="soon">Portable .zip</span><a class="os" href="download.html#platforms">${OS_ICON.mac}${OS_ICON.linux}macOS &amp; Linux: on the roadmap</a></p>
     <p class="dl-fine">Windows 10 &amp; 11 · free and open source · installers from 0.3.0 on GitHub Releases · winget and .zip later</p>
   </div>
-  <div class="stage-wrap">
+  ${HERO_DESK ? `<div class="stage-wrap">
     <div class="stage" id="stage">
       <div id="desk-host" class="desk-host"></div>
       <div class="sc-bar" id="sc-bar">
@@ -106,20 +127,24 @@ function homeHtml({ visionHref, apps = {}, packs = [], stars = null }) {
       </div>
     </div>
     <div class="sc-tabs" id="sc-tabs" role="tablist" aria-label="What the demo shows"></div>
-  </div>
+  </div>` : ""}
 </section>
 
-<section id="f-dock" class="sec xsec feature" aria-labelledby="f-dock-h">
+<section id="f-dock" class="sec xsec feature dockw-sec" aria-labelledby="f-dock-h">
   <div class="inner">
-    <div class="head center"><p class="kicker"><span class="k-ic">${IC.dock}</span>The Dock</p><h2 id="f-dock-h">One dock, nine ways.</h2><p>A dock that fits how you work: pick a style and an edge. Pick one below to put it on the desk above.</p></div>
-    <div class="docks-row" id="docks" aria-labelledby="docks-h">
-      <div class="dr-head"><h3 id="docks-h" class="h-sm">Nine docks</h3><p id="dock-info" class="dr-info" aria-live="polite"></p>
-        <span class="dr-nav"><button type="button" class="sb-btn" data-rail-prev aria-label="Scroll the docks left"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button><button type="button" class="sb-btn" data-rail-next aria-label="Scroll the docks right"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></span></div>
-      <div class="dock-rail" id="dock-rail" role="radiogroup" aria-labelledby="docks-h"></div>
+    <div class="head center"><p class="kicker"><span class="k-ic">${IC.dock}</span>Magic Dock + Top Dock</p><h2 id="f-dock-h">One dock, nine ways.</h2><p>The real Lens top bar and dock, live. Pick a style, an edge or an accent: the dock changes in place.</p></div>
+    <div class="dockw" id="dockw">
+      <div class="dockw-frame"><div id="dock-desk" class="desk-host"></div></div>
+      <div class="dockw-ctl" aria-label="Dock controls">
+        <div class="dw-row"><p class="dw-l" id="dw-style-l">Style</p><div class="dw-styles" id="dw-styles" role="radiogroup" aria-labelledby="dw-style-l">${DOCK_STYLE_NAMES.map((n, i) => radio(i, esc(n), "dw-chip")).join("")}</div></div>
+        <div class="dw-row dw-split">
+          <div><p class="dw-l" id="dw-edge-l">Edge</p><div class="dw-edges" id="dw-edges" role="radiogroup" aria-labelledby="dw-edge-l">${DOCK_EDGES.map(([id, n], i) => radio(i, `<span class="dw-edge-ic" aria-hidden="true"><i></i></span>${esc(n)}`, "dw-chip dw-edge", ` data-edge="${id}"`)).join("")}</div></div>
+          <div><p class="dw-l" id="dw-acc-l">Accent</p><div class="dw-acc" id="dw-acc" role="radiogroup" aria-labelledby="dw-acc-l">${PICK_ACCENTS.map(([h, n], i) => radio(i, CHECK_SVG, h ? "" : "auto", ` data-acc="${h}" aria-label="${esc(n)}" style="--c:${h || "#fafafa"};--on:${inkOn(h || "#fafafa")}"`)).join("")}</div></div>
+        </div>
+        <p class="dw-info" id="dock-info" aria-live="polite"><b>Floating</b> on the bottom edge. <span>A glass pill that floats above your windows.</span></p>
+      </div>
     </div>
-    <ul class="why why-3">
-      ${DOCK_CAPS.map(([ic, t, d]) => `<li><span class="why-ic">${ic}</span><b>${esc(t)}</b><span>${esc(d)}</span></li>`).join("")}
-    </ul>
+    <ul class="dw-chips" aria-label="What the dock does">${DOCK_CHIPS.map((c) => `<li>${esc(c)}</li>`).join("")}</ul>
   </div>
 </section>
 
@@ -128,7 +153,7 @@ function homeHtml({ visionHref, apps = {}, packs = [], stars = null }) {
     <div class="head center"><p class="kicker"><span class="k-ic">${IC.browser}</span>Lens Browser</p><h2 id="f-browser-h">A light browser, with AI beside the page.</h2><p>Ask in the one box. The AI works next to the page and lists every step it takes.</p></div>
     <div class="bx xmain" data-exhibit="browser">
       <div class="xstage" data-w="1180" data-h="660"><div class="xf" data-xf="browser.html?scene=home" data-marker=".lb-root" role="img" aria-label="Lens Browser, the real app, on its new tab page: one box for search, addresses and questions"></div></div>
-      ${xbar("Lens Browser", BROWSER_STEPS[0][1])}
+      ${xbar("Lens Browser", BROWSER_STEPS[0].slice(1))}
       <script type="application/json" class="xdata">${JSON.stringify(BROWSER_STEPS)}</script>
     </div>
     <ul class="why">
@@ -139,16 +164,19 @@ function homeHtml({ visionHref, apps = {}, packs = [], stars = null }) {
 
 <section id="f-magic" class="sec xsec" aria-labelledby="f-magic-h">
   <div class="inner">
-    <div class="head center"><p class="kicker"><span class="k-ic">${IC.magic}</span>Right-click</p><h2 id="f-magic-h">Right-click anything.</h2><p>The Lens menu opens right where you clicked, and knows what it is: a link, an image, a video, a window. Try it on the page below.</p></div>
+    <div class="head center"><p class="kicker"><span class="k-ic">${IC.magic}</span>Magic Mouse <span class="tag">Coming</span></p><h2 id="f-magic-h">Hold for Magic. Drag to grab.</h2><p>An optional pointer that works like your normal one, plus two moves: hold to open Magic where you point, or hold and drag to grab any area into Snip. It's off by default, and Lens asks before it turns on.</p></div>
     <div class="mx xmain" id="mx" data-exhibit="magic">
       <div class="xstage" data-w="1180" data-h="640">
-        <div class="xf mx-target" data-xf="browser.html?scene=frame" data-xf-magic="1" data-marker=".lb-root" role="img" aria-label="Lens Browser, the real app, with a page open. Right-click it."></div>
+        <div class="xf mx-target" data-xf="browser.html?scene=frame" data-marker=".lb-root" role="img" aria-label="Lens Browser, the real app, with a page open"></div>
         <div class="mx-dim" aria-hidden="true" hidden></div>
-        <div class="mx-menu" hidden><div class="xf" data-xf="magic.html?scene=link&amp;drag=0&amp;magic=0" data-marker="[class^=&#39;magic-&#39;]" data-eager="1" role="img" aria-label="The Lens magic window"></div></div>
+        <div class="mm-grab" aria-hidden="true" hidden></div>
+        <div class="mm-ptr" aria-hidden="true"><span class="mm-cloud"><span class="lens-cloud"><i></i><i></i><i></i><i></i><i></i><i></i></span></span><svg class="mm-ring" viewBox="0 0 44 44"><circle cx="22" cy="22" r="19"/></svg></div>
+        <div class="mx-menu" hidden><div class="xf" data-xf="magic.html?scene=link&amp;drag=0&amp;magic=0" data-marker="[class^=&#39;magic-&#39;]" data-eager="1" role="img" aria-label="The Lens Magic window"></div></div>
       </div>
-      ${xbar("Right-click", MAGIC_STEPS[0][1])}
+      ${xbar("Magic Mouse", MAGIC_STEPS[0].slice(1))}
       <script type="application/json" class="xdata">${JSON.stringify(MAGIC_STEPS)}</script>
     </div>
+    <p class="fine center-fine">Today, Ctrl + Alt + right-click opens the same Magic window, and every Lens menu ends with a “Lens ›” row.</p>
   </div>
 </section>
 
@@ -161,8 +189,9 @@ function homeHtml({ visionHref, apps = {}, packs = [], stars = null }) {
         <div class="lab-picks" role="group" aria-label="Themes"></div>
         <div class="lab-row"><button type="button" class="btn small" data-all aria-expanded="false" aria-controls="lab-pop">All ${packs.length || 80} themes…</button><button type="button" class="btn small" data-shuffle>Shuffle <kbd>T</kbd></button></div>
         <div class="lab-pop" id="lab-pop" role="dialog" aria-label="All themes" hidden><label class="sr" for="lab-q">Search themes</label><input id="lab-q" type="search" placeholder="Search ${packs.length || 89} themes…"><div class="grid"></div></div>
-        <p class="lab-label" id="acc-l">Accent <span>click, or drag onto the desk</span></p>
-        <div class="lab-acc" role="group" aria-labelledby="acc-l"></div>
+        <p class="lab-label" id="acc-l">Accent <span>click a colour, or drag one onto the desk</span></p>
+        <div class="lab-acc" role="radiogroup" aria-labelledby="acc-l"></div>
+        <p class="lab-acc-now" aria-live="polite"></p>
         <div class="lab-row"><button type="button" class="btn small" data-export>Download .lenstheme</button></div>
         <p class="lab-now" aria-live="polite"></p>
       </aside>
@@ -179,20 +208,21 @@ function homeHtml({ visionHref, apps = {}, packs = [], stars = null }) {
 
 <section id="byo" class="sec xsec" aria-labelledby="byo-h">
   <div class="inner">
-    <div class="head center"><p class="kicker"><span class="k-ic">${IC.agent}</span>Agentic desktop</p><h2 id="byo-h">Your agent, across the whole desktop.</h2><p>Connect Claude Code, Claude Desktop, a local model or any MCP agent. It works in Lens Browser, your windows, files and settings, and shows its plan as it goes.</p></div>
+    <div class="head center"><p class="kicker"><span class="k-ic">${IC.agent}</span>Agentic desktop</p><h2 id="byo-h">Say it. Lens does it, where you can see.</h2><p>Speak, or connect Claude Code, Claude Desktop, a local model or any MCP agent. The Lens cursor works the desktop on its own, in plain sight, and leaves a trail of every step.</p></div>
     <div class="agent-x xmain" data-exhibit="agent">
       <div class="agent-main">
-        <div class="xstage" data-w="1180" data-h="660"><div class="xf ag-browser" data-xf="browser.html?scene=dinner-plan" data-marker=".lb-root" role="img" aria-label="Lens Browser, the real app, with Claude Code's request in the AI panel: book Friday dinner for 4, add it to the calendar, message three people"></div></div>
-        <div class="ag-card" hidden><div class="xstage" data-w="470" data-h="660"><div class="xf" data-xf="approval.html?scene=dinner&amp;drag=0&amp;magic=0" data-eager="1" data-marker="[class^=&#39;ap-&#39;]" role="img" aria-label="The real “Needs your OK” card for the booking step: Claude Code, step 3 of 5, the reservation form and its $25 no-show fee, what each step of the task may do, Deny and hold to Book"></div></div></div>
+        <div class="ag-desk-wrap"><div id="agent-desk" class="desk-host"></div></div>
+        <div class="ag-card" hidden><div class="xstage" data-w="470" data-h="660"><div class="xf" data-xf="approval.html?scene=dinner&amp;drag=0&amp;magic=0" data-eager="1" data-marker="[class^=&#39;ap-&#39;]" role="img" aria-label="The real “Needs your OK” card for the booking step: the reservation form and its $25 no-show fee, Deny and hold to Book"></div></div></div>
       </div>
       <aside class="ag-side">
-        <p class="ag-ask"><span class="ag-who">Claude Code</span>“Book Friday dinner for 4 near me and add it to my calendar, then message Maya, Sam and Priya.”</p>
-        <ol class="ag-plan" aria-label="The plan, step by step">
+        <p class="ag-ask"><span class="ag-who">You, by voice</span>“Lens, book Friday dinner for four near me.”</p>
+        <ol class="ag-plan" aria-label="The action trail, step by step">
           ${AGENT_PLAN.map(([t, r, k], i) => `<li class="is-${k}" data-i="${i}"><span class="ag-n">${i + 1}</span><span class="ag-t">${esc(t)}</span><span class="ag-r">${esc(r)}</span></li>`).join("")}
         </ol>
-        <p class="ag-note">Each step that books, sends or changes something waits on the real “Needs your OK” card: approve it, deny it, or allow that kind of step for this task.</p>
+        <p class="ag-note">Reading and clicking run on their own. Anything that books, sends or pays waits on the real “Needs your OK” card.</p>
       </aside>
-      ${xbar("Agentic desktop", "Claude Code asks for dinner. Lens Browser searches and picks a place: reading runs on its own.")}
+      ${xbar("Agentic desktop", AGENT_STEPS[0].slice(1))}
+      <script type="application/json" class="xdata">${JSON.stringify(AGENT_STEPS)}</script>
     </div>
     <div class="learn">
       <span class="learn-ic" aria-hidden="true">${IC.learn}</span>
@@ -201,21 +231,21 @@ function homeHtml({ visionHref, apps = {}, packs = [], stars = null }) {
   </div>
 </section>
 
+<section id="apps" class="sec xsec" aria-labelledby="apps-h">
+  <div class="inner">
+    <div class="head center"><p class="kicker"><span class="k-ic">${IC.apps}</span>Lens Apps</p><h2 id="apps-h">Free and open-source apps, one click away.</h2><p>Official releases, checked before they install.</p></div>
+    <div class="app-grid">${[...SUITE, ...PICKS].map((id) => appTile(id, catalog.find((a) => a.id === id), apps[id])).join("")}</div>
+    <p class="fine apps-fine">Names, screenshots and trademarks belong to each project; Lens isn't affiliated with any of them. Each screenshot comes from the project's own repository; where a repository has none, the tile is Lens's own drawing.</p>
+  </div>
+</section>
+
 <section id="overlays" class="sec xsec" aria-labelledby="ov-h">
   <div class="inner">
-    <div class="head center"><p class="kicker"><span class="k-ic">${IC.layers}</span>Also in Lens</p><h2 id="ov-h">Small apps, already there.</h2><p>Themed tools for the jobs Windows makes awkward. Click one to open it on the desk.</p></div>
+    <div class="head center"><p class="kicker"><span class="k-ic">${IC.layers}</span>Also in Lens</p><h2 id="ov-h">Small apps, already there.</h2><p>Themed tools for the jobs Windows makes awkward. Click one to open it on the theme desk.</p></div>
     <div class="mini-grid" id="core-grid" data-cycle>
       ${SMALL.map(([id, t, d, img, live]) => miniTile(id, t, d, img, live)).join("")}
       ${CORE.filter(([id]) => id !== "notes").map(([id, t, d]) => miniTile(id, t, d, `core-${id}`, true)).join("")}
     </div>
-  </div>
-</section>
-
-<section id="apps" class="sec xsec" aria-labelledby="apps-h">
-  <div class="inner">
-    <div class="head center"><p class="kicker"><span class="k-ic">${IC.apps}</span>Lens Apps</p><h2 id="apps-h">Free and open-source apps, one click away.</h2><p>Official releases, checked before they install.</p></div>
-    <div class="app-grid">${[...SUITE, ...PICKS].map((id) => appTile(id, apps)).join("")}</div>
-    <p class="fine">Names belong to each project; Lens isn't affiliated with them. The icons here are Lens's own drawings.</p>
   </div>
 </section>
 
@@ -288,14 +318,25 @@ export const appGlyph = (id) => {
 };
 const extra = (t, line, { clip: c, img, alt } = {}) => `<article class="ex">${c ? clip(c, t) : img ? `<figure class="clip still"><img src="media/${img}" alt="${esc(alt ?? t)}" loading="lazy" width="1100" height="619"></figure>` : ""}<h3>${esc(t)}</h3><p>${esc(line)}</p></article>`;
 
-/** One app, once: Lens's own matte icon for it, one line, its licence, and Get. */
-function appTile(id, apps) {
-  const a = apps[id];
-  if (!a) return "";
+/** One app, once: a real screenshot from its own repository (or Lens's drawn tile when the repo has
+ *  none), its name and line, who makes it (linked to the source), its licence, the credit, and Get. */
+function appTile(id, c, m = {}) {
+  if (!c && !m.name) return "";
+  const name = c?.name ?? m.name, license = c?.license ?? m.license, repo = c?.repo ?? m.repo ?? c?.homepage ?? m.homepage;
+  const author = c?.author ?? c?.publisher ?? "";
+  const thumb = c?.thumb?.site ? c.thumb.site.replace(/^docs\//, "") : null;
+  const shot = thumb
+    ? `<figure class="apt-shot"><img src="${esc(thumb)}" alt="Screenshot of ${esc(name)}" loading="lazy" decoding="async" width="640" height="400"></figure>`
+    : `<div class="apt-shot is-glyph">${appGlyph(id)}</div>`;
   return `<article class="apt" data-app-card="${esc(id)}">
-  ${appGlyph(id)}
-  <div class="apt-t"><h3><a href="${esc(a.repo ?? a.homepage)}">${esc(a.name)}</a></h3><span>${esc(LINES[id] ?? "")}</span><span class="meta">${esc(a.license)}</span></div>
-  <button class="get-pill" type="button" data-get="${esc(a.name)}" aria-live="polite">Get</button>
+  ${shot}
+  <div class="apt-body">
+    <div class="apt-t"><h3><a href="${esc(c?.homepage ?? repo)}">${esc(name)}</a></h3><span class="apt-line">${esc(LINES[id] ?? "")}</span>
+      <span class="apt-by">${author ? `by <a href="${esc(repo)}" aria-label="${esc(author)}: ${esc(name)} source code">${esc(author)}</a> · ` : ""}<span class="apt-lic">${esc(license)}</span></span>
+    </div>
+    <button class="get-pill" type="button" data-get="${esc(name)}" aria-live="polite">Get</button>
+  </div>
+  ${thumb ? `<p class="apt-credit">Screenshot: ${esc(name)}, ${esc(license)}</p>` : ""}
 </article>`;
 }
 
