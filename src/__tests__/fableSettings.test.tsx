@@ -4,19 +4,28 @@
 //   B-111 (the "update ready" pill and the first Quick settings tile icon could be unreadable on an accent),
 //   B-112 (the Night light switch knob followed the accent's ink),
 //   the Dock on the shared press, pop-out origins and the sliding filter pill.
-import { describe, expect, mock, test } from "bun:test";
+import { beforeAll, describe, expect, mock, test } from "bun:test";
 // Module mocks from other test files leak across files (bun), and the real event / window modules
 // import names a partial core mock doesn't have: mock all three, as the other suites do.
-mock.module("@tauri-apps/api/core", () => ({ invoke: async () => null, convertFileSrc: (p: string) => p, transformCallback: () => 0 }));
+mock.module("@tauri-apps/api/core", () => ({
+  invoke: async () => null,
+  convertFileSrc: (p: string) => p,
+  transformCallback: () => 0,
+  // The real dpi / webview / window modules import these from core when they are loaded.
+  SERIALIZE_TO_IPC_FN: "__TAURI_TO_IPC_KEY__",
+  Channel: class {},
+  Resource: class {},
+  PluginListener: class {},
+  addPluginListener: async () => ({}),
+  isTauri: () => false,
+}));
+mock.module("@tauri-apps/api/webview", () => ({ getCurrentWebview: () => ({ setZoom: async () => {}, listen: async () => () => {} }) }));
 mock.module("@tauri-apps/api/event", () => ({ listen: async () => () => {}, emit: async () => {}, emitTo: async () => {} }));
 mock.module("@tauri-apps/api/window", () => ({ getCurrentWindow: () => ({ label: "settings", listen: async () => () => {}, onFocusChanged: async () => () => {} }) }));
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { AltDragCard } from "../components/AltDragCard";
-import { AppSummonCard } from "../components/AppSummonCard";
-import { MagicCard } from "../components/MagicCard";
 import {
   ACCENT_STRENGTHS,
   ACCENT_UI_MIN,
@@ -321,13 +330,21 @@ describe("the accent reaches the shared controls through the tokens", () => {
 
 describe("B-58: options stay usable while the feature is off", () => {
   const cfg = (patch: Record<string, unknown>) => ({ ...(sampleConfig() as object), ...patch }) as never;
-  const cards: [string, string][] = [
-    ["Alt + drag", renderToStaticMarkup(<AltDragCard config={cfg({ altDrag: { enabled: false, modifier: "alt", resize: true, raise: true, restoreMaximized: true, exclude: ["blender.exe"] } })} onUpdateConfig={() => {}} />)],
-    ["Magic", renderToStaticMarkup(<MagicCard config={cfg({})} onUpdateConfig={() => {}} />)],
-    ["App hotkeys", renderToStaticMarkup(<AppSummonCard config={cfg({ appSummon: { enabled: false, bindings: [{ id: "a", name: "Terminal", path: "wt.exe", hotkey: "Ctrl+Alt+T", enabled: true }] } })} onUpdateConfig={() => {}} />)],
-  ];
+  // Loaded here, after the module mocks above are in place (static imports are evaluated first).
+  const cards: [string, string][] = [];
+  beforeAll(async () => {
+    const { AltDragCard } = await import("../components/AltDragCard");
+    const { MagicCard } = await import("../components/MagicCard");
+    const { AppSummonCard } = await import("../components/AppSummonCard");
+    cards.push(
+      ["Alt + drag", renderToStaticMarkup(<AltDragCard config={cfg({ altDrag: { enabled: false, modifier: "alt", resize: true, raise: true, restoreMaximized: true, exclude: ["blender.exe"] } })} onUpdateConfig={() => {}} />)],
+      ["Magic", renderToStaticMarkup(<MagicCard config={cfg({})} onUpdateConfig={() => {}} />)],
+      ["App hotkeys", renderToStaticMarkup(<AppSummonCard config={cfg({ appSummon: { enabled: false, bindings: [{ id: "a", name: "Terminal", path: "wt.exe", hotkey: "Ctrl+Alt+T", enabled: true }] } })} onUpdateConfig={() => {}} />)]
+    );
+  });
 
   test("no card puts its options under pointer-events: none, and the class is gone for good", () => {
+    expect(cards.length).toBe(3);
     for (const [name, html] of cards) {
       expect(`${name}: ${html.includes("pi-off")}`).toBe(`${name}: false`);
       expect(`${name}: ${html.includes("pi-dim")}`).toBe(`${name}: true`);
