@@ -4,7 +4,9 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { glideIn } from "../ui/motion";
 import { LensMenuRow, LensPan } from "./LensPan";
-import type { LensItem } from "./lensPanModel";
+import type { LensItem, MenuAt } from "./lensPanModel";
+
+export { contextOrigin, type MenuAt } from "./lensPanModel";
 import "./lens-pan.css";
 
 export interface MenuAction {
@@ -15,10 +17,6 @@ export interface MenuAction {
   onSelect: () => void;
 }
 
-export interface MenuAt {
-  x: number;
-  y: number;
-}
 
 /** Keeps a menu of size w×h inside the viewport, opening down-right of the pointer when it fits. */
 export function placeMenu(at: MenuAt, w: number, h: number, vw: number, vh: number, margin = 6): { left: number; top: number } {
@@ -27,18 +25,6 @@ export function placeMenu(at: MenuAt, w: number, h: number, vw: number, vh: numb
   return { left: Math.max(margin, Math.min(left, vw - w - margin)), top: Math.max(margin, Math.min(top, vh - h - margin)) };
 }
 
-/**
- * Where a context menu opens and how it was asked for. A right-click opens at the pointer. The
- * Menu key and Shift+F10 also arrive as a `contextmenu` event, but with no pointer behind them:
- * the menu then opens on the item itself and is marked as keyboard-opened, so focus lands on
- * "Lens ›" with a visible ring (docs/features/magic.md, "Magic everywhere via the keyboard").
- */
-export function contextOrigin(e: { button: number; clientX: number; clientY: number }, rect: { left: number; top: number; bottom: number; width: number }): { at: MenuAt; byKeyboard: boolean } {
-  const byKeyboard = e.button !== 2;
-  return byKeyboard
-    ? { at: { x: Math.round(rect.left + Math.min(28, rect.width / 2)), y: Math.round(rect.bottom - 4) }, byKeyboard }
-    : { at: { x: e.clientX, y: e.clientY }, byKeyboard };
-}
 
 export function LensContextMenu({
   at,

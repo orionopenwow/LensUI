@@ -17,7 +17,7 @@ import {
   type VoiceSpeechEvent,
   type VoiceStateEvent,
 } from "./contract";
-import { INITIAL_CONV, captionFrom, estimateWordMs, reduceConv, words } from "./convoState";
+import { INITIAL_CONV, captionFrom, estimateWordMs, reduceConv, shouldTick, words } from "./convoState";
 import { LEVEL_BARS } from "./hudState";
 import { logFail, quiet } from "../failsafe/calls";
 
@@ -30,9 +30,6 @@ export function prefersReducedMotion(): boolean {
 
 /** How long to wait for Windows speech to report a word before revealing by estimate. */
 export const SPEECH_WAIT_MS = 1500;
-
-/** The conversation clock ticks only while a conversation is open. */
-export const shouldTick = (open: boolean) => open;
 
 export function useConversation(onHide?: () => void) {
   const [state, dispatch] = useReducer(reduceConv, INITIAL_CONV);

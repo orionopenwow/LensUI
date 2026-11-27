@@ -9,14 +9,13 @@ import { latestOnly, NO_PENDING, queueDelete, removedLine as snipRemovedLine, un
 import { routeKey } from "../snip/keys";
 import {
   allSel, clampSel, findEntities, isSelected, lineSel, moveSel, nearestWord, ordered, selectedCount, selectionRects, selectionText, shortValue,
-  visibleLines, wordAt, wordCount, wordSel, wordsLabel, type Line,
+  pillPlace, visibleLines, wordAt, wordCount, wordSel, wordsLabel, type Line,
 } from "../snip/liveText";
-import { pillPlace } from "../snip/LiveTextLayer";
-import { trimRange } from "../snip/Record";
-import { contextOrigin } from "../magic/LensContextMenu";
+import { trimRange } from "../snip/recordModel";
+import { contextOrigin } from "../magic/lensPanModel";
 import { removedLine, restoreInput } from "../shelf/restore";
 import type { ShelfItem } from "../shelf/contract";
-import { shouldTick } from "../voice/useConversation";
+import { shouldTick } from "../voice/convoState";
 import { moveVertical, type Box } from "../magic/start/model";
 
 /** Lays words out left to right, 10 px per character, 20 px line height. */

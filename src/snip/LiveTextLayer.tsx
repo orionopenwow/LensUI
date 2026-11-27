@@ -4,7 +4,7 @@
 import React from "react";
 import { Copy, EyeOff, Highlighter } from "lucide-react";
 import type { Rect } from "./geom";
-import { ENTITY_LABEL, isSelected, selectedCount, selectionRects, shortValue, wordsLabel, type Entity, type Line, type Sel } from "./liveText";
+import { ENTITY_LABEL, isSelected, pillPlace, selectedCount, selectionRects, shortValue, wordsLabel, type Entity, type Line, type Sel } from "./liveText";
 
 /** Inside the studio's SVG (image px). Words are faintly underlined so text reads as selectable. */
 export const LiveTextLayer: React.FC<{ lines: readonly Line[]; sel: Sel | null; hidden: (r: Rect) => boolean; flash: number; stroke: number }> = ({ lines, sel, hidden, flash, stroke }) => (
@@ -36,18 +36,6 @@ export interface LiveTextPillProps {
   onHide: () => void;
 }
 
-/** Where the bar sits: above the first selected line, or under the last when there is no room. */
-export function pillPlace(rects: readonly Rect[], scale: number, stage: { w: number; h: number }, size = { w: 268, h: 36 }): { left: number; top: number; below: boolean } {
-  const first = rects[0];
-  const last = rects[rects.length - 1];
-  if (!first || !last) return { left: 0, top: 0, below: false };
-  const above = first.y * scale - size.h - 8;
-  const below = above < 4;
-  const top = below ? Math.min(stage.h - size.h - 4, (last.y + last.h) * scale + 8) : above;
-  const anchor = below ? last : first;
-  const left = Math.max(4, Math.min(stage.w - size.w - 4, (anchor.x + anchor.w / 2) * scale - size.w / 2));
-  return { left, top: Math.max(4, top), below };
-}
 
 export const LiveTextPill: React.FC<LiveTextPillProps> = ({ lines, sel, scale, stage, onCopy, onHighlight, onHide }) => {
   const place = pillPlace(selectionRects(lines, sel, 0), scale, stage);
