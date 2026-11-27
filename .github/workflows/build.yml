@@ -80,11 +80,10 @@ jobs:
           cargo build --release --manifest-path src-tauri/lens-dwm-hook/Cargo.toml
           Copy-Item src-tauri/lens-dwm-hook/target/release/lens_dwm_hook.dll src-tauri/lens_dwm_hook.dll -Force
 
-      # No --locked yet: Cargo.toml gained features this session and Cargo.lock must be refreshed by one
-      # local build first. Add --locked to these three steps once the updated Cargo.lock is committed.
+      # --locked: Cargo.lock must match Cargo.toml, so a fresh clone builds exactly what CI built.
       - name: cargo check
         working-directory: src-tauri
-        run: cargo check --all-targets
+        run: cargo check --locked --all-targets
 
       # -D warnings: every rustc warning (dead code, unused imports, ...) fails the build. The
       # remaining allow-list covers clippy's style-level groups only; shrink it over time.
@@ -92,7 +91,7 @@ jobs:
       - name: cargo clippy
         working-directory: src-tauri
         run: >
-          cargo clippy --all-targets --
+          cargo clippy --locked --all-targets --
           -D warnings
           -D clippy::correctness
           -D clippy::suspicious
@@ -104,7 +103,7 @@ jobs:
 
       - name: cargo test (pure-logic unit tests)
         working-directory: src-tauri
-        run: cargo test --lib
+        run: cargo test --locked --lib
 
       # The dev-only Mission Control module (`--features admin`): lint it and run its tests. Never
       # used for the installer below.

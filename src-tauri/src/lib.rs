@@ -166,6 +166,10 @@ pub fn run() {
     if agent_cli::is_cli_invocation() {
         std::process::exit(agent_cli::run());
     }
+    // The installer (`--show-taskbar`, `--remove-changes`): give Windows back, then exit.
+    if let Some(code) = win_uninstall::early_exit_code() {
+        std::process::exit(code);
+    }
     // Browser native-messaging host, lens:// links, Explorer verbs and `--ask`: forward and exit.
     if let Some(code) = bridge::early_exit_code() {
         std::process::exit(code);

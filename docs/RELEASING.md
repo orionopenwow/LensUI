@@ -37,6 +37,27 @@ into the repository.
    Releases page. `win_update::tests::the_update_path_is_consistent` pins the endpoint, the empty
    key and the three version numbers.
 
+## Releasing before the key exists
+
+The signing key is only needed for in-app updates. Without it, `release.yml` still builds the
+NSIS and MSI installers and attaches them (with `SHA256SUMS.txt`, no `.sig`, no `latest.json`) to
+a draft **pre-release** named `Lens vX.Y.Z (preview)`. People can download and install Lens from
+it; the in-app updater stays off in that build and points to the Releases page. Once the key is
+set up, the next tag produces a normal signed release.
+
+## Installer smoke test
+
+`.github/workflows/installer.yml` builds both installers and runs `tools/installer/smoke.ps1` on a
+clean `windows-latest` runner: silent install, first launch, install over a running Lens,
+uninstall with Lens running (the uninstaller must run `lens-ui.exe --remove-changes` with no
+failed step, and `tools/e2e/probe.ps1` must find Windows as it was), then the MSI. It runs on pull
+requests that touch the installer, on every `v*` tag, weekly, and by hand (Actions › installer ›
+Run workflow). Screenshots, logs and the installers are uploaded as the `installer-smoke` artifact.
+Still test on a real Windows 11 VM before publishing: the runner is Windows Server.
+
+The installer look lives in `src-tauri/windows/` (BMPs drawn by `tools/installer/make_art.py`) and
+its behaviour in `src-tauri/windows/hooks.nsh`.
+
 ## Cutting a release
 
 1. Update the version in `package.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`

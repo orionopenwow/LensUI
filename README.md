@@ -187,20 +187,35 @@ Expected support, based on the Windows features each part uses; real-machine tes
 
 ## Install
 
-Starting with 0.3.0, the installers (`.exe` and `.msi`) are on [GitHub Releases](https://github.com/orionopenwow/LensUI/releases). They are not yet code-signed, so Windows SmartScreen warns the first time you run one; choose **More info › Run anyway**. Lens updates itself from there, and every update is signed. winget and a portable `.zip` come later.
+1. Download **`Lens UI_<version>_x64-setup.exe`** from the latest [GitHub Release](https://github.com/orionopenwow/LensUI/releases/latest).
+2. Run it. The installers are not code-signed yet, so Windows SmartScreen may say "Windows protected your PC": choose **More info › Run anyway**.
+3. It installs for your account only (no administrator prompt) and adds Lens to the Start menu. If the Microsoft Edge WebView2 Runtime is missing (rare on Windows 10, built into Windows 11), the installer fetches it.
+4. Lens opens a short setup on first launch. Nothing changes until you press **Finish**.
+
+To remove Lens, uninstall it from **Settings › Apps** like any app. The uninstaller first puts back everything Lens changed in Windows (taskbar, desktop icons, start-with-Windows, shell mode, folder icons and the rest of the list in Settings › Remove all Lens changes) and writes what it did to `%TEMP%\LensUI-uninstall.log`. Tick **Delete the application data** to also remove your Lens settings.
+
+The `.msi` on the same page is for IT deployment (per-machine, needs admin). It doesn't run the clean-up step, so use **Remove all Lens changes** in Settings before uninstalling it. winget and a portable `.zip` come later.
 
 ### Build from source
 
-Requirements: Windows 10 (1809 or newer) or Windows 11, the [Rust toolchain](https://www.rust-lang.org/tools/install) (stable, MSVC) and [Bun](https://bun.sh).
+You only need this to change Lens. Requirements:
+
+- Windows 10 (1809 or newer) or Windows 11, 16 GB of RAM recommended (8 GB works with `-LowMemory`), about 10 GB free disk space
+- [Rust](https://rustup.rs) (stable, MSVC toolchain, 1.80 or newer) and [Bun](https://bun.sh)
+- Visual Studio C++ Build Tools with the Windows SDK:
+  `winget install Microsoft.VisualStudio.2022.BuildTools --override "--quiet --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"`
 
 ```bat
 git clone https://github.com/orionopenwow/LensUI
-cd lensui
-bun install
-bun run tauri dev
+cd LensUI
+Build-Lens-UI.bat
 ```
 
-Or double-click `Launch-Lens-UI.bat` for development mode and `Build-Lens-UI.bat` for a standalone build (written to `src-tauri\target\release\bundle`).
+`Build-Lens-UI.bat` checks every requirement first and says what to install, builds the installer into `src-tauri\target\release\bundle\nsis`, and keeps the full log in `build-logs\`. If the build fails it names the problem and the fix (missing linker or SDK, out of memory, a running Lens locking the exe, disk space, network). Options: `-CheckOnly` (just the check), `-LowMemory`, `-Msi` (also the .msi), `-Full` (exactly the shipping profile; slowest).
+
+The first build compiles about 530 packages and takes 10 to 30 minutes. The last one, `lens-ui` itself (`530/532`), is one large compile that can be silent for several minutes. That is normal; the build script prints a line every minute while it works.
+
+For development, `bun install` then `bun run tauri dev`, or double-click `Launch-Lens-UI.bat`.
 
 After the first launch, open Settings and press **Run self-test**. If anything looks wrong, attach the report to an [issue](https://github.com/orionopenwow/LensUI/issues). Testers: Settings › About & Testing has today's checklist and a one-click report.
 

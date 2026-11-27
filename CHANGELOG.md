@@ -7,6 +7,20 @@ up and migrates `%APPDATA%\LensUI` where it can.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-27
+
+### Installing
+- **Download and install, no building needed.** The installer is on GitHub Releases: a per-user
+  install with no admin prompt, a new dark Lens look on its pages, and WebView2 fetched when missing.
+- **Uninstall puts Windows back.** Uninstalling from Settings › Apps first undoes every change Lens
+  made (taskbar, desktop icons, start-with-Windows, shell mode, folder icons and the rest of Remove
+  all Lens changes) and logs it to `%TEMP%\LensUI-uninstall.log`; "Delete the application data"
+  also removes `%APPDATA%\LensUI`. Installing over a running Lens gives the taskbar back.
+- **Building from source is faster and explains itself.** The final `lens-ui` step (530/532) no
+  longer optimises and links Lens three times. `Build-Lens-UI.bat` checks every prerequisite and
+  names the fix, prints progress during the long compile, keeps a full log in `build-logs\` and
+  explains common failures (missing linker or SDK, out of memory, locked exe, disk, network).
+
 ### Added
 - **Lens Apps updates: manual by default, automatic if you want it.** An app with a newer version
   shows "Update available" with a one-click Update. A new **Update apps automatically** switch in
@@ -553,6 +567,7 @@ Lens build on Windows yet:
 
 - Initial import of Lens UI.
 
-[Unreleased]: https://github.com/orionopenwow/LensUI/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/orionopenwow/LensUI/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/orionopenwow/LensUI/releases/tag/v0.4.0
 [0.3.0]: https://github.com/orionopenwow/LensUI/releases/tag/v0.3.0
 [0.1.0]: https://github.com/orionopenwow/LensUI/commit/ad52a44

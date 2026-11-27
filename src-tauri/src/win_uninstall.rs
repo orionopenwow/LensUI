@@ -91,6 +91,58 @@ pub fn delete_lens_data() -> Result<String, String> {
     Ok(format!("Deleted {}", dir.display()))
 }
 
+/// `lens-ui.exe --remove-changes [--delete-data]`: run by the installer's uninstaller (and usable by
+/// hand) after Lens has been closed. Walks the same change registry as Settings › Remove all Lens
+/// changes, saves the config so nothing is re-applied, and writes what it did to
+/// `%TEMP%\LensUI-uninstall.log`. `--delete-data` also deletes %APPDATA%\LensUI, unless an undo step
+/// failed (its backup lives there). Never starts the shell.
+pub const REMOVE_CHANGES_FLAG: &str = "--remove-changes";
+pub const DELETE_DATA_FLAG: &str = "--delete-data";
+pub const SHOW_TASKBAR_FLAG: &str = "--show-taskbar";
+
+/// Checked first thing at startup (lib.rs): if this process is the uninstall helper, run and exit.
+pub fn early_exit_code() -> Option<i32> {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    // The installer closes a running Lens before it upgrades: give back the taskbar and desktop
+    // icons Lens may have hidden. Settings are untouched, so the next start applies them again.
+    if args.iter().any(|a| a.eq_ignore_ascii_case(SHOW_TASKBAR_FLAG)) {
+        crate::win_taskbar::set_native_taskbar_hidden(false);
+        crate::win_taskbar::set_desktop_icons_hidden(false);
+        return Some(0);
+    }
+    if !args.iter().any(|a| a.eq_ignore_ascii_case(REMOVE_CHANGES_FLAG)) {
+        return None;
+    }
+    let delete_data = args.iter().any(|a| a.eq_ignore_ascii_case(DELETE_DATA_FLAG));
+    let mut cfg = crate::config::load_config();
+    let mut steps = remove_all_lens_changes(&mut cfg);
+    let blocked = if delete_data { data_deletion_blocked(&steps) } else { None };
+    if delete_data && blocked.is_none() {
+        let res = delete_lens_data();
+        steps.push(UninstallStep { step: "Lens data".into(), ok: res.is_ok(), detail: res.unwrap_or_else(|e| e) });
+    } else {
+        if let Some(why) = blocked {
+            steps.push(UninstallStep { step: "Lens data".into(), ok: false, detail: why });
+        }
+        crate::failsafe::features::release_overrides();
+        if let Err(e) = crate::config::save_config(&cfg) {
+            steps.push(UninstallStep { step: "Save settings".into(), ok: false, detail: e });
+        }
+    }
+    let log = uninstall_log(&steps);
+    let _ = std::fs::write(std::env::temp_dir().join("LensUI-uninstall.log"), &log);
+    println!("{}", log);
+    Some(if steps.iter().all(|s| s.ok) { 0 } else { 1 })
+}
+
+pub fn uninstall_log(steps: &[UninstallStep]) -> String {
+    let mut out = String::from("Lens: removing the changes Lens made to Windows\r\n");
+    for s in steps {
+        out.push_str(&format!("[{}] {}: {}\r\n", if s.ok { "ok" } else { "FAILED" }, s.step, s.detail));
+    }
+    out
+}
+
 #[cfg(test)]
 #[path = "tests/win_uninstall.rs"]
 mod tests;

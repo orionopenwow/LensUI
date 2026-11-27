@@ -76,3 +76,7 @@ tools/apps/.media-cache/
 tools/parity/setup/shots/
 tools/parity/magicwaves/shots/
 tools/parity/mission/shots/
+
+# Build-Lens-UI.bat logs and installer smoke-test output
+build-logs/
+installer-out/

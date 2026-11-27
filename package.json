@@ -1,7 +1,7 @@
 {
   "name": "lens-ui",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "description": "Lens — a calm, themeable desktop shell for Windows 10 and 11",
   "scripts": {
