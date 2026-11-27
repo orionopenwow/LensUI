@@ -363,7 +363,13 @@ tr:last-child td { border-bottom: 0; }
 .lx:focus-visible { box-shadow: inset 0 0 0 2px var(--hue); }
 .lx-canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; overflow: hidden; }
 .lx.is-full .lx-canvas { position: fixed; }
-.lx.lx-fade .lw, .lx.lx-fade .lx-top, .lx.lx-fade .lx-icons, .lx.lx-fade { transition: background-color .42s, color .42s, border-color .42s, box-shadow .42s; }
+/* The desk's accent eases between colours (registered so it interpolates; the glow and rings follow). */
+@property --lx-accent { syntax: "<color>"; inherits: true; initial-value: #fafafa; }
+.lx { transition: --lx-accent var(--lens-dur-slower) var(--lens-ease-out); }
+.lx.lx-fade .lw, .lx.lx-fade .lx-top, .lx.lx-fade .lx-icons, .lx.lx-fade { transition: background-color .42s, color .42s, border-color .42s, box-shadow .42s, --lx-accent var(--lens-dur-slower) var(--lens-ease-out); }
+/* A pick in the Theme lab washes the desk in the new accent for a moment (js/desk.js wash()). */
+.lx-wash { position: absolute; inset: 0; z-index: 30; pointer-events: none; background: radial-gradient(circle at var(--x) var(--y), color-mix(in srgb, var(--wash) 34%, transparent), color-mix(in srgb, var(--wash) 10%, transparent) 45%, transparent 75%); animation: lx-wash .9s var(--lens-ease-out) forwards; }
+@keyframes lx-wash { from { opacity: 0; } 25% { opacity: 1; } to { opacity: 0; } }
 .lx-bg { position: absolute; inset: 0; overflow: hidden; filter: brightness(var(--lx-bright, 1)); }
 .lx-wall { position: absolute; inset: -20px; transition: transform .6s var(--lens-ease-out); }
 .lx.is-dragging .lx-glow { visibility: hidden; }
@@ -432,7 +438,6 @@ body:has(.lx.is-dragging) { user-select: none; -webkit-user-select: none; }
 /* ---- the Theme lab ---------------------------------------------------------------------------------- */
 .lab { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; padding: 8px; border-radius: 22px; background: color-mix(in srgb, var(--card) 70%, transparent); box-shadow: 0 0 0 1px var(--line-2), 0 40px 100px -30px rgb(0 0 0 / .5); }
 .lab .desk-host { align-self: start; }
-.lab .desk-host.drop-ok { box-shadow: 0 0 0 3px var(--hue); }
 .lab-side { position: relative; display: flex; flex-direction: column; gap: 12px; padding: 10px 8px 8px 0; min-width: 0; }
 .lab-picks { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .tp { display: flex; align-items: center; gap: 9px; padding: 7px; border: 0; border-radius: 12px; background: rgb(var(--ink) / 0.03); box-shadow: inset 0 0 0 1px var(--line); color: var(--fg-2); font: 0.82rem/1.2 var(--sans); text-align: left; cursor: pointer; transition: background-color .15s, box-shadow .15s; min-width: 0; }
@@ -450,12 +455,36 @@ body:has(.lx.is-dragging) { user-select: none; -webkit-user-select: none; }
 .lab-pop .grid { overflow: auto; display: grid; grid-template-columns: 1fr; gap: 4px; }
 .lab-label { margin: 4px 0 0; font-size: 0.82rem; font-weight: 600; color: var(--fg-2); }
 .lab-label span { font-weight: 400; color: var(--fg-3); }
-.lab-acc { display: flex; gap: 8px; flex-wrap: wrap; }
-.lab-acc button { width: 28px; height: 28px; border-radius: 50%; border: 0; background: var(--c); cursor: grab; box-shadow: inset 0 0 0 1px rgb(127 127 127 / .35); touch-action: none; transition: transform .15s; }
-.lab-acc button:hover { transform: scale(1.12); }
+/* Accent: a radio group of named colours. The picked one gets a ring and a check; its name shows below. */
+.lab-acc, .dw-acc { display: flex; gap: 5px; flex-wrap: wrap; padding: 4px; }
+.lab-acc button, .dw-acc button { position: relative; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border-radius: 50%; border: 0; background: var(--c); color: var(--on, #09090b); cursor: grab; box-shadow: inset 0 0 0 1px rgb(127 127 127 / .35); touch-action: none; transition: transform var(--lens-dur-fast) var(--lens-ease-out), box-shadow var(--lens-dur-fast) var(--lens-ease-out); }
+.lab-acc button.auto, .dw-acc button.auto { background: conic-gradient(from 210deg, var(--c) 0 50%, var(--card) 50% 100%); }
+.lab-acc button svg, .dw-acc button svg { width: 16px; height: 16px; opacity: 0; transform: scale(.6); transition: opacity var(--lens-dur-fast) var(--lens-ease-out), transform var(--lens-dur-fast) var(--lens-ease-out); }
+.lab-acc button:hover, .dw-acc button:hover { transform: scale(1.1); }
+.lab-acc button:active, .dw-acc button:active { cursor: grabbing; }
+.lab-acc button[aria-checked="true"], .dw-acc button[aria-checked="true"] { box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--fg); }
+.lab-acc button[aria-checked="true"] svg, .dw-acc button[aria-checked="true"] svg { opacity: 1; transform: none; }
+.lab-acc button:focus-visible, .dw-acc button:focus-visible { outline: 2px solid var(--hue); outline-offset: 5px; }
+.lab-acc-now { display: flex; align-items: center; gap: 8px; margin: -2px 0 0; min-height: 1.5em; font-size: 0.86rem; color: var(--fg-2); }
+.lab-acc-now i { width: 12px; height: 12px; border-radius: 50%; background: var(--c); box-shadow: inset 0 0 0 1px rgb(127 127 127 / .35); transition: background-color var(--lens-dur-slower) var(--lens-ease-out); }
+.lab-acc-now b { color: var(--fg); font-weight: 600; }
+.lab-acc-now code { font: 0.78rem var(--mono); color: var(--fg-3); }
 .lab-now { margin: auto 0 0; font-size: 0.84rem; color: var(--fg-3); min-height: 1.4em; }
-.acc-ghost { position: fixed; left: 0; top: 0; z-index: 100; width: 28px; height: 28px; border-radius: 50%; pointer-events: none; box-shadow: 0 0 0 3px #fff, 0 8px 20px rgb(0 0 0 / .4); }
-.acc-splash { position: absolute; z-index: 5; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; pointer-events: none; animation: splash .7s ease-out forwards; }
+/* Dragging an accent: a grabbing hand everywhere, the desk outlined as the drop target, and a label
+   on it that says what a drop does; it lights up in the colour once the pointer is over it. */
+html.acc-dragging, html.acc-dragging * { cursor: grabbing !important; user-select: none; -webkit-user-select: none; }
+.lab .desk-host { transition: box-shadow var(--lens-dur-fast) var(--lens-ease-out); }
+/* The lab's active window wears Lens's focus border in the accent. */
+.lab .lw.is-focused { box-shadow: 0 0 0 2px var(--lx-accent), 0 0 36px -8px color-mix(in srgb, var(--lx-accent) 60%, transparent), var(--lens-elev-4); }
+.lab .desk-host.drop-armed { box-shadow: 0 0 0 2px var(--card), 0 0 0 4px color-mix(in srgb, var(--drop, var(--hue)) 55%, transparent); }
+.lab .desk-host.drop-ok { box-shadow: 0 0 0 2px var(--card), 0 0 0 5px var(--drop, var(--hue)), 0 0 40px color-mix(in srgb, var(--drop, var(--hue)) 45%, transparent); }
+.lab-drop { position: absolute; inset: 0; z-index: 50; display: grid; place-items: center; pointer-events: none; border-radius: inherit; opacity: 0; transition: opacity var(--lens-dur-fast) var(--lens-ease-out); }
+.lab-drop span { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 999px; background: rgb(12 12 16 / .86); color: #f4f4f5; font-size: 0.9rem; box-shadow: 0 0 0 1px rgb(255 255 255 / .16), 0 12px 30px rgb(0 0 0 / .4); }
+.lab-drop i { width: 12px; height: 12px; border-radius: 50%; background: var(--drop); }
+.desk-host.drop-armed .lab-drop { opacity: .8; }
+.desk-host.drop-ok .lab-drop { opacity: 1; background: color-mix(in srgb, var(--drop) 12%, transparent); }
+.acc-ghost { position: fixed; left: 0; top: 0; z-index: 100; width: 30px; height: 30px; border-radius: 50%; pointer-events: none; box-shadow: 0 0 0 3px #fff, 0 8px 20px rgb(0 0 0 / .4); }
+.acc-splash { position: absolute; z-index: 51; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; pointer-events: none; animation: splash .7s var(--lens-ease-out) forwards; }
 @keyframes splash { from { scale: .3; opacity: .7; } to { scale: 30; opacity: 0; } }
 @media (max-width: 980px) { .lab { grid-template-columns: 1fr; } .lab-side { padding: 4px; } .lab-picks { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); } }
 
@@ -857,9 +886,17 @@ button.ov-media { border: 0; padding: 0; cursor: pointer; aspect-ratio: 5 / 3; }
 #f-dock .docks-row { max-width: 1100px; margin: 8px auto 0; }
 
 /* The calm loop under each exhibit: a caption, three progress dots, Pause. */
-.xbar { display: flex; align-items: center; gap: 14px; margin-top: 12px; padding: 0 6px; min-height: 40px; }
-.xcap { flex: 1; min-width: 0; margin: 0; color: var(--fg-2); font-size: 0.98rem; line-height: 1.45; text-wrap: pretty; transition: opacity .5s var(--lens-ease-out); }
+/* The caption strip under each exhibit: a solid matte bar (never text over the scene), the step's
+   number and label, then one clear sentence at reading size. */
+.xbar { display: flex; align-items: center; gap: 16px; margin-top: 12px; padding: 14px 16px 14px 18px; min-height: 64px; border-radius: 16px; background: var(--card); box-shadow: 0 0 0 1px var(--line-2); }
+.xcap { flex: 1; min-width: 0; margin: 0; display: flex; align-items: baseline; gap: 14px; color: var(--fg); font-size: 1.08rem; line-height: 1.45; text-wrap: pretty; transition: opacity var(--lens-dur-slower) var(--lens-ease-out); }
+.xcap-n { flex: none; display: inline-flex; align-items: baseline; gap: 8px; }
+.xcap-k { font: 600 0.8rem var(--mono); color: var(--fg-2); }
+.xcap-l { font-weight: 700; color: var(--fg); white-space: nowrap; }
+.xcap-l::after { content: ""; display: inline-block; width: 1px; height: 1em; margin-left: 14px; vertical-align: -0.15em; background: var(--line-2); }
+.xcap-t { min-width: 0; font-weight: 500; }
 .xcap.is-fade { opacity: 0; }
+@media (max-width: 700px) { .xcap { flex-direction: column; gap: 4px; font-size: 1rem; } .xcap-l::after { display: none; } .xbar { padding: 12px 14px; } }
 .xdots, .sc-dots { display: flex; gap: 6px; flex: none; }
 .xdots i, .sc-dots i { width: 6px; height: 6px; border-radius: 50%; background: rgb(var(--ink) / .2); transition: background .5s, width .5s var(--lens-ease-out); }
 .xdots i.on, .sc-dots i.on { width: 18px; border-radius: 3px; background: var(--fg); }
@@ -868,10 +905,52 @@ button.ov-media { border: 0; padding: 0; cursor: pointer; aspect-ratio: 5 / 3; }
 .x-pause .i-play, .sc-play .i-play, .x-pause[aria-pressed="true"] .i-pause, .sc-play[aria-pressed="true"] .i-pause { display: none; }
 .x-pause[aria-pressed="true"] .i-play, .sc-play[aria-pressed="true"] .i-play { display: block; }
 @media (prefers-reduced-motion: reduce) { .xdots, .x-pause, .sc-dots, .sc-play { display: none; } .xcap { transition: none; } }
+
+/* ---- the Dock widget: the real top bar and dock in a short strip of desktop, with its pickers ---- */
+.dockw { display: grid; gap: 16px; max-width: 1180px; margin: 8px auto 0; }
+.dockw-frame { padding: 8px; border-radius: 24px; background: var(--card); box-shadow: 0 0 0 1px var(--line-2), 0 40px 100px -40px rgb(0 0 0 / .55); }
+.dockw-frame .desk-host { border-radius: 16px; }
+.dockw-ctl { display: grid; gap: 14px; padding: 16px 18px; border-radius: 20px; background: var(--card); box-shadow: 0 0 0 1px var(--line); }
+.dw-row { display: grid; gap: 8px; }
+.dw-split { grid-template-columns: auto minmax(0, 1fr); gap: 28px; align-items: start; }
+.dw-split > div { display: grid; gap: 8px; }
+.dw-l { margin: 0; font-size: 0.82rem; font-weight: 600; color: var(--fg-2); }
+.dw-styles, .dw-edges { display: flex; flex-wrap: wrap; gap: 6px; }
+.dw-chip { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: rgb(var(--ink) / .04); box-shadow: inset 0 0 0 1px var(--line); color: var(--fg-2); font: 550 0.9rem var(--sans); cursor: pointer; transition: background-color var(--lens-dur-fast) var(--lens-ease-out), box-shadow var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out); }
+.dw-chip:hover { background: rgb(var(--ink) / .08); color: var(--fg); }
+.dw-chip[aria-checked="true"] { background: var(--fg); color: var(--bg); box-shadow: none; }
+.dw-chip:focus-visible { outline: 2px solid var(--hue); outline-offset: 2px; }
+.dw-edge-ic { position: relative; width: 18px; height: 14px; border-radius: 3px; box-shadow: inset 0 0 0 1.5px currentColor; opacity: .85; }
+.dw-edge-ic i { position: absolute; background: currentColor; border-radius: 1px; }
+.dw-edge[data-edge="bottom"] .dw-edge-ic i { left: 4px; right: 4px; bottom: 2px; height: 2.5px; }
+.dw-edge[data-edge="top"] .dw-edge-ic i { left: 4px; right: 4px; top: 2px; height: 2.5px; }
+.dw-edge[data-edge="left"] .dw-edge-ic i { top: 3px; bottom: 3px; left: 2px; width: 2.5px; }
+.dw-edge[data-edge="right"] .dw-edge-ic i { top: 3px; bottom: 3px; right: 2px; width: 2.5px; }
+.dw-info { margin: 0; font-size: 0.95rem; color: var(--fg-2); min-height: 1.5em; }
+.dw-info b { color: var(--fg); }
+.dw-chips { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 20px auto 0; padding: 0; max-width: 900px; }
+.dw-chips li { padding: 6px 12px; border-radius: 999px; font-size: 0.86rem; color: var(--fg-2); box-shadow: inset 0 0 0 1px var(--line); }
+@media (max-width: 760px) { .dw-split { grid-template-columns: 1fr; gap: 14px; } }
+
+/* ---- Magic Mouse: the Lens cloud pointer, its hold ring, and the grabbed area ---- */
+.mm-ptr { position: absolute; left: 0; top: 0; z-index: 3; width: 44px; height: 44px; margin: -6px 0 0 -6px; pointer-events: none; will-change: transform; }
+.mm-cloud { position: absolute; left: 6px; top: 6px; width: 30px; height: 30px; border-radius: 50%; box-shadow: 0 6px 18px rgb(0 0 0 / .45); }
+.mm-cloud::before { content: ""; position: absolute; left: -5px; top: -5px; width: 0; height: 0; border-left: 9px solid #f4f4f5; border-bottom: 9px solid transparent; z-index: 1; filter: drop-shadow(0 1px 1px rgb(0 0 0 / .5)); }
+.mm-ring { position: absolute; inset: -1px; width: 46px; height: 46px; transform: rotate(-90deg); fill: none; stroke: #fafafa; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 120; stroke-dashoffset: 120; opacity: 0; }
+.mm-ptr.is-held .mm-ring { opacity: 1; stroke-dashoffset: 0; transition: stroke-dashoffset .6s linear, opacity .1s; }
+.mm-grab { position: absolute; left: 0; top: 0; z-index: 1; border-radius: 6px; pointer-events: none; background: rgb(255 255 255 / .06); box-shadow: 0 0 0 2px #fafafa, 0 0 0 9999px rgb(6 6 10 / .38); outline: 1.5px dashed rgb(9 9 11 / .7); outline-offset: -1px; }
+.mm-grab.is-done { box-shadow: 0 0 0 2px #fafafa, 0 0 0 9999px rgb(6 6 10 / .5); }
+.mm-grab[hidden] { display: none; }
+.center-fine { text-align: center; margin: 16px auto 0; max-width: 720px; }
+
+/* ---- the agentic desk: the Lens cursor and the voice card float over the real desk ---- */
+.ag-desk-wrap { padding: 6px; border-radius: 20px; background: var(--card); box-shadow: 0 0 0 1px var(--line-2), 0 40px 100px -40px rgb(0 0 0 / .55); }
+.ag-desk-wrap .desk-host { border-radius: 14px; }
+.ag-layer { position: absolute; left: 0; top: 0; width: 100%; height: 100%; border: 0; z-index: 45; pointer-events: none; background: transparent; color-scheme: normal; }
 .sc-t { color: var(--fg-2); font-size: 0.96rem; }
 
 /* Agentic desktop: the browser with Claude Code's request, the real card for the risky step, the plan. */
-.agent-x { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px 24px; align-items: start; max-width: 1100px; }
+.agent-x { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 20px 24px; align-items: start; max-width: 1100px; margin: 0 auto; }
 .agent-x .xbar { grid-column: 1 / -1; }
 .agent-main { position: relative; }
 .ag-card { position: absolute; right: 2%; top: 4%; width: 36%; z-index: 2; filter: drop-shadow(0 24px 40px rgb(0 0 0 / .5)); }
@@ -909,16 +988,41 @@ button.mini, a.mini { cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .mini { transition: none; } .mini.is-on, .mini:hover { transform: none; } }
 @media (max-width: 520px) { .mini-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
 
-/* Lens Apps: roomy cards, Lens's own matte icon set. */
-#apps .app-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; max-width: 1000px; margin: 0 auto; }
-#apps .apt { flex-direction: row; align-items: center; gap: 16px; padding: 18px 18px; border-radius: 18px; overflow: visible; }
+/* Lens Apps: roomy cards, each with a real screenshot from the project's own repo on top (or Lens's
+   drawn tile when the repo has none) in a matte frame, then the name, who makes it, licence and Get. */
+#apps .app-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; max-width: 1120px; margin: 0 auto; }
+#apps .apt { flex-direction: column; gap: 0; padding: 10px; border-radius: 20px; overflow: visible; transition: box-shadow var(--lens-dur-fast) var(--lens-ease-out); }
+#apps .apt:hover, #apps .apt:focus-within { box-shadow: 0 0 0 1px var(--line-2); }
+.apt-shot { margin: 0; aspect-ratio: 16 / 10; border-radius: 12px; overflow: hidden; background: var(--sunk); box-shadow: inset 0 0 0 1px var(--line); position: relative; }
+.apt-shot img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+.apt-shot::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgb(var(--ink) / .08); pointer-events: none; }
+.apt-shot.is-glyph { display: grid; place-items: center; background: linear-gradient(160deg, rgb(var(--ink) / .06), rgb(var(--ink) / .02)), var(--sunk); }
+.apt-shot.is-glyph .app-ic { width: 84px; height: 84px; border-radius: 24px; }
+.apt-shot.is-glyph .app-ic svg { width: 40px; height: 40px; max-width: 40px; max-height: 40px; }
+#apps .apt-body { flex: 1; display: flex; align-items: flex-start; gap: 14px; padding: 14px 6px 4px; }
+#apps .apt .get-pill { margin-top: 2px; }
+#apps .apt-t { gap: 2px; }
 #apps .apt-t h3 a { color: inherit; text-decoration: none; }
 #apps .apt-t h3 a:hover { text-decoration: underline; }
+#apps .apt-line { font-size: 0.86rem; color: var(--fg-2); }
+#apps .apt-by { font-size: 0.78rem; color: var(--fg-3); }
+#apps .apt-by a { color: var(--fg-2); text-decoration: underline; text-decoration-color: var(--line-2); text-underline-offset: 2px; }
+#apps .apt-by a:hover { color: var(--fg); text-decoration-color: currentColor; }
+.apt-credit { margin: 8px 6px 2px; font-size: 0.72rem; line-height: 1.4; color: var(--fg-3); }
+#apps .apps-fine { max-width: 760px; margin: 28px auto 0; text-align: center; }
 .app-ic { flex: none; display: grid; place-items: center; width: 56px; height: 56px; border-radius: 16px; color: var(--fg); background: linear-gradient(160deg, rgb(var(--ink) / .07), rgb(var(--ink) / .03)); box-shadow: inset 0 0 0 1px rgb(var(--ink) / .08), inset 0 1px 0 rgb(255 255 255 / .04); }
 .app-ic svg { width: 28px; height: 28px; }
 .app-ic .acc { stroke: var(--a); fill: none; }
 .app-ic .acc circle, .app-ic .acc rect { fill: var(--a); stroke: none; }
-@media (max-width: 900px) { #apps .app-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 560px) { #apps .app-grid { grid-template-columns: 1fr; gap: 12px; } }
-
+@media (max-width: 1000px) { #apps .app-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; } }
+@media (max-width: 600px) { #apps .app-grid { grid-template-columns: 1fr; gap: 16px; } }
+@media (prefers-reduced-motion: reduce) { #apps .apt { transition: none; } }
 #apps .apt-t h3 { margin: 0; font-size: 1rem; }
+.dw-acc button, .dw-acc button:active { cursor: pointer; }
+/* Reserve each desk's room before its script sizes it (no layout shift): the same ratios js/desk.js uses. */
+#dock-desk { aspect-ratio: 10 / 3; }
+#agent-desk { aspect-ratio: 16 / 9; }
+@media (max-width: 860px) { #dock-desk { aspect-ratio: 100 / 62; } }
+@media (max-width: 700px) { #agent-desk { aspect-ratio: 1 / 1; } }
+.mx-snip[hidden] { display: none; }
+.mx-snip { z-index: 2; }

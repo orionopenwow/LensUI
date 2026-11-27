@@ -6,6 +6,8 @@
 //!
 //! * Every style but Taskbar: a comfortable fixed width (`SETTINGS_W`), widened to the pill only
 //!   when the pill is wider, centred on the pill, and fused onto it (1 px overlap, no seam).
+//! * Unified: exactly like Floating (same width rule, centred, fused on top of the pill). Its pill
+//!   floats `UNIFIED_FLOAT_GAP` above the edge, so the pill's top is that much higher.
 //! * Taskbar: like the Windows 11 Start menu. A fixed panel above the bar with Windows' gap,
 //!   at the start side when the icons are left-aligned, centred when they are centred. Never fused.
 //!
@@ -22,6 +24,24 @@ pub const WIN_GAP: f64 = 12.0;
 pub const TASKBAR_H: f64 = 48.0;
 /// Margin kept free at the monitor's sides.
 pub const SIDE_MARGIN: f64 = 12.0;
+
+/// Gap the Unified style's pill floats above the Dock edge, logical px (on top of the user's
+/// `dock.groundedMarginBottom`). Must match `.dock-style-unified` in DockSurface.css.
+pub const UNIFIED_FLOAT_GAP: f64 = 8.0;
+
+/// Extra gap (physical px) between the edge and the pill for a style: only Unified floats.
+pub fn float_gap(style: &str, scale: f64) -> i32 {
+    if style.eq_ignore_ascii_case("unified") {
+        (UNIFIED_FLOAT_GAP * scale).round() as i32
+    } else {
+        0
+    }
+}
+
+/// Top of a bottom Dock's pill in physical px (estimate; the watcher prefers the measured rect).
+pub fn pill_top(m: &Monitor, dock: &DockInput) -> i32 {
+    m.bottom - dock.pill_h - dock.margin_bottom - float_gap(dock.style, m.scale)
+}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Monitor {
@@ -97,7 +117,7 @@ pub fn flyout_rect_bottom(m: &Monitor, dock: &DockInput, own_w_logical: f64, des
         let bar = (TASKBAR_H * s).round() as i32;
         (m.bottom - bar.max(dock.pill_h) - dock.margin_bottom, (WIN_GAP * s).round() as i32, false)
     } else {
-        (m.bottom - dock.pill_h - dock.margin_bottom, 0, true)
+        (pill_top(m, dock), 0, true)
     };
     // Room between the Top Bar and the bar. A 400 px floor keeps Settings usable on short
     // screens, but never taller than the room itself: on a small or highly scaled display
@@ -136,8 +156,16 @@ mod tests {
         }
     }
 
-    const STYLES: [(&str, f64); 6] =
-        [("floating", 640.0), ("slim", 420.0), ("taskbar", 1920.0), ("studio", 900.0), ("minimal", 360.0), ("split", 1500.0)];
+    const STYLES: [(&str, f64); 8] = [
+        ("floating", 640.0),
+        ("slim", 420.0),
+        ("taskbar", 1920.0),
+        ("studio", 900.0),
+        ("minimal", 360.0),
+        ("split", 1500.0),
+        ("islands", 1920.0),
+        ("unified", 980.0),
+    ];
 
     #[test]
     fn width_never_follows_a_narrow_pill_or_a_full_width_bar() {
@@ -177,8 +205,7 @@ mod tests {
             for (style, pill) in STYLES.iter().filter(|(s, _)| *s != "taskbar") {
                 let d = dock(style, "center", *pill, scale);
                 let r = settings_rect_bottom(&m, &d, 720.0);
-                let pill_top = m.bottom - d.pill_h - d.margin_bottom;
-                assert_eq!(r.y + r.h as i32, pill_top + 1, "{style}@{scale}");
+                assert_eq!(r.y + r.h as i32, pill_top(&m, &d) + 1, "{style}@{scale}");
                 assert!((r.x + r.w as i32 / 2 - m.w / 2).abs() <= 1, "{style}@{scale} centred");
                 assert!(r.y >= m.top, "{style}@{scale} below the top bar");
             }
@@ -276,6 +303,34 @@ mod tests {
         let pill_top = m.bottom - d.pill_h - d.margin_bottom;
         assert_eq!(r.y + r.h as i32, pill_top + 1, "still fused to the pill");
         assert!(r.y >= m.top);
+    }
+
+    #[test]
+    fn unified_opens_like_floating_above_its_floating_pill() {
+        for scale in [1.0, 1.25, 1.5, 2.0] {
+            let m = mon(scale);
+            for pill in [300.0, 640.0, 980.0, 1400.0] {
+                let f = dock("floating", "center", pill, scale);
+                let u = dock("unified", "center", pill, scale);
+                // Same width rule as Floating: never narrow, never the whole screen.
+                assert_eq!(settings_width(&m, &u, SETTINGS_W), settings_width(&m, &f, SETTINGS_W), "@{scale} pill {pill}");
+                let w = settings_width(&m, &u, SETTINGS_W) as f64 / scale;
+                assert!(w >= SETTINGS_W - 1.0 && w <= 1920.0 - 2.0 * SIDE_MARGIN + 1.0, "@{scale}: {w}");
+                for (own, desired) in [(SETTINGS_W, 720.0), (SEARCH_W, 412.0)] {
+                    let rf = flyout_rect_bottom(&m, &f, own, desired);
+                    let ru = flyout_rect_bottom(&m, &u, own, desired);
+                    assert_eq!((ru.x, ru.w, ru.h), (rf.x, rf.w, rf.h), "@{scale} pill {pill}");
+                    // Fused on the pill, which floats the gap higher than Floating's.
+                    let gap = (UNIFIED_FLOAT_GAP * scale).round() as i32;
+                    assert_eq!(ru.y + ru.h as i32, pill_top(&m, &u) + 1);
+                    assert_eq!(ru.y, (rf.y - gap).max(m.top));
+                    assert!(ru.y >= m.top);
+                }
+            }
+        }
+        assert_eq!(float_gap("Unified", 1.5), 12);
+        assert_eq!(float_gap("floating", 1.5), 0);
+        assert!(!opens_like_windows("unified"));
     }
 
     #[test]

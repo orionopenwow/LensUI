@@ -108,6 +108,19 @@ export const DockScenePreview: React.FC<PreviewProps> = ({ styleId, accent = "va
         pill(icons.slice(0, 4).map((c, i) => icon(c, 7, i, i < 2)), { padding: "3px 6px", borderRadius: 99 }),
         pill(tray(), { padding: "4px 6px", borderRadius: 99 }));
       break;
+    case "unified":
+      // One floating pill: launcher, apps, a hairline, tray, bell and a two-line clock.
+      dock = h("div", { style: { position: "absolute", left: "50%", bottom: 6, transform: "translateX(-50%)" } },
+        pill([
+          h("span", { key: "l", style: { width: 7, height: 7, borderRadius: 2, border: `1.5px solid ${ink(0.6)}`, flexShrink: 0 } }),
+          ...icons.slice(0, 4).map((c, i) => icon(c, 8, i, i < 2)),
+          h("span", { key: "div", style: { width: 1, height: 9, background: ink(0.18), margin: "0 1px" } }),
+          ...tray(),
+          h("span", { key: "clk", style: { display: "flex", flexDirection: "column", gap: 1.5 } },
+            h("span", { style: { width: 11, height: 2.5, borderRadius: 1, background: ink(0.7) } }),
+            h("span", { style: { width: 11, height: 1.5, borderRadius: 1, background: ink(0.4) } })),
+        ], { borderRadius: 99, padding: "3px 7px" }));
+      break;
     default:
       dock = h("div", { style: { position: "absolute", left: "50%", bottom: 6, transform: "translateX(-50%)" } },
         pill(icons.slice(0, 5).map((c, i) => icon(c, 9, i, i < 2)), { borderRadius: 8, padding: "4px 6px" }));

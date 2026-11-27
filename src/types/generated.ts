@@ -1169,7 +1169,7 @@ export interface DockConfig {
   separatorsAfter: string[];
   /** Live window thumbnails in the Dock hover card, like the Windows taskbar. On by default. */
   livePreviews: boolean;
-  /** Dock shape: "floating" | "slim" | "taskbar" | "studio" | "minimal" | "split". */
+  /** Dock shape: "floating" | "slim" | "taskbar" | "studio" | "minimal" | "split" | "islands" | "unified". */
   style: string;
   /** Icon alignment for the Taskbar style: "center" | "left". */
   alignment: string;

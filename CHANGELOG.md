@@ -81,6 +81,19 @@ up and migrates `%APPDATA%\LensUI` where it can.
   Windows' own accent back.
 
 ### Added
+- **Unified Dock style.** One floating pill: the Launcher first, your apps, then the tray, a
+  notification bell with a count and a two-line clock (the time, and "Thu 26 Nov" below it). Pick
+  it in Settings › Dock & Bar or in the setup wizard. Settings and Search open above it at the same
+  width as on Floating.
+- **Window carousel.** Pointing at an app with two or more windows shows them as a carousel: the
+  current window large in the middle with its title and a close button, its neighbours peeking in,
+  and dots below. Scroll, use ‹ ›, the arrow keys or the dots to move; click to switch to it.
+- **Window-count marks on every Dock style.** A short dash under an app with one window, three
+  small dots under one with several.
+- **The Dock reflows smoothly** when apps are pinned, unpinned, reordered, opened or closed
+  (instant with reduced motion).
+- **Pin glyphs in the Launcher.** Apps pinned to the Dock show a small pin; right-click to pin or
+  unpin.
 - **Pointer halo switch** (Settings › Dock & Bar › Top Bar). The see-through ring that shows where
   clicks pass through the Top Bar can be turned off, and it is never drawn while Windows'
   transparency effects are off.

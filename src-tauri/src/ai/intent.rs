@@ -100,6 +100,8 @@ pub const DOCK_STYLES: &[(&[&str], &str)] = &[
     (&["studio"], "studio"),
     (&["minimal", "minimalist", "icons only"], "minimal"),
     (&["split"], "split"),
+    (&["islands"], "islands"),
+    (&["unified", "one pill", "single pill"], "unified"),
 ];
 
 /// Playground scenes: (spoken names, scene id). Must match src/playground scene ids.

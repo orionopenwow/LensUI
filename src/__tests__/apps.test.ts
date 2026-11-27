@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { existsSync, statSync } from "node:fs";
 import catalogJson from "../../catalog/apps/catalog.json";
 import { validateCatalog, validateApp, isWingetId, isHttpsUrl } from "../apps/validate";
 import { filterApps, resolveApp, categoryFor, recommend, homeSections, score } from "../apps/search";
@@ -183,6 +184,18 @@ describe("media", () => {
     }
     expect(n).toBeGreaterThan(80);
     expect(catalog.apps.filter((a) => a.media.icon).length).toBeGreaterThanOrEqual(40);
+  });
+  test("card thumbnails: pinned in the project's own repos, made, and small", () => {
+    const withThumb = catalog.apps.filter((a) => a.thumb);
+    expect(withThumb.length).toBeGreaterThanOrEqual(8);
+    for (const a of withThumb) {
+      expect(a.thumb!.src).toMatch(/^https:\/\/raw\.githubusercontent\.com\/[^/]+\/[^/]+\/[0-9a-f]{40}\//);
+      expect(a.thumb!.site).toBe(`docs/media/apps/${a.id}.webp`);
+      expect(!!a.author).toBe(true);
+      const f = `${import.meta.dir}/../../${a.thumb!.site}`;
+      expect(existsSync(f)).toBe(true);
+      expect(statSync(f).size).toBeLessThanOrEqual(60 * 1024);
+    }
   });
   test("tints are stable and avoid muddy hues", () => {
     for (const a of catalog.apps) {

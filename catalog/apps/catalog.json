@@ -97,6 +97,11 @@
       "publisher": "ArtCraft (storytold)",
       "homepage": "https://getartcraft.com",
       "repo": "https://github.com/storytold/artcraft",
+      "author": "storytold",
+      "thumb": {
+        "src": "https://raw.githubusercontent.com/storytold/github-media/22a27373707b13f48fc56405f1f89ca143c43d5d/character-posing.webp",
+        "site": "docs/media/apps/artcraft.webp"
+      },
       "install": {
         "method": "githubRelease",
         "repo": "storytold/artcraft",
@@ -859,7 +864,12 @@
       "licenseVerified": false,
       "publisher": "ArtCraft (storytold)",
       "homepage": "https://getartcraft.com/apps/wordcraft",
-      "repo": null,
+      "repo": "https://github.com/storytold/wordcraft",
+      "author": "storytold",
+      "thumb": {
+        "src": "https://raw.githubusercontent.com/storytold/wordcraft/c369c3a20befef8742f8913128cacd79002435d6/docs/images/hero.png",
+        "site": "docs/media/apps/wordcraft.webp"
+      },
       "install": {
         "method": "via",
         "via": "craft-launcher",
@@ -942,7 +952,12 @@
       "licenseVerified": false,
       "publisher": "ArtCraft (storytold)",
       "homepage": "https://getartcraft.com/apps/deckcraft",
-      "repo": null,
+      "repo": "https://github.com/storytold/deckcraft",
+      "author": "storytold",
+      "thumb": {
+        "src": "https://raw.githubusercontent.com/storytold/deckcraft/7fbdc085ebfd6ded43abd3d12a87377a7a0fa852/docs/images/editor.png",
+        "site": "docs/media/apps/deckcraft.webp"
+      },
       "install": {
         "method": "via",
         "via": "craft-launcher",
@@ -1023,7 +1038,12 @@
       "licenseVerified": false,
       "publisher": "ArtCraft (storytold)",
       "homepage": "https://getartcraft.com/apps/gridcraft",
-      "repo": null,
+      "repo": "https://github.com/storytold/gridcraft",
+      "author": "storytold",
+      "thumb": {
+        "src": "https://raw.githubusercontent.com/storytold/gridcraft/927d4d60a6da2db2971b82994f0b79ac7aba3faf/docs/images/hero-sales.png",
+        "site": "docs/media/apps/gridcraft.webp"
+      },
       "install": {
         "method": "via",
         "via": "craft-launcher",
@@ -1187,6 +1207,11 @@
       "publisher": "jub0t",
       "homepage": "https://concatenate.pages.dev",
       "repo": "https://github.com/jub0t/Concat",
+      "author": "jub0t",
+      "thumb": {
+        "src": "https://raw.githubusercontent.com/jub0t/Concat/c8bdeb9868b0114e82678e6e26a00e35e1b75df8/assets/editor.png",
+        "site": "docs/media/apps/concat.webp"
+      },
       "stars": "11.9k",
       "install": {
         "method": "githubRelease",
@@ -1281,6 +1306,11 @@
       "publisher": "degenview",
       "homepage": "https://github.com/degenview/degenview",
       "repo": "https://github.com/degenview/degenview",
+      "author": "degenview",
+      "thumb": {
+        "src": "https://raw.githubusercontent.com/degenview/degenview/471f5dacf9445cb40595d12a7569a5babbed0789/assets/screenshots/hero.png",
+        "site": "docs/media/apps/degenview.webp"
+      },
       "stars": null,
       "install": {
         "method": "githubRelease",
@@ -1485,6 +1515,11 @@
       "publisher": "AFFiNE",
       "homepage": "https://affine.pro",
       "repo": "https://github.com/toeverything/AFFiNE",
+      "author": "toeverything",
+      "thumb": {
+        "src": "https://raw.githubusercontent.com/toeverything/AFFiNE/5444d929c22b6114fbb1519ccb3ea180c2cd84d4/blocksuite/docs-site/images/affine-demo.jpg",
+        "site": "docs/media/apps/affine.webp"
+      },
       "install": {
         "method": "winget",
         "wingetId": "ToEverything.AFFiNE",
@@ -1864,6 +1899,8 @@
       "publisher": "Krita Foundation",
       "homepage": "https://krita.org",
       "repo": "https://invent.kde.org/graphics/krita",
+      "author": "KDE",
+      "thumb": null,
       "install": {
         "method": "winget",
         "wingetId": "KDE.Krita",
@@ -2013,6 +2050,8 @@
       "publisher": "Blender Foundation",
       "homepage": "https://www.blender.org",
       "repo": "https://projects.blender.org/blender/blender",
+      "author": "Blender Foundation",
+      "thumb": null,
       "install": {
         "method": "winget",
         "wingetId": "BlenderFoundation.Blender",
@@ -2237,6 +2276,8 @@
       "publisher": "OBS Project",
       "homepage": "https://obsproject.com",
       "repo": "https://github.com/obsproject/obs-studio",
+      "author": "OBS Project",
+      "thumb": null,
       "install": {
         "method": "winget",
         "wingetId": "OBSProject.OBSStudio",
@@ -3582,6 +3623,11 @@
       "publisher": "Ollama",
       "homepage": "https://ollama.com",
       "repo": "https://github.com/ollama/ollama",
+      "author": "Ollama",
+      "thumb": {
+        "src": "https://raw.githubusercontent.com/ollama/ollama/8ae8acb81afba9c3c67adf08190964eb7d1207ef/docs/images/ollama-settings.png",
+        "site": "docs/media/apps/ollama.webp"
+      },
       "install": {
         "method": "winget",
         "wingetId": "Ollama.Ollama",
@@ -3862,6 +3908,11 @@
       "publisher": "orionopenwow",
       "homepage": "https://orionopenwow.github.io/ThumbDesk/",
       "repo": "https://github.com/orionopenwow/ThumbDesk",
+      "author": "orionopenwow",
+      "thumb": {
+        "src": "https://raw.githubusercontent.com/orionopenwow/ThumbDesk/81ed6cded116e2cd999e925b80e5bb73f4874333/docs/assets/thumbdesk_ui_screenshot.png",
+        "site": "docs/media/apps/thumbdesk.webp"
+      },
       "install": {
         "method": "githubRelease",
         "repo": "orionopenwow/ThumbDesk",

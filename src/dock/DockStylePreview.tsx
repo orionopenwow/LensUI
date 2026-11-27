@@ -92,6 +92,25 @@ export const DockStylePreview: React.FC<{ style: DockStyleId; selected?: boolean
         </>
       );
     }
+    case "unified": {
+      // One pill: launcher, apps, a hairline, then tray, bell and a two-line clock.
+      const rw = rowW(5, 6, 2);
+      const w = 6 + 2 + rw + 4 + 1 + 4 + 18 + 4;
+      const x = (W - w) / 2;
+      const y = H - 11;
+      const dx = x + 3 + 6 + 2 + rw + 3;
+      return frame(
+        <>
+          <rect className="dsp-pill" x={x} y={y} width={w} height={11} rx={5.5} />
+          <rect className="dsp-sys" x={x + 3} y={y + 3} width={6} height={5} rx={1.5} />
+          {icons(x + 3 + 6 + 2, y + 2.5, 5, 6, 2, "u")}
+          <rect className="dsp-sys" x={dx} y={y + 2.5} width={0.8} height={6} />
+          <rect className="dsp-sys" x={dx + 4} y={y + 3.5} width={7} height={2} rx={1} />
+          <rect className="dsp-sys" x={dx + 13} y={y + 2.5} width={8} height={2.2} rx={1} />
+          <rect className="dsp-sys" x={dx + 13} y={y + 6} width={8} height={1.4} rx={0.7} />
+        </>
+      );
+    }
     default: {
       const rw = rowW(6, 6, 2);
       const x = (W - rw - 8) / 2;
