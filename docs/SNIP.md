@@ -14,7 +14,8 @@ Everything is **off until you turn it on** (Settings › Lens Snip), local, and 
 | Capture | Region (with snapping to windows and UI Automation element edges), window (rendered on its own with `PrintWindow`, even when covered), screen, all screens, last region, freeform lasso, 3/5/10 s delay, optional pointer. Frozen-screen overlay with a loupe (8×, pixel grid, coordinates, hex colour), size label with the monitor's scale, arrow-key nudge (Alt+arrows resize), Tab to switch modes. |
 | Studio (before save) | Arrow, box, highlight, text, numbered steps (renumber on delete), pixelate, blur, spotlight, pen, crop; 7 colours, 4 widths; undo/redo (100 steps); select + Delete. |
 | Hide sensitive details | Windows OCR on this PC → suggestions for emails, phone numbers, card numbers (Luhn), API keys/tokens (known prefixes, `key=value`, `Bearer x`, high-entropy strings), IPv4/IPv6, links with secrets. Each one ticks on/off; **Hide all** takes the likely ones. Hidden areas are burned into the exported pixels, and the words under them become `•••` in every text Lens copies or sends. |
-| Text | OCR text panel, **Copy text** (2), translate in place (8) through Lens Intelligence — local model by default; cloud only through the AI privacy setting, with a "Needs your OK" card. |
+| Live text | The **Select text** tool (L): the words OCR found are selectable on the image. Drag across words, double-click a line, Shift+click to extend, or use the arrow keys (Shift extends, Home/End, Ctrl+A). A small bar follows the selection: **Copy** (Ctrl+C or Enter), **Highlight** and **Hide**, each snapped to the words and one undo step. Links, email addresses, phone numbers and sign-in codes found in the snip are listed as one-press copies. Words under a hidden area copy as `•••` and never produce a chip. |
+| Text | Only the text the exported image still shows: words cropped away or outside a freeform outline are left out of every copy and hand-off. OCR text panel, **Copy text** (2), translate in place (8) through Lens Intelligence — local model by default; cloud only through the AI privacy setting, with a "Needs your OK" card. |
 | Frame | Off · Soft · Vivid · Mono · Theme (gradient from the active theme), padding, rounded corners, shadow. |
 | Actions bar | `1` Copy · `2` Copy text · `3` Save · `4` Pin · `5` Shelf · `6` Paste to Claude · `7` Ask · `8` Translate · `9` Share · `0` Send to…, plus Ctrl+C / Ctrl+Shift+C / Ctrl+S, arrows + Enter, Esc. **Recent** chips for the targets you used last. A drag handle drops the PNG into any app. |
 | Paste to Claude | **Claude Desktop**: image on the clipboard, Claude brought forward — you press Ctrl+V; Lens sends nothing. **Lens Command**: opens Command with the snip attached (image path + OCR text); Command's AI privacy rules decide where it's answered. |
@@ -24,6 +25,15 @@ Everything is **off until you turn it on** (Settings › Lens Snip), local, and 
 | Scrolling capture | Experimental: wheel messages posted only to the chosen window (pointer never moves), frames stitched by row matching that ignores sticky headers/footers and the scrollbar; stops at the end, 40 steps or 20 000 px. |
 | History | Local library of every snip you copy, save, pin, share or send: OCR-searchable, `#tags`, keep (pin) to protect from retention, reopen in the studio. Index and images sealed with DPAPI under `%APPDATA%\LensUI\snip\history`. Never synced. Retention by days, count and size. |
 | Print Screen | Optional. Sets `HKCU\Control Panel\Keyboard\PrintScreenKeyForSnippingEnabled` to 0 and registers Print Screen; the original value — including "didn't exist" — is backed up once and restored exactly when you turn it off, turn Snip off, or close Lens. A machine policy can still keep the key; Lens says so and your own shortcut keeps working. |
+
+## Live text: where it comes from
+
+Rewrite-light of an idea several tools share, built from their public behaviour and docs only (no
+code copied): Live Text in macOS, **Text actions** in the Windows Snipping Tool, and PowerToys
+Text Extractor (MIT, [microsoft/PowerToys](https://github.com/microsoft/PowerToys)). Lens goes
+further in two places: a selection can be highlighted or hidden exactly, and it follows the
+studio's rules (hidden words stay hidden, cropped words are gone). Model: `src/snip/liveText.ts`;
+UI: `src/snip/LiveTextLayer.tsx`. Windows OCR runs on this PC; nothing is sent.
 
 ## What Lens Snip won't do
 
@@ -43,9 +53,10 @@ Everything is **off until you turn it on** (Settings › Lens Snip), local, and 
 | `src-tauri/src/snip/{config,recent,printscreen,record,history,image,service}.rs` | Settings, Recent targets, Print Screen plan, ffmpeg args, library, PNG/DIB, state + storage. |
 | `src-tauri/src/snip/{win,ocr,share}.rs` | Windows: capture, windows, UI Automation, clipboard, registry; Windows OCR; share sheet. |
 | `src-tauri/src/commands/snip.rs` | 32 commands, hotkeys, recording, pins, scrolling capture. |
+| `src/snip/{liveText.ts,LiveTextLayer.tsx,keys.ts,historyModel.ts,StudioPopover.tsx,studioShapes.tsx}` | Live text model and layer, studio key routing, history ordering and Undo, the hand-off cards and shape helpers split out of `Studio.tsx`. |
 | `src/snip/*` | Overlay (`Select`), `Studio`, `Pin`, `Record`, `HistoryView`, pure models (`geom`, `annotations`, `actions`), `render` (burn-in), `api`. |
 | `src/components/SnipCard.tsx` | Settings card. |
-| `tools/parity/snip/*` | Screenshot gallery (11 scenes × 2 themes) — runs in CI. |
+| `tools/parity/snip/*` | Screenshot gallery (15 scenes × 2 themes) — runs in CI. |
 
 ## Shared-file edits made in this PR (kept minimal)
 
@@ -98,6 +109,7 @@ Everything is **off until you turn it on** (Settings › Lens Snip), local, and 
 - Capture on mixed-DPI multi-monitor setups (overlay spans monitors with different scale; Lens re-applies the window rect after Windows' DPI change), negative coordinates, HDR displays (BitBlt returns SDR).
 - `PrintWindow(PW_RENDERFULLCONTENT)` on Chromium, UWP and DirectX apps; fallback to on-screen pixels.
 - UI Automation element snapping latency (150 ms budget) on heavy apps.
+- Live text: OCR word boxes line up with the words at 100 %, 150 % and 200 % scale; drag-select across two columns; highlight and hide land on the words.
 - Windows OCR language packs and accuracy on small text; auto-redact false positives in real screenshots.
 - Clipboard image paste into Office, Discord, Slack, Claude Desktop (CF_DIB + PNG).
 - Share sheet from the overlay window (desktop-app `IDataTransferManagerInterop`), targets that only accept files.

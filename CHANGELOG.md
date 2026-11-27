@@ -38,6 +38,16 @@ up and migrates `%APPDATA%\LensUI` where it can.
   (no certificate is possible there), which is why it's a preview; Settings explains the limits.
 - **Music setup and Tweaks.** A short three-step setup at the top of Settings › Music (skip it any
   time) and a Tweaks section that groups the advanced options.
+- **Live text in Lens Snip.** In the studio, press L (or the new Select text tool) and the words
+  Windows OCR found become selectable on the image: drag across them, double-click a line, or use
+  the arrow keys with Shift. Copy just those words, highlight them, or hide them, each snapped to
+  the text. Links, email addresses, phone numbers and sign-in codes in the snip get a one-press
+  copy. Everything is read on this PC and nothing is sent. Not yet confirmed on a real PC (OCR word
+  boxes come from Windows).
+- **Undo when you remove a snip from history or an item from the Shelf.** A snip is really deleted
+  five seconds after Remove; a Shelf item can be put back for six.
+- **The Menu key and Shift+F10 open a Shelf item's menu** with "Lens ›" focused, and focus returns
+  to the item when the menu closes.
 - **Dock keys: the Dock works from the keyboard.** With a Dock icon focused (Tab from search, or
   after a click) the arrow keys along the Dock move between icons, Home and End jump to the ends,
   and typing finds an app by name: the others step back and a small chip shows what you typed
@@ -73,6 +83,22 @@ up and migrates `%APPDATA%\LensUI` where it can.
   "Media controls in the Top Bar" moved from the pop-out to the same page.
 
 ### Fixed
+- **Text you cropped out of a snip no longer goes with it.** Copy text, Shelf, Paste to Claude, Ask
+  and Translate now use only the words still inside the crop (and inside a freeform outline).
+- **Cropping in the Snip studio no longer stretches the picture or misplaces new marks.** The crop
+  is an outline while you edit and is applied when you copy, save or share.
+- **Enter on a focused Snip studio button no longer also runs Copy**, and typing in the language
+  list no longer triggers shortcuts.
+- **Snip history shows the newest search** when answers arrive out of order, and says so when
+  Keep, Remove or opening a snip fails.
+- **Voice conversation no longer leaves a listener behind when interrupted**, and its hidden
+  window no longer redraws every second.
+- **Failures in Snip, voice, Magic Start and the Shelf no longer pass silently.** They are said
+  where you are, or written to the log with what was being done.
+- **Magic Start keeps the selected row in view and announces it** to screen readers.
+- **"Snip this window" and "Open in Lens Browser" now appear in the Magic window** (Snip while
+  Lens Snip is on; Lens Browser for browser windows). Snip opens in window mode with that window
+  under the pointer, so one click takes it.
 - **Windows on the wrong Dock icon.** A window Lens couldn't name (an app running as
   administrator) could sit on any pinned app with "app" in its name, such as WhatsApp, and one
   window could show on two pins (Notepad on both Notepad and Notepad++). A window now sits on one
