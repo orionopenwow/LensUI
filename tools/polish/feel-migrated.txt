@@ -92,3 +92,4 @@ src/dock/DockStylePreview.tsx
 src/dock/DockSystemArea.tsx
 src/dock/DockWindowCarousel.tsx
 src/themeux/AccentStrengthPreview.tsx
+src/settings/RecentlyChanged.tsx

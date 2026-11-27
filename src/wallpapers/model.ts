@@ -178,6 +178,26 @@ export function paletteFromRgba(rgba: ArrayLike<number>, count = 5): string[] {
 }
 
 /** Palette ordered dark to light: the order a backdrop or a theme wants. */
+/** A palette colour as it is copied: "#RRGGBB" in capitals ("#abc" → "#AABBCC"); null if it isn't one. */
+export function hexText(hex: string): string | null {
+  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return null;
+  const h = m[1].length === 3 ? m[1].replace(/./g, (c) => c + c) : m[1];
+  return `#${h.toUpperCase()}`;
+}
+
+/** The colours a card can copy: its real palette, never the grey stand-in shown while a file's
+ *  colours are still being read. At most five, as "#RRGGBB". */
+export function copyablePalette(card: Pick<Card, "palette" | "item" | "meta">): string[] {
+  if (card.item && !card.meta.palette.length) return [];
+  const out: string[] = [];
+  for (const raw of card.palette) {
+    const hex = hexText(raw);
+    if (hex && out.length < 5) out.push(hex);
+  }
+  return out;
+}
+
 export function byLightness(palette: string[]): string[] {
   return [...palette].sort((a, b) => srgbToOklab(hexToRgb(a))[0] - srgbToOklab(hexToRgb(b))[0]);
 }

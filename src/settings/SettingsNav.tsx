@@ -37,6 +37,9 @@ import { preloadSettingsPage } from "./pages";
 import { ModePill } from "./simple/ModePill";
 import { inSimpleNav, isAdvancedHit, morePages, type SettingsMode } from "./simple/mode";
 import { oops } from "../ui/oops";
+import { stepIndex } from "./navKeys";
+
+export { stepSidebarFromHeading } from "./navKeys";
 
 const ICONS: Record<string, React.FC<{ size?: number; strokeWidth?: number; color?: string; "aria-hidden"?: boolean }>> = {
   quick: SlidersHorizontal,
@@ -75,7 +78,8 @@ export const SettingsNav: React.FC<{
   /** Simple or Advanced (docs/SETTINGS_SIMPLE.md). Advanced when omitted. */
   mode?: SettingsMode;
   onMode?: (m: SettingsMode) => void;
-  onNavigate: (page: PageId, section?: string) => void;
+  /** `fromSidebar`: the person picked the page in the list (focus then moves to its heading). */
+  onNavigate: (page: PageId, section?: string, fromSidebar?: boolean) => void;
   onWizard: () => void;
 }> = ({ page, mode = "advanced", onMode, onNavigate, onWizard }) => {
   const [showMore, setShowMore] = useState(false);
@@ -124,9 +128,8 @@ export const SettingsNav: React.FC<{
     const i = items.indexOf(document.activeElement as HTMLButtonElement);
     if (i < 0) return;
     e.preventDefault();
-    const next =
-      e.key === "Home" ? 0 : e.key === "End" ? items.length - 1 : (i + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
-    items[next]?.focus();
+    const next = stepIndex(i, items.length, e.key);
+    if (next !== null) items[next]?.focus();
   };
 
   return (
@@ -202,7 +205,7 @@ export const SettingsNav: React.FC<{
                   data-page={p.id}
                   className={`cc-nav-btn ${page === p.id ? "active" : ""} ${simple && !inSimpleNav(p.id) ? "ss-nav-extra" : ""}`}
                   aria-current={page === p.id ? "page" : undefined}
-                  onClick={() => onNavigate(p.id)}
+                  onClick={() => onNavigate(p.id, undefined, true)}
                   onPointerEnter={() => preloadSettingsPage(p.id)}
                   onFocus={() => preloadSettingsPage(p.id)}
                 >

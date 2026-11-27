@@ -10,6 +10,8 @@
 
 > **Fable pass (Dock family, `fable/dock-20261126`, 2026-11-26):** `DockSurface.tsx` split along the MODULES.md seams (2,916 → about 1,500 lines; rendered output byte-identical on every Dock visual state before any intended change). Bugs B-106 to B-110 fixed. Big win: **Dock keys** (arrows, type to find, window list from the keyboard). Flourishes: a pin drops in, badges roll, the search home arrives in order, the Dock's notice. Press weights (`data-weight`) on every Dock, Launcher and carousel control, ready for the feel primitives (PR #131). Everything below marked "(harness)" was checked headless only.
 
+> **Quick wins (`feat/settings-quick-wins`, 2026-11-27):** the Dock's own menu has "Next wallpaper"; an app's menu has "Don't style this app" while Lens draws window buttons or borders (writes the per-app window rule `exclude`, Undo on the notice, "Style this app again" to turn back; never for protected apps; `src/dock/styleMenu.ts`). Not yet confirmed on a real PC.
+
 > **Feel adoption (`fable/settings-20261127`, 2026-11-27):** the Dock's own `:active` rules are removed and its window runs the shared weighted press (`main.tsx`); Settings and Quick settings grow from the gear and the system-area buttons (`data-opens`); the search filter highlight slides (`useSlidingIndicator`); the focused mark is the contrast-checked accent and running marks carry a hint of it. The Dock's search opens inside the Dock, so no button there opens the Search pop-out. Needs a look on a real PC: the press together with magnification.
 
 ## Rundown

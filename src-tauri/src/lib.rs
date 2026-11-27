@@ -1,6 +1,7 @@
 mod agent_cli;
 mod ai;
 mod config;
+mod settings_history;
 mod report;
 mod voice;
 #[cfg(windows)]
@@ -548,6 +549,8 @@ pub fn run() {
             commands::rightclick::clipper_write,
             commands::theme::get_config,
             commands::theme::save_config_cmd,
+            commands::theme::settings_history_cmd,
+            commands::theme::settings_undo_cmd,
             commands::dock::set_dock_pill_width,
             commands::dock::set_dock_pill_rect_cmd,
             commands::dock::set_topbar_hit_rects_cmd,

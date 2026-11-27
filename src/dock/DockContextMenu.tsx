@@ -3,13 +3,14 @@
 // DockSurface.tsx (docs/features/dock.md, quick win 5); the Dock owns the open state and where the
 // menu goes, this file owns the rows. Every row is a menu item with a press weight (DESIGN §5.2),
 // and anything that fails says so in the Dock's notice (src/dock/act.ts).
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import {
   AppWindow,
   ArrowUpToLine,
   ExternalLink,
   FolderOpen,
+  Images,
   Lock,
   Minus,
   Monitor,
@@ -18,6 +19,7 @@ import {
   PanelLeft,
   PanelRight,
   PanelTop,
+  PaintbrushVertical,
   Pin,
   PinOff,
   PlusSquare,
@@ -30,9 +32,12 @@ import {
   X,
 } from "lucide-react";
 import type { LensConfig, RunningWindow } from "../types/lens";
+import type { WindowRule } from "../types/generated";
 import { appLabel, dockDo, dockFail } from "./act";
 import { MENU_ICON_SIZES } from "./advanced";
 import { DockLensPan, DockLensRow } from "./LensMenuHost";
+import { styleRow, withLeftAlone } from "./styleMenu";
+import { toast } from "../ui/toastBus";
 import type { DockContextMenu as DockMenu, DockEdge, DockExtras } from "./model";
 import "./DockContextMenu.css";
 
@@ -90,6 +95,40 @@ function Row({ icon, label, onClick, danger, weight = "light" }: { icon: React.R
   );
 }
 
+/** For an app's menu: its window rules and whether it is protected, once Lens Core answers. */
+function useStyleRowData(process: string | undefined, exePath: string | undefined) {
+  const [rules, setRules] = useState<WindowRule[] | null>(null);
+  const [isProtected, setProtected] = useState<boolean | null>(null);
+  useEffect(() => {
+    setRules(null);
+    setProtected(null);
+    if (!process) return;
+    let live = true;
+    // Background reads: if either fails the row simply doesn't show.
+    invoke<WindowRule[]>("get_window_rules_cmd")
+      .then((r) => live && setRules(Array.isArray(r) ? r : []))
+      .catch(() => live && setRules(null));
+    invoke<boolean[]>("protected_processes_cmd", { processes: [exePath || process] })
+      .then((f) => live && setProtected(Array.isArray(f) ? !!f[0] : null))
+      .catch(() => live && setProtected(null));
+    return () => {
+      live = false;
+    };
+  }, [process, exePath]);
+  return { rules, isProtected };
+}
+
+/** "Don't style this app" / "Style this app again": writes the per-app rule, with Undo on the toast. */
+function setLeftAlone(rules: WindowRule[], process: string, alone: boolean, name: string) {
+  invoke("set_window_rules_cmd", { rules: withLeftAlone(rules, process, alone) })
+    .then(() =>
+      toast(alone ? `Lens leaves ${name} as Windows draws it.` : `Lens styles ${name} again.`, {
+        action: { label: "Undo", onClick: () => void invoke("set_window_rules_cmd", { rules }).catch(dockFail("undo that")) },
+      }),
+    )
+    .catch(dockFail(alone ? `stop styling ${name}` : `style ${name} again`));
+}
+
 const EDGES: { id: DockEdge; label: string; Icon: typeof PanelLeft }[] = [
   { id: "left", label: "left", Icon: PanelLeft },
   { id: "bottom", label: "bottom", Icon: PanelBottom },
@@ -124,6 +163,9 @@ export function DockContextMenu({
     closeMenu();
   };
   const name = menu.kind === "app" ? appLabel(menu.pinnedApp?.name ?? menu.launchPath) : "";
+  const front = menu.kind === "app" ? menu.windows[0] : undefined;
+  const styleData = useStyleRowData(front?.processName, front?.exePath);
+  const styleChoice = front ? styleRow(config, front.processName, styleData.rules, styleData.isProtected) : null;
   const label = menu.kind === "app" ? `${menu.pinnedApp?.name ?? menu.title} menu` : menu.kind === "folder" ? `${menu.folder.name} menu` : "Dock menu";
   return (
     <>
@@ -219,6 +261,14 @@ export function DockContextMenu({
               onClick={then(() => void dockDo("launch_app_advanced_cmd", { path: menu.launchPath, mode: "reveal" }, `show where ${name} is`))}
             />
 
+            {styleChoice && front && styleData.rules && (
+              <Row
+                icon={<PaintbrushVertical size={14} strokeWidth={2.4} className="dcm-fixed" />}
+                label={styleChoice.label}
+                onClick={then(() => setLeftAlone(styleData.rules!, front.processName, styleChoice.alone, name))}
+              />
+            )}
+
             {menu.pinnedApp && !locked && (
               <Row
                 icon={<SeparatorVertical size={14} strokeWidth={2.4} className="dcm-fixed" />}
@@ -268,6 +318,11 @@ export function DockContextMenu({
             <Row icon={<Palette size={14} strokeWidth={2.4} />} label="Theme and look" onClick={then(() => openPopoutTab("theme"))} />
             <Row icon={<PanelBottom size={14} strokeWidth={2.4} />} label="Dock and Top Bar" onClick={then(() => openPopoutTab("dock"))} />
             <Row icon={<Search size={14} strokeWidth={2.4} />} label="Search" onClick={then(openSearch)} />
+            <Row
+              icon={<Images size={14} strokeWidth={2.4} />}
+              label="Next wallpaper"
+              onClick={then(() => void dockDo("wallpapers_step_cmd", { direction: "next", hour: new Date().getHours() }, "change the wallpaper"))}
+            />
 
             <div className="dock-ctx-sep" role="separator" />
 

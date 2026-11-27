@@ -9,7 +9,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { Clock, EyeOff, FolderOpen, Heart, Images, Layers, Palette, Play, Search, Shuffle, Sparkles, Tag, Trash2, X } from "lucide-react";
+import { Check, Clock, EyeOff, FolderOpen, Heart, Images, Layers, Palette, Play, Search, Shuffle, Sparkles, Tag, Trash2, X } from "lucide-react";
 import { ToastHost, toast } from "../ui";
 import { usePresence } from "../ui/motion";
 import { useLensState } from "../hooks/useLensState";
@@ -30,6 +30,8 @@ import {
   fanPose,
   fanWindow,
   fileCard,
+  copyablePalette,
+  hexText,
   isLive,
   moveIndex,
   nextFit,
@@ -55,7 +57,9 @@ const FanCard: React.FC<{
   current: boolean;
   full: string | null;
   onPick: () => void;
-}> = ({ card, offset, current, full, onPick }) => {
+  /** A palette chip on the front card was clicked: copy its colour instead of picking. */
+  onCopy: (hex: string) => void;
+}> = ({ card, offset, current, full, onPick, onCopy }) => {
   const pose = fanPose(offset);
   const [ready, setReady] = useState(false);
   useEffect(() => setReady(false), [full]);
@@ -80,7 +84,14 @@ const FanCard: React.FC<{
         "--dim": String(pose.dim),
         "z-index": String(pose.layer),
       })}
-      onClick={onPick}
+      onClick={(e) => {
+        // The chips are pictures inside the card, not buttons of their own (no nested buttons);
+        // the same colours are real buttons under the fan for the keyboard.
+        const chip = focused ? (e.target as HTMLElement).closest<HTMLElement>(".wsw-chip[data-hex]") : null;
+        const hex = chip?.dataset.hex ? hexText(chip.dataset.hex) : null;
+        if (hex && copyablePalette(card).includes(hex)) onCopy(hex);
+        else onPick();
+      }}
     >
       <span className="wsw-art" ref={vars<HTMLSpanElement>({ "--art": card.art })} />
       {card.thumb && <img className="wsw-img" src={convertFileSrc(card.thumb)} alt="" draggable={false} decoding="async" />}
@@ -278,6 +289,24 @@ export const WallpaperPicker: React.FC<{ windowControls?: React.ReactNode; onOpe
       .catch((e) => toast.error(errorText(e, "There is nothing to shuffle yet.")));
   }, [focusOn]);
 
+  // Palette chips: a click copies the colour. The chip shows a tick for a moment as well as the toast.
+  const [copied, setCopied] = useState<string | null>(null);
+  const copiedTimer = useRef(0);
+  useEffect(() => () => window.clearTimeout(copiedTimer.current), []);
+  const copyHex = useCallback((raw: string) => {
+    const hex = hexText(raw);
+    if (!hex) return;
+    navigator.clipboard
+      .writeText(hex)
+      .then(() => {
+        setCopied(hex);
+        window.clearTimeout(copiedTimer.current);
+        copiedTimer.current = window.setTimeout(() => setCopied(null), 1400);
+        toast(`Copied ${hex}`);
+      })
+      .catch(() => toast.error("Couldn't copy that colour. Windows may be using the clipboard; try again."));
+  }, []);
+
   const cycleFit = useCallback(() => {
     wallpapersApi
       .host()
@@ -350,6 +379,8 @@ export const WallpaperPicker: React.FC<{ windowControls?: React.ReactNode; onOpe
       return;
     }
     if (typing || e.ctrlKey || e.altKey || e.metaKey) return;
+    // Enter on a focused button is that button's click, not "set this wallpaper" as well (B-145).
+    if (e.key === "Enter" && (e.target as HTMLElement).closest("button")) return;
     const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
     const act: Record<string, () => void> = {
       ArrowRight: () => go(1),
@@ -500,6 +531,7 @@ export const WallpaperPicker: React.FC<{ windowControls?: React.ReactNode; onOpe
                 current={!!view && view.current === card.id && !host?.scene}
                 full={full && full.id === card.id ? full.url : null}
                 onPick={() => (from + i === at ? void apply(card) : setIndex(from + i))}
+                onCopy={copyHex}
               />
             ))}
           </div>
@@ -520,6 +552,26 @@ export const WallpaperPicker: React.FC<{ windowControls?: React.ReactNode; onOpe
                 </span>
               )}
               {focus.item && <span>{sizeLabel(focus.item.bytes)}</span>}
+              {copyablePalette(focus).length > 0 && (
+                <span className="wsw-swatches" role="group" aria-label="Colours in this wallpaper">
+                  {copyablePalette(focus).map((hex, i) => {
+                    const done = copied === hex;
+                    return (
+                      <button
+                        key={`${hex}-${i}`}
+                        type="button"
+                        data-weight="light"
+                        className={`wsw-swatch ${done ? "is-copied" : ""}`}
+                        aria-label={done ? `${hex} copied` : `Copy ${hex}`}
+                        ref={vars<HTMLButtonElement>({ "--sw": hex })}
+                        onClick={() => copyHex(hex)}
+                      >
+                        {done && <Check size={10} strokeWidth={3} aria-hidden />}
+                      </button>
+                    );
+                  })}
+                </span>
+              )}
               {(focus.meta.collections.length > 0 || (isFile && focus.meta.tags.length > 0)) && (
                 <span className="wsw-labels">
                   {focus.meta.collections.map((c) => (

@@ -8,6 +8,19 @@ up and migrates `%APPDATA%\LensUI` where it can.
 ## [Unreleased]
 
 ### Added
+- **Recently changed, with Undo.** Settings › Quick settings lists the last five settings that
+  changed, by you or by an agent ("Opacity · 0.96 → 0.8 · 2 min ago"), each with Undo. Undo puts
+  the old values back through the normal save, so the taskbar, startup and window buttons follow,
+  and it never overwrites a setting you changed again since. A slider drag is one change. The list
+  is a small file in the Lens data folder (`settings-history.json`); it never leaves this PC and
+  never holds keys, tokens or passwords.
+- **Copy a wallpaper's colours.** In the Wallpaper Switcher, click a palette chip on the front card
+  (or the colour buttons under the fan, which the keyboard reaches with Tab) to copy its hex.
+  Lens says "Copied #4A6B8C" and ticks the chip.
+- **Two more rows in the Dock's right-click menus**: "Next wallpaper" in the Dock's own menu, and
+  "Don't style this app" in an app's menu while Lens draws window buttons or borders. It writes the
+  same per-app rule as Settings › Per-app window rules (Lens leaves that app as Windows draws it),
+  with Undo on the notice; "Style this app again" turns it back. Protected apps never show it.
 - **Link rules in Lens Browser.** Send links to a space by site ("github.com goes to Code"), by the
   app they came from ("links from Slack go to Work") or by words in the address. Arc's Air Traffic
   Control rules come over with an Arc import and leave with its undo.
@@ -179,6 +192,8 @@ up and migrates `%APPDATA%\LensUI` where it can.
   "Media controls in the Top Bar" moved from the pop-out to the same page.
 
 ### Fixed
+- Wallpaper Switcher: Enter on a focused button (Favourite, Hide, Fit…) also set the focused
+  wallpaper on the desktop. Now it only presses the button (B-145).
 - Alt+drag, Magic and App hotkeys: the options under each switch can be clicked while the feature
   is off (they were dimmed and ignored the mouse, but still took keyboard focus) (B-58).
 - Text on an accent-coloured button or pill is always readable, the Night light switch keeps its
@@ -275,6 +290,8 @@ up and migrates `%APPDATA%\LensUI` where it can.
   now drawn over other apps too.
 
 ### Changed
+- After you pick a page in the Settings sidebar, keyboard focus moves to the page's heading, so a
+  screen reader reads the new page. ↑/↓ there still walk the sidebar; Tab goes on into the page.
 - **Lens's own app icons are simpler and bolder.** Monitor, Timer, Notes, Calculator, Color, Power,
   Network, Clipboard, Startup, Feeds and Messages (in the Dock, Search, Command and their title
   bars), and Lens's apps on the website, now share one set: a thick white glyph on a plain dark

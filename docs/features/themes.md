@@ -8,6 +8,8 @@
 
 > **Fable pass (`fable/settings-20261127`, 2026-11-27):** the accent reads across Lens. `src/themes/accentTokens.ts` turns the accent, the pack's surfaces and the new `theme.accentStrength` (subtle / balanced / vivid, default balanced) into eight tokens (DESIGN §4.1) that switches, selected states, primary buttons, focus rings, running marks, meters and fill bars read. The accent keeps its hue and moves in lightness until it reaches 3:1; text on it is at least 4.5:1; the selected-row wash is capped so secondary text stays at 4.5:1. Checked for every pack at every strength and for 360 colours of the wheel on every pack. Grey accents write nothing (the monochrome look is unchanged, so are the default goldens); living looks re-derive the tokens for their own colours. No selector is keyed on the accent, so a theme switch costs nothing more (rig 31/31; perf within noise of main). Left: the Lens Cloud featured look, wallpaper quick wins (the palette chips sit inside the card button, so "copy hex" needs the card restructured to stay keyboard-reachable).
 
+> **Quick wins (`feat/settings-quick-wins`, 2026-11-27):** palette chips copy their hex (the front card's chips on click; real buttons under the fan for the keyboard; no nested buttons; only real colours, never the grey stand-in), B-145 fixed (Enter on a picker button also set the wallpaper), "Next wallpaper" in the Dock's menu. **Folder picker dialog skipped:** `tauri-plugin-dialog` is not a dependency; a follow-up can mirror the hand-written Win32 save dialog in `win_plugins::save_theme_with_dialog` with an `IFileOpenDialog` + `FOS_PICKFOLDERS`, which needs a real PC to check. Left: the folder dialog, the Lens Cloud featured look.
+
 ## Rundown
 
 Themes decide how Lens looks: colours, materials, accent, and (only when the person opts in) a look's font and shape. Since #95 a theme never changes the Dock's style, size or position. Around themes sit the creative tools: 12 featured looks plus ~36 more packs, Day & night scheduling, accent from wallpaper, `.lenstheme` import/export, community themes, Living Skies (time/weather-aware skies), Backdrop Lab (GPU gradients, live wallpaper, export), and the Wallpaper Switcher.
@@ -75,9 +77,9 @@ Themes decide how Lens looks: colours, materials, accent, and (only when the per
 ### 7. Wallpaper Switcher
 | Feature | Sub | Status | Evidence |
 |---|---|---|---|
-| Library & picker | Folders, palette chips, fan | works | WALLPAPER_SWITCHER |
+| Library & picker | Folders, palette chips (click copies the hex), fan | works (copy: harness) | WALLPAPER_SWITCHER, `settingsQuickWins.test.ts` |
 | Auto-change | Timer over your files | works | `AutoChangeControls.tsx` |
-| Next wallpaper | Tray + Command intent `next_wallpaper` | works | intent ACTIONS |
+| Next wallpaper | Tray, Dock menu, Command intent `next_wallpaper` | works (Dock row: harness) | intent ACTIONS, `DockContextMenu.tsx` |
 | Wallpaper of the day | Setting exists, no source | not built | Deferred |
 | Per-monitor / span, video thumbnails, folder dialog, sorting | | not built | Deferred |
 
@@ -90,8 +92,8 @@ Themes decide how Lens looks: colours, materials, accent, and (only when the per
 1. **Done (PR #113).** ~~Regenerate THEMES_AUDIT and prune near-duplicates that now differ only by Dock.~~ Since themes are colour-only, pairs listed as differing in "dock" (Green Phosphor/CRT, Claude Light/Claude Light Brand) are visually identical in practice — merge or hide one of each.
 2. **Done (PR #113).** ~~B-39 undo~~: snapshot `folderStyle.theme`, pinned-folder colours and `themeSchedule` before the first theme change in a session; restore on going back.
 3. **Folder picker dialog** for the Wallpaper library (Tauri dialog) — currently paste-a-path only.
-4. **Palette chip click copies hex** (deferred list) — tiny, delightful.
-5. **"Next wallpaper" in the Dock context menu and Top Bar** (deferred list).
+4. **Done (`feat/settings-quick-wins`).** ~~Palette chip click copies hex~~.
+5. **Half done (`feat/settings-quick-wins`).** "Next wallpaper" is in the Dock context menu; the Top Bar is left.
 
 ## Polish assessment
 - **Motion:** theme switch is one frame with no transitions (#88); a single 150 ms whole-window cross-fade (opacity of a snapshot layer) would feel softer without the old flashes — try behind a flag and run the rig.

@@ -91,7 +91,8 @@ import { useGrowFromTrigger } from "../ui/motion/origin";
 import { PAGE_COMPONENTS } from "../settings/pages";
 import { GuideDrawer } from "../guide/GuideDrawer";
 import { openGuide } from "../guide/coach";
-import { SettingsNav, PageIcon } from "../settings/SettingsNav";
+import { SettingsNav, PageIcon, stepSidebarFromHeading } from "../settings/SettingsNav";
+import { RecentlyChanged } from "../settings/RecentlyChanged";
 // Simple-mode cards load only when Simple mode shows them, so Advanced pays nothing for them.
 const SimpleView = React.lazy(() => import("../settings/simple/SimpleView").then((m) => ({ default: m.SimpleView })));
 import { MoreOptions } from "../settings/simple/MoreOptions";
@@ -135,7 +136,21 @@ export const ControlCenterSurface: React.FC = () => {
   const [navTab, setNavTab] = useState<PageId>(tab);
   // Section a deep link asked for (`lens://settings/<page>#<section>`); cleared on manual navigation.
   const [section, setSection] = useState<string | undefined>(() => initial?.section);
-  const navigate = (page: PageId, sec?: string) => {
+  // A page picked in the sidebar puts focus on its heading once it shows (screen readers read the
+  // new page; ↑/↓ on the heading still walk the sidebar, see stepSidebarFromHeading).
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const headingFor = useRef<PageId | null>(null);
+  useEffect(() => {
+    if (headingFor.current !== null && headingFor.current === tab) {
+      headingFor.current = null;
+      headingRef.current?.focus({ preventScroll: true });
+    }
+  });
+  const navigate = (page: PageId, sec?: string, fromSidebar?: boolean) => {
+    if (fromSidebar) {
+      if (page === tab) headingRef.current?.focus({ preventScroll: true });
+      else headingFor.current = page;
+    }
     setNavTab(page);
     startTransition(() => {
       setPage(page);
@@ -417,7 +432,16 @@ export const ControlCenterSurface: React.FC = () => {
               <PageIcon id={tab} size={17} />
             </span>
             <div className="sh-pagehead-text">
-              <h1 className="sh-pagehead-title">{pageDef.label}</h1>
+              <h1
+                ref={headingRef}
+                className="sh-pagehead-title"
+                tabIndex={-1}
+                onKeyDown={(e) => {
+                  if (!e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && stepSidebarFromHeading(e.key)) e.preventDefault();
+                }}
+              >
+                {pageDef.label}
+              </h1>
               <div className="sh-pagehead-desc">{pageDef.description}</div>
             </div>
             {pageDef.winUri && <WinLink uri={pageDef.winUri} label="Windows Settings" compact />}
@@ -428,6 +452,7 @@ export const ControlCenterSurface: React.FC = () => {
           </header>
           <div ref={stageRef} key={tab} className="lens-tab-stage" data-swap={swap.current.dir === "none" ? undefined : swap.current.dir}>
           {modeUnchosen(config) && <ModeHint mode={mode} onChoose={setMode} />}
+          {tab === "quick" && <RecentlyChanged />}
           {simpleCards && (
             <Suspense fallback={<Skeleton label="Loading" shape="page" rows={2} className="sh-page-loading" />}>
             <SimpleView
