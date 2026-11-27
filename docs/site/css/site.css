@@ -906,31 +906,112 @@ button.ov-media { border: 0; padding: 0; cursor: pointer; aspect-ratio: 5 / 3; }
 .x-pause[aria-pressed="true"] .i-play, .sc-play[aria-pressed="true"] .i-play { display: block; }
 @media (prefers-reduced-motion: reduce) { .xdots, .x-pause, .sc-dots, .sc-play { display: none; } .xcap { transition: none; } }
 
-/* ---- the Dock widget: the real top bar and dock in a short strip of desktop, with its pickers ---- */
-.dockw { display: grid; gap: 16px; max-width: 1180px; margin: 8px auto 0; }
+/* ---- the Dock widget: the real top bar and dock on a strip of desktop, then three steps ------------
+   1 Style, 2 Edge, 3 Accent. Each option is a card with a small drawing of the real thing (the app's own
+   DockStylePreview geometry), matte and monochrome; the accent appears only on the picked card. */
+.dockw { --dw-acc: var(--hue); --dw-on: #09090b; --dw-spring: cubic-bezier(.3, 1.35, .5, 1); display: grid; gap: 14px; max-width: 1180px; margin: 8px auto 0; }
 .dockw-frame { padding: 8px; border-radius: 24px; background: var(--card); box-shadow: 0 0 0 1px var(--line-2), 0 40px 100px -40px rgb(0 0 0 / .55); }
 .dockw-frame .desk-host { border-radius: 16px; }
-.dockw-ctl { display: grid; gap: 14px; padding: 16px 18px; border-radius: 20px; background: var(--card); box-shadow: 0 0 0 1px var(--line); }
-.dw-row { display: grid; gap: 8px; }
-.dw-split { grid-template-columns: auto minmax(0, 1fr); gap: 28px; align-items: start; }
-.dw-split > div { display: grid; gap: 8px; }
-.dw-l { margin: 0; font-size: 0.82rem; font-weight: 600; color: var(--fg-2); }
-.dw-styles, .dw-edges { display: flex; flex-wrap: wrap; gap: 6px; }
-.dw-chip { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: rgb(var(--ink) / .04); box-shadow: inset 0 0 0 1px var(--line); color: var(--fg-2); font: 550 0.9rem var(--sans); cursor: pointer; transition: background-color var(--lens-dur-fast) var(--lens-ease-out), box-shadow var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out); }
-.dw-chip:hover { background: rgb(var(--ink) / .08); color: var(--fg); }
-.dw-chip[aria-checked="true"] { background: var(--fg); color: var(--bg); box-shadow: none; }
-.dw-chip:focus-visible { outline: 2px solid var(--hue); outline-offset: 2px; }
-.dw-edge-ic { position: relative; width: 18px; height: 14px; border-radius: 3px; box-shadow: inset 0 0 0 1.5px currentColor; opacity: .85; }
-.dw-edge-ic i { position: absolute; background: currentColor; border-radius: 1px; }
-.dw-edge[data-edge="bottom"] .dw-edge-ic i { left: 4px; right: 4px; bottom: 2px; height: 2.5px; }
-.dw-edge[data-edge="top"] .dw-edge-ic i { left: 4px; right: 4px; top: 2px; height: 2.5px; }
-.dw-edge[data-edge="left"] .dw-edge-ic i { top: 3px; bottom: 3px; left: 2px; width: 2.5px; }
-.dw-edge[data-edge="right"] .dw-edge-ic i { top: 3px; bottom: 3px; right: 2px; width: 2.5px; }
-.dw-info { margin: 0; font-size: 0.95rem; color: var(--fg-2); min-height: 1.5em; }
+/* The desk's backdrop: soft light in the accent and two of the Lens cloud's hues, and a faint horizon.
+   Gradients only (no blur, no backdrop-filter); it eases to a new accent with the rest of the desk. */
+.dw-wall { position: absolute; inset: 0; pointer-events: none; }
+.dw-wall i { position: absolute; display: block; }
+.dw-wall-a { inset: 0; background:
+  radial-gradient(38% 46% at 50% 104%, color-mix(in srgb, var(--lx-accent) 30%, transparent), transparent 72%),
+  radial-gradient(34% 52% at 30% 100%, rgb(76 201 240 / .16), transparent 70%),
+  radial-gradient(34% 52% at 70% 100%, rgb(199 125 255 / .18), transparent 70%),
+  radial-gradient(30% 40% at 12% 0%, rgb(255 95 143 / .08), transparent 70%),
+  radial-gradient(30% 40% at 92% 6%, rgb(255 210 94 / .06), transparent 70%); }
+.dw-wall-b { inset: 0; background-image: radial-gradient(rgb(255 255 255 / .07) 1px, transparent 1.2px); background-size: 22px 22px; -webkit-mask-image: linear-gradient(180deg, transparent 10%, #000 55%, transparent 100%); mask-image: linear-gradient(180deg, transparent 10%, #000 55%, transparent 100%); }
+.dw-wall-h { left: 0; right: 0; top: 62%; height: 1px; background: linear-gradient(90deg, transparent, rgb(255 255 255 / .10), transparent); }
+.lx[data-scheme="light"] .dw-wall-a { opacity: .75; }
+.lx[data-scheme="light"] .dw-wall-b { background-image: radial-gradient(rgb(0 0 0 / .07) 1px, transparent 1.2px); }
+.lx[data-scheme="light"] .dw-wall-h { background: linear-gradient(90deg, transparent, rgb(0 0 0 / .08), transparent); }
+
+/* The live caption: what just changed, in plain words. Old and new lines share one cell and crossfade. */
+.dw-info { display: grid; margin: 0 auto; max-width: 100%; min-height: 3em; align-items: start; justify-items: center; text-align: center; font-size: 0.98rem; color: var(--fg-2); }
+.dw-info-t { grid-area: 1 / 1; max-width: 760px; }
 .dw-info b { color: var(--fg); }
+.dw-now { display: inline-block; margin-left: 6px; padding: 1px 9px; border-radius: 999px; font-size: 0.8rem; color: var(--fg-3); box-shadow: inset 0 0 0 1px var(--line); white-space: nowrap; }
+
+.dockw-ctl { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; padding: 18px 20px 20px; border-radius: 20px; background: var(--card); box-shadow: 0 0 0 1px var(--line); }
+.dw-side { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 18px 28px; align-items: start; }
+.dw-step { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.dw-h { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.dw-n { display: grid; place-items: center; flex: none; width: 20px; height: 20px; border-radius: 50%; font-size: 0.72rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--fg-2); box-shadow: inset 0 0 0 1px var(--line-2); }
+.dw-l { margin: 0; font-size: 0.78rem; font-weight: 650; letter-spacing: .05em; text-transform: uppercase; color: var(--fg-2); }
+.dw-hint { margin: 0 0 0 4px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.86rem; color: var(--fg-3); }
+
+/* Cards: a drawing and a name. Hover steps the fill; a press sinks (medium weight, DESIGN §5.2) and
+   springs back; the ring (.dw-ind) slides to the picked card; the picked card gets the accent. */
+.dw-cards { position: relative; display: grid; gap: 8px; }
+.dw-styles { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.dw-edges { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.dw-card { position: relative; z-index: 1; display: grid; justify-items: center; gap: 6px; min-width: 0; padding: 10px 8px 8px; border: 0; border-radius: 14px; background: rgb(var(--ink) / .035); box-shadow: inset 0 0 0 1px var(--line); color: var(--fg-2); font: 600 0.86rem var(--sans); cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: transform 220ms var(--dw-spring), background-color var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out); }
+.dw-card:hover { background: rgb(var(--ink) / .07); color: var(--fg); }
+.dw-card:active, .dw-card.is-pressed { transform: translateY(1px) scale(.97); background: rgb(var(--ink) / .09); transition: transform 70ms var(--lens-ease-out), background-color 70ms var(--lens-ease-out); }
+.dw-card[aria-checked="true"] { color: var(--fg); background: rgb(var(--ink) / .06); }
+.dw-card:focus { outline: none; }
+.dw-card:focus-visible { outline: 2px solid var(--hue); outline-offset: 3px; }
+.dw-pic { display: block; width: 100%; max-width: 200px; aspect-ratio: 112 / 38; overflow: hidden; border-radius: 6px; }
+.dw-edges .dw-pic { aspect-ratio: 112 / 64; }
+.dw-edges .dw-pic { max-width: 112px; }
+.dw-name { line-height: 1.2; white-space: nowrap; }
+.dw-mark { position: absolute; top: 6px; right: 6px; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--dw-acc); color: var(--dw-on); opacity: 0; transform: scale(.5); transition: opacity var(--lens-dur-fast) var(--lens-ease-out), transform 220ms var(--dw-spring); }
+.dw-mark svg { width: 12px; height: 12px; }
+.dw-card[aria-checked="true"] .dw-mark { opacity: 1; transform: none; }
+.dw-ind { position: absolute; left: 0; top: 0; z-index: 2; border-radius: 14px; box-shadow: inset 0 0 0 2px var(--fg); pointer-events: none; opacity: 0; transition: transform var(--lens-dur-slow) var(--lens-ease-out), opacity var(--lens-dur-fast) var(--lens-ease-out); }
+.dw-ind.is-on { opacity: 1; }
+/* Without the script the picked card still shows its ring. */
+.dw-cards:not(:has(.dw-ind.is-on)) .dw-card[aria-checked="true"] { box-shadow: inset 0 0 0 2px var(--fg); }
+
+/* The drawings: matte and monochrome, in the site's ink; the accent only on the picked card. */
+.dsp { display: block; width: 100%; height: 100%; overflow: visible; }
+.dsp .dsp-screen { fill: rgb(var(--ink) / .035); stroke: rgb(var(--ink) / .16); stroke-width: 1; }
+.dsp .dsp-topbar { fill: rgb(var(--ink) / .1); }
+.dsp .dsp-win { fill: rgb(var(--ink) / .045); stroke: rgb(var(--ink) / .1); stroke-width: .6; }
+.dsp .dsp-winbar { fill: rgb(var(--ink) / .07); }
+.dsp .dsp-pill, .dsp .dsp-bar { fill: var(--sunk); stroke: rgb(var(--ink) / .32); stroke-width: .9; transition: stroke var(--lens-dur-fast) var(--lens-ease-out); }
+.dsp .dsp-ghost { fill: none; stroke: rgb(var(--ink) / .3); stroke-width: .8; stroke-dasharray: 2 2; }
+.dsp .dsp-icon { fill: rgb(var(--ink) / .7); transition: fill var(--lens-dur-fast) var(--lens-ease-out); }
+.dsp .dsp-sys { fill: rgb(var(--ink) / .42); }
+.dsp .dsp-arrow { fill: none; stroke: rgb(var(--ink) / .3); stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; }
+.dsp-expressive .dsp-pill { stroke-width: 1.6; }
+.dsp-dotmatrix .dsp-pill { fill: url(#dsp-dots); }
+.dsp-dotmatrix .dsp-dot { fill: rgb(var(--ink) / .16); }
+.dw-card[aria-checked="true"] .dsp-pill, .dw-card[aria-checked="true"] .dsp-bar, .dw-card[aria-checked="true"] .dsp-ghost { stroke: var(--dw-acc); }
+.dw-card[aria-checked="true"] .dsp-arrow { fill: none; stroke: var(--dw-acc); }
+
+/* Accent swatches, aligned with the cards: no scale on hover (DESIGN §5.2), a medium press. */
+.dockw .dw-acc { gap: 8px; padding: 4px 2px; }
+.dockw .dw-acc button { width: 32px; height: 32px; cursor: pointer; transition: transform 220ms var(--dw-spring), box-shadow var(--lens-dur-fast) var(--lens-ease-out); }
+.dockw .dw-acc button:hover { transform: none; box-shadow: inset 0 0 0 1px rgb(127 127 127 / .35), 0 0 0 2px var(--card), 0 0 0 3px var(--line-2); }
+.dockw .dw-acc button:active, .dockw .dw-acc button.is-pressed { transform: translateY(1px) scale(.94); transition: transform 70ms var(--lens-ease-out); }
+.dockw .dw-acc button[aria-checked="true"] { box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--fg); }
+.dockw .dw-acc button:focus { outline: none; }
+.dockw .dw-acc button:focus-visible { outline: 2px solid var(--hue); outline-offset: 5px; }
+
 .dw-chips { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 20px auto 0; padding: 0; max-width: 900px; }
 .dw-chips li { padding: 6px 12px; border-radius: 999px; font-size: 0.86rem; color: var(--fg-2); box-shadow: inset 0 0 0 1px var(--line); }
-@media (max-width: 760px) { .dw-split { grid-template-columns: 1fr; gap: 14px; } }
+
+@media (max-width: 1040px) {
+  .dw-side { grid-template-columns: 1fr; }
+}
+/* Phones: each step's cards become a strip that scrolls sideways and snaps; nothing wider than the page. */
+@media (max-width: 760px) {
+  .dockw-ctl { padding: 14px 0 16px; gap: 16px; }
+  .dw-h, .dw-step-acc .dw-acc { padding-inline: 14px; }
+  .dw-side { gap: 16px; }
+  .dw-step-style .dw-hint { display: none; }
+  .dw-cards { display: flex; gap: 8px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding-inline: 14px; padding: 2px 14px 6px; scrollbar-width: none; }
+  .dw-cards::-webkit-scrollbar { display: none; }
+  .dw-card { flex: 0 0 auto; width: 132px; scroll-snap-align: start; }
+  .dw-edges .dw-card { width: 96px; }
+  .dw-ind { display: none; }
+  .dw-cards .dw-card[aria-checked="true"] { box-shadow: inset 0 0 0 2px var(--fg); }
+  .dw-info { min-height: 4.5em; font-size: 0.92rem; padding-inline: 4px; }
+}
 
 /* ---- Magic Mouse: the Lens cloud pointer, its hold ring, and the grabbed area ---- */
 .mm-ptr { position: absolute; left: 0; top: 0; z-index: 3; width: 44px; height: 44px; margin: -6px 0 0 -6px; pointer-events: none; will-change: transform; }
@@ -1020,9 +1101,9 @@ button.mini, a.mini { cursor: pointer; }
 #apps .apt-t h3 { margin: 0; font-size: 1rem; }
 .dw-acc button, .dw-acc button:active { cursor: pointer; }
 /* Reserve each desk's room before its script sizes it (no layout shift): the same ratios js/desk.js uses. */
-#dock-desk { aspect-ratio: 10 / 3; }
+#dock-desk { aspect-ratio: 25 / 9; }
 #agent-desk { aspect-ratio: 16 / 9; }
-@media (max-width: 860px) { #dock-desk { aspect-ratio: 100 / 62; } }
+@media (max-width: 767px) { #dock-desk { aspect-ratio: 10 / 7; } }
 @media (max-width: 700px) { #agent-desk { aspect-ratio: 1 / 1; } }
 .mx-snip[hidden] { display: none; }
 .mx-snip { z-index: 2; }

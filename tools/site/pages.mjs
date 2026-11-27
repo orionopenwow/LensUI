@@ -22,15 +22,33 @@ const AGENT_STEPS = [
   ["ask", "Big steps wait", "Booking has a $25 no-show fee, so that step stops on “Needs your OK” until you say yes."],
 ];
 // The Dock widget's pickers, drawn here so the section has its full height before js/home.js runs
-// (no layout shift); js/home.js wires them. Same order as its DOCKS, EDGES and the lab's ACCENTS.
-const DOCK_STYLE_NAMES = ["Floating", "Slim", "Taskbar", "Studio", "Minimal", "Split", "Islands", "Expressive", "Dot Matrix"];
-const DOCK_EDGES = [["bottom", "Bottom"], ["top", "Top"], ["left", "Left"], ["right", "Right"]];
+// (no layout shift); js/home.js wires them from the cards' data attributes. The styles are the app's
+// own list (src/dock/styles.ts via lib/dockstyles.mjs), each drawn with the app's DockStylePreview,
+// so a new style gets a card here with no site change. Accents follow the lab's ACCENTS.
+const DOCK_EDGES = [["bottom", "Bottom", "Along the bottom, under your windows."], ["top", "Top", "Under the top bar, across the top."], ["left", "Left", "Up the left side of the screen."], ["right", "Right", "Up the right side of the screen."]];
+/** A tiny screen with the dock on one edge, in the same drawing language as the style cards. */
+function edgeSvg(edge) {
+  const W = 112, H = 64, T = 5, side = edge === "left" || edge === "right";
+  let dock;
+  if (side) {
+    const h = 6 * 6 + 5 * 2 + 8, y = T + (H - T - h) / 2, x = edge === "left" ? 3 : W - 3 - 11;
+    dock = `<rect class="dsp-pill" x="${x}" y="${y}" width="11" height="${h}" rx="3"/>` + Array.from({ length: 6 }, (_, i) => `<rect class="dsp-icon" x="${x + 2.5}" y="${y + 4 + i * 8}" width="6" height="6" rx="1.5"/>`).join("");
+  } else {
+    const w = 6 * 6 + 5 * 2 + 8, x = (W - w) / 2, y = edge === "top" ? T + 3 : H - 11 - 3;
+    dock = `<rect class="dsp-pill" x="${x}" y="${y}" width="${w}" height="11" rx="3"/>` + Array.from({ length: 6 }, (_, i) => `<rect class="dsp-icon" x="${x + 4 + i * 8}" y="${y + 2.5}" width="6" height="6" rx="1.5"/>`).join("");
+  }
+  const arrow = { bottom: "M56 40v8m-3-3 3 3 3-3", top: "M56 32v-8m-3 3 3-3 3 3", left: "M42 34.5h-8m3-3-3 3 3 3", right: "M70 34.5h8m-3-3 3 3-3 3" }[edge];
+  return `<svg class="dsp dsp-edge" viewBox="0 0 ${W} ${H}" aria-hidden="true" focusable="false"><rect class="dsp-screen" x="0.5" y="0.5" width="111" height="63" rx="3"/><rect class="dsp-topbar" x="0.5" y="0.5" width="111" height="${T}"/><path class="dsp-arrow" d="${arrow}"/>${dock}</svg>`;
+}
+const WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen"];
+const word = (n) => WORDS[n] ?? String(n);
+const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 const PICK_ACCENTS = [["", "Theme's own"], ["#FAFAFA", "Snow"], ["#818CF8", "Iris"], ["#38BDF8", "Sky"], ["#34D399", "Mint"], ["#FBBF24", "Amber"], ["#FB923C", "Tangerine"], ["#FB7185", "Coral"], ["#C084FC", "Violet"]];
 const CHECK_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
 const inkOn = (h) => { const n = parseInt(h.slice(1, 7), 16); return (((n >> 16) & 255) * 299 + ((n >> 8) & 255) * 587 + (n & 255) * 114) / 1000 > 150 ? "#09090b" : "#fafafa"; };
 const radio = (i, inner, cls, extra = "") => `<button type="button" role="radio" class="${cls}" aria-checked="${i === 0}" tabindex="${i ? -1 : 0}"${extra}>${inner}</button>`;
 // The Dock widget's capabilities, as one short line of chips.
-const DOCK_CHIPS = ["Nine styles", "Any edge", "Live window previews", "Calm attention", "Magic from the dock", "Settings joined to the dock"];
+const DOCK_CHIPS = (n) => [`${cap(word(n))} styles`, "Any edge", "Live window previews", "Calm attention", "Magic from the dock", "Settings joined to the dock"];
 // Scenes of the real BrowserSurface (tools/parity/browser/entry.tsx).
 const BROWSER_STEPS = [
   ["home", "One box", "One box for a search, an address or a question."],
@@ -50,7 +68,7 @@ const WHY_BROWSER = [
 // The Dock: what it does (docs/brain/FEATURES.md › Desktop shell and docks). Shown as tiles when the
 // hero desk is on; the Dock widget shows DOCK_CHIPS instead.
 export const DOCK_CAPS = [
-  [S('<rect x="3" y="15" width="18" height="5" rx="2.5"/><rect x="6" y="5" width="12" height="6" rx="2"/>'), "Nine styles", "Floating by default; Taskbar, Slim, Studio, Minimal, Split, Islands and two with their own packs."],
+  [S('<rect x="3" y="15" width="18" height="5" rx="2.5"/><rect x="6" y="5" width="12" height="6" rx="2"/>'), "Ten styles", "Floating by default; Taskbar, Slim, Studio, Minimal, Split, Islands, Unified and two with their own packs."],
   [S('<rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 21v-3h10v3M3 7h3v10H3"/>'), "Any edge", "Bottom, top, left or right, with auto-hide that always comes back."],
   [S('<rect x="4" y="4" width="16" height="10" rx="2"/><path d="M9 18h6M12 14v4"/>'), "Live window previews", "Hover a running app to see its windows, anchored to the icon."],
   [S('<circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4"/>'), "Attention, calmly", "An app that needs you flashes once, bounces once, and stays highlighted until you look."],
@@ -96,7 +114,7 @@ export function home(o) {
   // A stage reserves its room before its frames load (no layout shift).
   return homeHtml(o).replace(/data-w="(\d+)" data-h="(\d+)"/g, (m, w, h) => `${m} style="aspect-ratio:${w}/${h}"`);
 }
-function homeHtml({ visionHref, apps = {}, catalog = [], packs = [], stars = null }) {
+function homeHtml({ visionHref, apps = {}, catalog = [], packs = [], stars = null, dockStyles = [] }) {
   void packs;
   const PAUSE = `<button type="button" class="sb-btn x-pause" data-xpause aria-pressed="false"><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z"/></svg><span class="sr">Pause</span></button>`;
   // The caption strip under each exhibit: a solid matte bar, the step's label and one clear sentence.
@@ -132,19 +150,29 @@ function homeHtml({ visionHref, apps = {}, catalog = [], packs = [], stars = nul
 
 <section id="f-dock" class="sec xsec feature dockw-sec" aria-labelledby="f-dock-h">
   <div class="inner">
-    <div class="head center"><p class="kicker"><span class="k-ic">${IC.dock}</span>Magic Dock + Top Dock</p><h2 id="f-dock-h">One dock, nine ways.</h2><p>The real Lens top bar and dock, live. Pick a style, an edge or an accent: the dock changes in place.</p></div>
+    <div class="head center"><p class="kicker"><span class="k-ic">${IC.dock}</span>Magic Dock + Top Dock</p><h2 id="f-dock-h">One dock, ${word(dockStyles.length)} ways.</h2><p>The real Lens top bar and dock, live. Pick a style, then an edge, then an accent: the dock changes in place.</p></div>
     <div class="dockw" id="dockw">
       <div class="dockw-frame"><div id="dock-desk" class="desk-host"></div></div>
-      <div class="dockw-ctl" aria-label="Dock controls">
-        <div class="dw-row"><p class="dw-l" id="dw-style-l">Style</p><div class="dw-styles" id="dw-styles" role="radiogroup" aria-labelledby="dw-style-l">${DOCK_STYLE_NAMES.map((n, i) => radio(i, esc(n), "dw-chip")).join("")}</div></div>
-        <div class="dw-row dw-split">
-          <div><p class="dw-l" id="dw-edge-l">Edge</p><div class="dw-edges" id="dw-edges" role="radiogroup" aria-labelledby="dw-edge-l">${DOCK_EDGES.map(([id, n], i) => radio(i, `<span class="dw-edge-ic" aria-hidden="true"><i></i></span>${esc(n)}`, "dw-chip dw-edge", ` data-edge="${id}"`)).join("")}</div></div>
-          <div><p class="dw-l" id="dw-acc-l">Accent</p><div class="dw-acc" id="dw-acc" role="radiogroup" aria-labelledby="dw-acc-l">${PICK_ACCENTS.map(([h, n], i) => radio(i, CHECK_SVG, h ? "" : "auto", ` data-acc="${h}" aria-label="${esc(n)}" style="--c:${h || "#fafafa"};--on:${inkOn(h || "#fafafa")}"`)).join("")}</div></div>
+      <p class="dw-info" id="dock-info" aria-live="polite"><span class="dw-info-t"><b>${esc(dockStyles[0]?.label ?? "Floating")}</b> on the bottom edge. ${esc(dockStyles[0]?.description ?? "")}</span></p>
+      <div class="dockw-ctl" role="group" aria-label="Dock controls">
+        <div class="dw-step dw-step-style">
+          <div class="dw-h"><span class="dw-n" aria-hidden="true">1</span><p class="dw-l" id="dw-style-l">Style</p><p class="dw-hint" id="dw-style-hint" aria-hidden="true">${esc(dockStyles[0]?.description ?? "")}</p></div>
+          <div class="dw-cards dw-styles" id="dw-styles" role="radiogroup" aria-labelledby="dw-style-l"><span class="dw-ind" aria-hidden="true"></span>${dockStyles.map((d, i) => radio(i, `<span class="dw-pic">${d.svg}</span><span class="dw-name">${esc(d.label)}</span><span class="dw-mark" aria-hidden="true">${CHECK_SVG}</span>`, "dw-card dw-style", ` data-id="${d.id}" data-style="${d.style}" data-label="${esc(d.label)}" data-line="${esc(d.description)}"${d.shape ? ` data-shape="${d.shape}"` : ""}${d.pack ? ` data-pack="${d.pack}"` : ""} aria-describedby="dw-d-${d.id}" data-weight="medium"`)).join("")}</div>
+          <div hidden>${dockStyles.map((d) => `<span id="dw-d-${d.id}">${esc(d.description)}</span>`).join("")}</div>
         </div>
-        <p class="dw-info" id="dock-info" aria-live="polite"><b>Floating</b> on the bottom edge. <span>A glass pill that floats above your windows.</span></p>
+        <div class="dw-side">
+          <div class="dw-step dw-step-edge">
+            <div class="dw-h"><span class="dw-n" aria-hidden="true">2</span><p class="dw-l" id="dw-edge-l">Edge</p></div>
+            <div class="dw-cards dw-edges" id="dw-edges" role="radiogroup" aria-labelledby="dw-edge-l"><span class="dw-ind" aria-hidden="true"></span>${DOCK_EDGES.map(([id, n, line], i) => radio(i, `<span class="dw-pic">${edgeSvg(id)}</span><span class="dw-name">${esc(n)}</span><span class="dw-mark" aria-hidden="true">${CHECK_SVG}</span>`, "dw-card dw-edge", ` data-edge="${id}" data-label="${esc(n)}" data-line="${esc(line)}" data-weight="medium"`)).join("")}</div>
+          </div>
+          <div class="dw-step dw-step-acc">
+            <div class="dw-h"><span class="dw-n" aria-hidden="true">3</span><p class="dw-l" id="dw-acc-l">Accent</p><p class="dw-hint" id="dw-acc-name" aria-hidden="true">Theme's own</p></div>
+            <div class="dw-acc" id="dw-acc" role="radiogroup" aria-labelledby="dw-acc-l">${PICK_ACCENTS.map(([h, n], i) => radio(i, CHECK_SVG, h ? "" : "auto", ` data-acc="${h}" data-name="${esc(n)}" aria-label="${esc(n)}" style="--c:${h || "#fafafa"};--on:${inkOn(h || "#fafafa")}"`)).join("")}</div>
+          </div>
+        </div>
       </div>
     </div>
-    <ul class="dw-chips" aria-label="What the dock does">${DOCK_CHIPS.map((c) => `<li>${esc(c)}</li>`).join("")}</ul>
+    <ul class="dw-chips" aria-label="What the dock does">${DOCK_CHIPS(dockStyles.length).map((c) => `<li>${esc(c)}</li>`).join("")}</ul>
   </div>
 </section>
 
