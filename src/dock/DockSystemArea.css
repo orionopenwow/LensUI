@@ -128,3 +128,45 @@
 .dock-sys-inline .dock-sys-icon {
   width: calc(var(--dock-effective-icon-size, 40px));
 }
+
+/* Unified style: time bold on top, "Thu 26 Nov" below; the bell carries a small count. */
+.dock-sys-clock-stacked {
+  align-items: center;
+  line-height: 1.15;
+  gap: 1px;
+}
+
+.dock-sys-clock-stacked .dock-sys-time {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.dock-sys-clock-stacked .dock-sys-date {
+  font-size: 10.5px;
+  font-weight: 500;
+}
+
+.dock-sys-count {
+  position: absolute;
+  top: 3px;
+  right: 1px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 1;
+  /* Same red count as the app badges in the Dock. */
+  background: #ef4444;
+  color: #ffffff;
+  border: 1.5px solid var(--lens-pack-elevated, #18181b);
+  pointer-events: none;
+}
+
+.dock-sys.is-vertical .dock-sys-clock-stacked .dock-sys-date {
+  font-size: 9.5px;
+}
