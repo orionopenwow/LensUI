@@ -1,5 +1,6 @@
 //! Dashboard widget commands (docs/plans/MAGIC_WAVES.md §4, wave M2). Every command refuses while
-//! `magicWaves.dashboard` or `magicWaves.widgets` is off. Hosts are only ever approved by the
+//! `magicWaves.widgets` is off, or while neither the Dashboard nor desktop widgets
+//! (`magicWaves.desktopWidgets`, which can show an approved widget on the desktop) is on. Hosts are only ever approved by the
 //! person, through the Dashboard's consent screen; the page can't approve one any other way, and
 //! nothing here is reachable from the control catalogue.
 use crate::magic_waves::widgets::{self as w, Fetched, WidgetInstance, WidgetStore};
@@ -10,8 +11,13 @@ use tauri::{AppHandle, Emitter, Manager, State};
 /// Sent to every window when the widget list or the fetch switch changes.
 pub(crate) const EVT_CHANGED: &str = "lens://widgets-changed";
 
+/// Widgets are on, and there is somewhere to show them: the Dashboard or desktop widgets.
 fn flags_on(state: &AppState) -> bool {
-    state.config.lock().map(|c| c.magic_waves.dashboard && c.magic_waves.widgets).unwrap_or(false)
+    state
+        .config
+        .lock()
+        .map(|c| c.magic_waves.widgets && (c.magic_waves.dashboard || c.magic_waves.desktop_widgets))
+        .unwrap_or(false)
 }
 
 fn require(state: &AppState) -> Result<(), String> {
