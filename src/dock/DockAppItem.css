@@ -1,0 +1,11 @@
+/* A Dock badge whose number changes rolls up into place (transform and opacity only; with
+ * reduced motion the duration token is 1 ms, so it simply changes). */
+@keyframes dock-badge-roll {
+  from {
+    opacity: 0;
+    transform: translateY(45%);
+  }
+}
+.dock-badge-roll {
+  animation: dock-badge-roll var(--lens-dur-fast) var(--lens-ease-out);
+}

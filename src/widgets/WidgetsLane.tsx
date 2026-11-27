@@ -2,7 +2,7 @@
 // that names every site a widget will fetch from, a Sources page to take approvals back, and one
 // switch that stops all widget fetching. Lens fetches; widgets never touch the network.
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, Plus, ShieldCheck, X } from "lucide-react";
+import { ArrowDown, ArrowUp, LayoutGrid, Plus, ShieldCheck, X } from "lucide-react";
 import { AdaptiveCard } from "./AdaptiveCard";
 import { validateCard, type CardElement } from "./format";
 import { GALLERY, galleryDef, initialParams, type WidgetDef } from "./gallery";
@@ -70,7 +70,14 @@ const WidgetTile: React.FC<{ inst: WidgetInstance; api: WidgetsApi; fetchOff: bo
   );
 };
 
-export const WidgetsLane: React.FC<{ api?: WidgetsApi; initial?: WidgetStore; listen?: (cb: (s: WidgetStore) => void) => () => void; plugins?: boolean }> = ({ api = widgetsApi, initial, listen, plugins = true }) => {
+/** The "Desktop widgets" switch in the lane's header (docs/features/desktop-widgets.md). */
+export interface DesktopSwitch {
+  on: boolean;
+  onToggle: (on: boolean) => void;
+  onEdit: () => void;
+}
+
+export const WidgetsLane: React.FC<{ api?: WidgetsApi; initial?: WidgetStore; listen?: (cb: (s: WidgetStore) => void) => () => void; plugins?: boolean; desktop?: DesktopSwitch }> = ({ api = widgetsApi, initial, listen, plugins = true, desktop }) => {
   const [store, setStore] = useState<WidgetStore>(initial ?? EMPTY_STORE);
   const [view, setView] = useState<View>({ kind: "list" });
   const [error, setError] = useState<string | null>(null);
@@ -105,6 +112,19 @@ export const WidgetsLane: React.FC<{ api?: WidgetsApi; initial?: WidgetStore; li
       <button type="button" className="mwg-btn" onClick={() => setView({ kind: "sources" })}>
         <ShieldCheck size={12} aria-hidden /> Sources
       </button>
+      {desktop && (
+        <span className="mwg-desk">
+          <label className="mwg-switch">
+            <input type="checkbox" checked={desktop.on} onChange={(e) => desktop.onToggle(e.currentTarget.checked)} />
+            Desktop widgets
+          </label>
+          {desktop.on && (
+            <button type="button" className="mwg-btn" onClick={desktop.onEdit}>
+              <LayoutGrid size={12} aria-hidden /> Edit widgets…
+            </button>
+          )}
+        </span>
+      )}
     </div>
   );
 
@@ -152,7 +172,7 @@ export const WidgetsLane: React.FC<{ api?: WidgetsApi; initial?: WidgetStore; li
               ))}
             </ul>
             <p className="mwg-fine">
-              Only these sites, only while the Dashboard is open, at most every {view.def.refreshMinutes} minutes. The widget itself never gets network access. You can take this back any time under Sources.
+              Only these sites, only while the Dashboard (or this widget on your desktop) is showing, at most every {view.def.refreshMinutes} minutes. The widget itself never gets network access. You can take this back any time under Sources.
             </p>
           </>
         )}

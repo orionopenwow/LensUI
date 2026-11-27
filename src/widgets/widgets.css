@@ -59,3 +59,4 @@
 .mac-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .mac-action { border: 0; padding: 3px 8px; border-radius: 6px; font: inherit; font-size: 12px; background: rgb(var(--lens-ink) / 0.06); color: var(--lens-fg); cursor: pointer; }
 .mac-action:hover { background: rgb(var(--lens-ink) / 0.1); }
+.mwg-desk { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; font-size: 12px; color: var(--lens-fg-secondary); }

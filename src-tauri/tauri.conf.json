@@ -442,6 +442,22 @@
         "visible": false,
         "focus": false,
         "create": false
+      },
+      {
+        "label": "deskwidgets",
+        "title": "Lens Desktop Widgets",
+        "url": "index.html?surface=deskwidgets",
+        "width": 1280,
+        "height": 720,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": false,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "visible": false,
+        "focus": false,
+        "create": false
       }
     ],
     "security": {

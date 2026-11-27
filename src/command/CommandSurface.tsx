@@ -42,6 +42,7 @@ import { backdropTemplate, isBackdropStub, runBackdropSlash } from "../studio/ba
 import { isWallpaperStub, parseWallpaperSlash, runWallpaperSlash, wallpaperTemplate } from "../wallpapers/command";
 import { isLensAppStub, lensAppTemplates, runLensAppSlash } from "../report/command";
 import { dashboardTemplates, isDashboardPhrase, isDashboardStub, openDashboard } from "../dashboard/command";
+import { editDesktopWidgets, isEditWidgetsPhrase } from "../deskwidgets/api";
 
 const MODE_ICON: Record<Mode, React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
   ask: Sparkles,
@@ -433,6 +434,13 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
     // "dashboard", "open the dashboard" or /dashboard, while the Magic Dashboard is on.
     // Rust has the last word on the flag, so a Command opened before it was turned on still works.
     const dashboardAsked = isDashboardStub(template) || (!template && isDashboardPhrase(rest) && (await invoke<boolean>("dashboard_available").catch(() => false)));
+    // "edit widgets" while desktop widgets are on: the widget gallery on the desktop.
+    if (!template && isEditWidgetsPhrase(rest) && (await invoke<boolean>("desktop_widgets_available").catch(() => false))) {
+      setText("");
+      await hide();
+      void editDesktopWidgets().then((err) => err && flash(err, false));
+      return;
+    }
     if (dashboardAsked) {
       // Hide Command first and wait, so its hide can't hand the focus back to another app after
       // the Dashboard has taken it.
@@ -671,6 +679,11 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
     if ((isDashboardPhrase(typed) || typed.toLowerCase() === "/dashboard") && (await invoke<boolean>("dashboard_available").catch(() => false))) {
       await hide();
       void openDashboard().then((err) => err && flash(err, false));
+      return;
+    }
+    if (isEditWidgetsPhrase(typed) && (await invoke<boolean>("desktop_widgets_available").catch(() => false))) {
+      await hide();
+      void editDesktopWidgets().then((err) => err && flash(err, false));
       return;
     }
     const out = await runDo(

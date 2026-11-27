@@ -6,14 +6,15 @@ Status words: **works** (built and tested), **partly** (built with gaps), **brok
 
 | Feature | File | Status | Top quick win | Top bug | Idea to push |
 |---|---|---|---|---|---|
-| Dock | [dock.md](dock.md) | works (robustness wave: left/right E2E, B-18 Dock share, B-62–B-65) | Split `DockSurface.tsx` (left/right E2E done) | B-62 multi-monitor DPI fix needs a two-display real-PC check | "Dock in 10 seconds" ghost tour after a style change |
-| Top Bar | [topbar.md](topbar.md) | works | Focus strip (halo switch and transparency-off rule done in the Settings wave) | Stale hit rect when the Dashboard flag flips (suspected) | Focus strip under the clock |
+| Dock | [dock.md](dock.md) | works (Fable pass `fable/dock-20261126`: split, B-106–B-110, Dock keys, notice) | Drop the Dock's own `:active` rules once #131 merges (split done) | Pinned folders are not drawn on the Dock; B-62 still needs a two-display real-PC check | A "focus the Dock" hotkey for Dock keys; then the ghost tour |
+| Top Bar | [topbar.md](topbar.md) | works (Fable pass: B-108, minute clock, errors logged) | Focus strip (halo switch and transparency-off rule done in the Settings wave) | none open (B-108 fixed; the stale-rect suspicion is closed) | Focus strip under the clock |
 | Settings | [settings.md](settings.md) | works | "Recently changed" strip (B-41, B-40, Settings swallowed errors fixed in the Settings wave) | B-58 `.pi-off` dead clicks on three cards | "Recently changed" strip with Undo |
 | Themes & backdrops | [themes.md](themes.md) | works | Wallpaper folder dialog (every-pack contrast audit done in the Settings wave) | B-19 hard-coded colours (B-38 closed, B-39 fixed in #113) | "Lens Cloud" featured look (Backdrop preset done in #113) |
 | Window styling | [windows-styling.md](windows-styling.md) | works (Fable pass, #115) | "Don't style this app" in the Dock menu | Left-side buttons not yet seen on a real PC | Per-app window rules page with locked "Protected" badge (first cut built, #115) |
 | Command | [command.md](command.md) | works (Fable pass, #115) | 10 s Undo toast after an applied intent | B-12c first key after cold start (maybe CDP-only) | "Teach me": show where each setting lives after an intent (built, #115) |
 | Setup, updates & safety | [setup-updates-safety.md](setup-updates-safety.md) | partly (Fable pass, #115: code ready, owner creates the key and first release) | Make updates shippable: signing key and first release (owner) | Empty updater pubkey in the repo is by design (injected by release.yml from the TAURI_UPDATER_PUBKEY variable); updates can't verify until the owner adds the key | Safety card in About (built, #115) |
 | Lens Browser | [browser.md](browser.md) | see dossier | Local reader view | Agent approval is a UI boolean, not step-bound | Reader view with Ask as a side action |
+| Desktop widgets | [desktop-widgets.md](desktop-widgets.md) | built, off by default (`magicWaves.desktopWidgets`) | Bluetooth device batteries | Host per monitor not built yet (Lens monitor only) | A host per monitor with its own layout |
 | Magic | [magic.md](magic.md) | see dossier | Notifications get a real "Lens ›" menu | B-07 blocks "Get transcript" verbs | Menu key / Shift+F10 opens any Lens item's menu with Lens › focused |
 | AI and agents | [ai-agents.md](ai-agents.md) | see dossier | Pin B-07 checksums | Approval not step-bound; undo lost on restart | Plan view with per-step allow/deny |
 | Music | [music.md](music.md) | Fable pass in PR #112 | Lyrics offset nudge per track (queue empty state done) | Meter may stay on the old output device (suspected; port fallback done) | One shared mini player (desktop lyrics built) |
@@ -34,7 +35,7 @@ Quick wins still open in those four dossiers, ranked by value for the effort:
 7. **Done (Settings wave).** ~~**A delay setting for closing pop-outs** (the switch exists; the 1.5 s / 1.8 s are fixed in `watcher.rs`).~~
 8. **Done** (robustness and Settings waves). ~~**Sentence-case the Top Bar's own aria-labels**~~.
 9. **Wallpaper**: folder picker dialog, palette chip copies hex, Next wallpaper in the Dock and Top Bar menus.
-10. **Split `DockSurface.tsx`** (context menu first). No behaviour change, goldens unchanged.
+10. **Done (Fable pass, `fable/dock-20261126`).** ~~**Split `DockSurface.tsx`**~~: 2,916 → about 1,500 lines, rendered output byte-identical before the intended changes.
 
 Ideas not built in this pass: Settings "Recently changed" strip with Undo; the "Lens Cloud" featured look (its Backdrop Lab preset is in); Dock "in 10 seconds" tour; Top Bar focus strip.
 

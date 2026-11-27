@@ -61,6 +61,9 @@ Three things to hold in your head:
 | File | Read it when |
 |---|---|
 | [IDENTITY.md](IDENTITY.md) | Always first: the mission (free, open source, local-first, reversible), naming, brand and aesthetic, motion and copy rules, and the safety contract on one page. |
+| [COMBINATOR.md](COMBINATOR.md) | The long-running plan: Lens as the open-source combinator (link, bridge, rebuild light, learn), the licence rules, the Lens by Campton brand, the twice-weekly open-source scan and the horizons to 2027. Catalogue in [`docs/combinator/`](../combinator/). |
+| [MODULES.md](MODULES.md) | The deep plan for modular Lens: a mandatory kernel, modules with requires/adjacent/enhances links, editions (Lens Dock first) built from the monorepo, generated mirror repos, coexistence and upgrades, and the checks that keep full Lens unbroken at every phase. |
+| [FABLE_BRIEF.md](FABLE_BRIEF.md) | The standing contract for every deep Fable pass: what to read first, the project-wide bar (promises, look, DESIGN §5 feel, themes, module seams, licences), the deliverables per area (bugs, quick wins, polish, one big win, 3–5 UX/UI flourishes, dossier, real-PC list), the exact workflow and the self-review gate. |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | You need to know where something lives, which thread runs it, which window shows it, or what it writes to disk. |
 | [FEATURES.md](FEATURES.md) | The all-time catalogue: every feature on `main` or in a PR with its status, the modern-rewrite foundations, and every suggested feature from reviews and research with a one-line why. |
 | [SCOPE.md](SCOPE.md) | You are planning work: size, hotspots, duplicates to merge, dead code, risks, and the 1.0 bar. |
