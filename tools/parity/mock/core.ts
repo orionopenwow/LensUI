@@ -53,6 +53,9 @@ if (preset.startsWith("cc-") || preset.startsWith("living-")) config = applyThem
 // ?look=1: the whole featured look (font, glass, Dock style and feel), as "Apply" does it.
 if (params.get("look") && isFeatured(preset)) config = applyFeaturedLook(config, preset);
 // ?shape=expressive|dotmatrix and ?dockStyle=islands: style-layer scenes (tools/parity/styles).
+// ?accent=2563EB (a custom accent, no #) and ?accentStrength=subtle|balanced|vivid: accent scenes.
+if (params.get("accent")) config.theme = { ...config.theme, accentMode: "custom", customAccent: `#${params.get("accent")}` };
+if (params.get("accentStrength")) (config.theme as any).accentStrength = params.get("accentStrength");
 if (params.get("shape")) config.theme.shapeStyle = params.get("shape");
 if (params.get("dockStyle")) config.dock.style = params.get("dockStyle");
 // ?magic=dashboard,studioV2,… turns on Magic preview flags (and Tester mode, which shows the

@@ -30,6 +30,10 @@ import { DockScenePreview, dockStyleLabel, dockStyleOf, dockAlignmentOf } from "
 import type { WallpaperState } from "../surfaces/wallpaperTypes";
 import { LivingThemesRow } from "../themes/living/LivingThemesRow";
 import { quiet } from "../ui/oops";
+import { Segmented } from "../ui/Segmented";
+import { ACCENT_CHROMA_MIN, ACCENT_STRENGTHS, chroma, normalizeAccentStrength, paintedSurfaces } from "../themes/accentTokens";
+import { textTokensFor, TEXT_TOKENS } from "../themes/contrastAudit";
+import { AccentStrengthPreview } from "./AccentStrengthPreview";
 
 interface Props {
   config: LensConfig;
@@ -95,7 +99,7 @@ function Chips<T extends string>({
       <div className="tux-field-label">{label}</div>
       <div className="cc-chip-grid" role="radiogroup" aria-label={label}>
         {options.map((o) => (
-          <button
+          <button data-weight="light"
             key={o.id}
             type="button"
             role="radio"
@@ -122,7 +126,7 @@ const Section: React.FC<{
   children: React.ReactNode;
 }> = ({ id, title, summary, open, onToggle, children }) => (
   <div className={`tux-section ${open ? "open" : ""}`}>
-    <button
+    <button data-weight="medium"
       type="button"
       className="tux-section-head"
       data-cc-section={id}
@@ -261,6 +265,18 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
   const pack = packById(config.theme.preset);
   const light = pack?.scheme === "light";
   const accent = config.theme.accentMode === "custom" ? config.theme.customAccent : winTheme.accentHex;
+  const accentStrength = normalizeAccentStrength(config.theme.accentStrength);
+  // The same inputs applyThemeToDocument uses, for the per-strength samples.
+  const accentScheme = pack?.scheme === "light" ? ("light" as const) : ("dark" as const);
+  const accentText = pack ? textTokensFor(pack) : TEXT_TOKENS.dark;
+  const accentInput = {
+    accent,
+    ...paintedSurfaces(pack?.base, accentScheme, accent, config.theme.accentTintStrength),
+    scheme: accentScheme,
+    fg: accentText.fg,
+    secondary: accentText.secondary,
+    highContrast: config.theme.contrast === "high",
+  };
   const schedule = readSchedule(config);
   const appearance: Appearance = schedule.enabled ? "auto" : light ? "light" : "dark";
   const total = allPacks().length;
@@ -389,7 +405,7 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
             <div className="tux-appearance">
               <div className="tux-seg" role="radiogroup" aria-label="Appearance">
                 {(["dark", "light", "auto"] as Appearance[]).map((a) => (
-                  <button key={a} type="button" role="radio" aria-checked={appearance === a} className={appearance === a ? "active" : ""} onClick={() => setAppearance(a)}>
+                  <button data-weight="light" key={a} type="button" role="radio" aria-checked={appearance === a} className={appearance === a ? "active" : ""} onClick={() => setAppearance(a)}>
                     {a === "dark" ? "Dark" : a === "light" ? "Light" : "Auto"}
                   </button>
                 ))}
@@ -402,7 +418,7 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
             </div>
             <AnimatedBackdropSwitch />
             {modified && pack && (
-              <button type="button" className="cc-btn-ghost tux-small-btn" onClick={() => onApplyPack(applyThemePack(config, pack.id))}>
+              <button data-weight="medium" type="button" className="cc-btn-ghost tux-small-btn" onClick={() => onApplyPack(applyThemePack(config, pack.id))}>
                 <RotateCcw size={12} /> Reset to {pack.label}
               </button>
             )}
@@ -413,7 +429,7 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
           <div className="tux-field">
             <div className="tux-field-label">Accent colour</div>
             <div className="tux-swatches" role="radiogroup" aria-label="Accent colour">
-              <button
+              <button data-weight="light"
                 type="button"
                 role="radio"
                 aria-checked={config.theme.accentMode === "windows"}
@@ -427,7 +443,7 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
               {swatches.map((hex) => {
                 const on = config.theme.accentMode === "custom" && config.theme.customAccent.toUpperCase() === hex;
                 return (
-                  <button
+                  <button data-weight="light"
                     key={hex}
                     type="button"
                     role="radio"
@@ -442,7 +458,7 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
                 );
               })}
               <div className="tux-pop-anchor" ref={popRef}>
-                <button
+                <button data-weight="light"
                   type="button"
                   aria-haspopup="dialog"
                   aria-expanded={wheelOpen}
@@ -465,6 +481,24 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+
+          {/* How much of the accent Lens's own controls show (src/themes/accentTokens.ts). Colours
+              inside Lens only: nothing in Windows changes. */}
+          <div className="tux-field" data-accent-strength>
+            <div className="tux-field-label">Accent strength</div>
+            <Segmented
+              label="Accent strength"
+              options={ACCENT_STRENGTHS.map(({ id, label }) => ({ id, label }))}
+              value={accentStrength}
+              onChange={(v) => setTheme({ accentStrength: v })}
+            />
+            <AccentStrengthPreview input={accentInput} value={accentStrength} />
+            <div className="cc-desc tux-accent-note" aria-live="polite">
+              {chroma(accent) < ACCENT_CHROMA_MIN
+                ? "This accent is a grey, so there is no colour to show. Pick a colour and Lens uses it here."
+                : `${ACCENT_STRENGTHS.find((x) => x.id === accentStrength)?.description} Always readable: Lens adjusts the shade for this theme.`}
             </div>
           </div>
 
@@ -503,7 +537,7 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
       <section className="tux-block" aria-label="Choose a theme">
         <div className="tux-block-head">
           <div className="tux-h2">Choose a theme</div>
-          <button type="button" className="cc-btn-ghost tux-small-btn" data-browse-all aria-expanded={browseAll} onClick={() => setBrowseAll((v) => !v)}>
+          <button data-weight="medium" type="button" className="cc-btn-ghost tux-small-btn" data-browse-all aria-expanded={browseAll} onClick={() => setBrowseAll((v) => !v)}>
             {browseAll ? "Show featured" : `Browse all ${total}`}
           </button>
         </div>
@@ -526,7 +560,7 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
         {/* The undo row always holds its place, so applying a theme never pushes the page down. */}
         <div className={`tux-undo ${undo ? "" : "is-empty"}`} role="status" aria-hidden={!undo}>
           <span>Theme applied.</span>
-          <button
+          <button data-weight="medium"
             type="button"
             className="cc-btn-ghost tux-small-btn"
             data-undo-theme
@@ -646,7 +680,7 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
             />
             <div className="tux-help">
               Folders in File Explorer are styled separately.{" "}
-              <button type="button" className="tux-link" onClick={() => onOpenTab("folders")}>
+              <button data-weight="light" type="button" className="tux-link" onClick={() => onOpenTab("folders")}>
                 Open Folder Icons
               </button>
             </div>

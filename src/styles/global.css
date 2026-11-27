@@ -333,12 +333,8 @@ button {
 /* Presses: the weighted press from src/ui/press (DESIGN.md §5.2) replaced the per-class :active
    scales that used to live here. These classes get their weight from src/ui/press/weights.ts
    (cc-btn medium, cc-btn-primary heavy, cc-nav-btn / cc-chip / rows light, Quick settings tiles
-   medium …), or from data-weight where a surface declares it. The Dock keeps its own press until
-   its Fable pass (the Dock is not migrated in this wave). */
-.dock-ctx-item:active {
-  transform: scale(var(--lens-press-scale));
-  transition-duration: var(--lens-dur-instant);
-}
+   medium …), or from data-weight where a surface declares it. The Dock uses it too (its menu rows
+   declare data-weight). */
 
 /* ==================== ACCESSIBILITY ==================== */
 

@@ -110,7 +110,7 @@ export const TilingCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
             alone, and a window you move yourself starts floating.
           </div>
         </div>
-        <button
+        <button data-weight="light"
           type="button"
           role="switch"
           aria-checked={tiling.enabled}
@@ -131,7 +131,7 @@ export const TilingCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
       </div>
       <div className="cc-chip-grid">
         {TILING_LAYOUTS.map((l) => (
-          <button
+          <button data-weight="light"
             key={l.id}
             type="button"
             className={`cc-chip lens-chip-icon ${tiling.layout === l.id ? "active" : ""}`}
@@ -176,7 +176,7 @@ export const TilingCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
             { id: "end", label: "At the end" },
             { id: "master", label: "As master" },
           ].map((o) => (
-            <button
+            <button data-weight="light"
               key={o.id}
               type="button"
               className={`cc-chip ${tiling.newWindow === o.id ? "active" : ""}`}
@@ -194,7 +194,7 @@ export const TilingCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
         {tiling.floatApps.map((app) => (
           <span key={app} className="cc-chip lens-app-chip">
             {app.replace(/\.exe$/, "")}
-            <button
+            <button data-weight="light"
               type="button"
               className="lens-app-chip-x"
               aria-label={`Stop floating ${app}`}
@@ -215,7 +215,7 @@ export const TilingCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
               if (e.key === "Enter") addApp();
             }}
           />
-          <button type="button" className="cc-btn-ghost" onClick={addApp} aria-label="Add app">
+          <button data-weight="medium" type="button" className="cc-btn-ghost" onClick={addApp} aria-label="Add app">
             <Plus size={13} strokeWidth={2.6} />
           </button>
         </span>
@@ -227,7 +227,7 @@ export const TilingCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
           <div className="cc-desc">Work after turning on Keyboard Tiling shortcuts and restarting Lens.</div>
         </div>
         <div style={{ display: "flex", gap: 8, flexShrink: 0, whiteSpace: "nowrap" }}>
-          <button
+          <button data-weight="medium"
             type="button"
             className="cc-btn-ghost"
             disabled={!tiling.enabled}
@@ -235,7 +235,7 @@ export const TilingCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
           >
             Re-tile now
           </button>
-          <button type="button" className="cc-btn-ghost" onClick={() => setShowKeys((s) => !s)}>
+          <button data-weight="medium" type="button" className="cc-btn-ghost" onClick={() => setShowKeys((s) => !s)}>
             {showKeys ? "Hide keys" : "Show keys"}
           </button>
         </div>
@@ -288,7 +288,7 @@ export const TILING_CARD_CSS = `
 .lens-ws-hint { display: block; font-size: 10px; color: var(--lens-fg-muted); margin-top: 1px; }
 .lens-ws-note { padding: 8px 10px; border-radius: 9px; background: rgb(251 191 36 / 0.08); border: 1px solid rgb(251 191 36 / 0.22); color: var(--lens-fg-secondary); font-size: 11px; line-height: 1.45; }
 .lens-ws-strip { display: inline-flex; align-items: center; gap: 2px; }
-.lens-ws-pill { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border-radius: 6px; font-size: 11px; font-weight: 500; color: var(--lens-fg-secondary); font-variant-numeric: tabular-nums; transition: background 140ms cubic-bezier(0.22, 1, 0.36, 1), color 140ms ease; }
+.lens-ws-pill { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border-radius: 6px; font-size: 11px; font-weight: 500; color: var(--lens-fg-secondary); font-variant-numeric: tabular-nums; transition: background var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out); }
 .lens-ws-pill:hover { background: rgb(var(--lens-ink) / 0.07); color: var(--lens-fg); }
 .lens-ws-pill.active { background: color-mix(in oklch, var(--lens-accent) 24%, rgb(var(--lens-ink) / 0.09)); color: var(--lens-fg-strong, var(--lens-fg)); }
 .lens-ws-pill .lens-ws-pill-dot { width: 6px; height: 6px; border-radius: 999px; }

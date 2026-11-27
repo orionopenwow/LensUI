@@ -121,7 +121,7 @@ export const BackupRestoreCard: React.FC = () => {
           <div className="cc-label">Include workflow recordings and training data</div>
           <div className="cc-desc">Off by default. Applies to both saving and restoring.</div>
         </div>
-        <button
+        <button data-weight="light"
           type="button"
           role="switch"
           aria-checked={includeTraining}
@@ -132,7 +132,7 @@ export const BackupRestoreCard: React.FC = () => {
       </div>
 
       <div style={{ display: "flex", gap: 8 }}>
-        <button type="button" className="cc-btn" disabled={busy} onClick={exportBackup}>
+        <button data-weight="medium" type="button" className="cc-btn" disabled={busy} onClick={exportBackup}>
           Save Backup
         </button>
       </div>
@@ -149,7 +149,7 @@ export const BackupRestoreCard: React.FC = () => {
             if (e.key === "Enter") restoreBackup();
           }}
         />
-        <button type="button" className="cc-btn-ghost" disabled={busy || !restorePath.trim()} onClick={restoreBackup}>
+        <button data-weight="medium" type="button" className="cc-btn-ghost" disabled={busy || !restorePath.trim()} onClick={restoreBackup}>
           Restore
         </button>
       </div>
@@ -169,7 +169,7 @@ export const BackupRestoreCard: React.FC = () => {
           </div>
         </div>
         {!confirming && (
-          <button type="button" className="cc-btn-ghost" disabled={busy} onClick={() => setConfirming(true)}>
+          <button data-weight="medium" type="button" className="cc-btn-ghost" disabled={busy} onClick={() => setConfirming(true)}>
             Remove…
           </button>
         )}
@@ -188,7 +188,7 @@ export const BackupRestoreCard: React.FC = () => {
           )}
           <div className="cc-row">
             <div className="cc-desc">Also delete Lens settings, themes and training data</div>
-            <button
+            <button data-weight="light"
               type="button"
               role="switch"
               aria-checked={deleteData}
@@ -206,7 +206,7 @@ export const BackupRestoreCard: React.FC = () => {
               value={confirmText}
               onChange={(e) => setConfirmText(e.target.value)}
             />
-            <button
+            <button data-weight="medium"
               type="button"
               className="cc-btn"
               disabled={busy || confirmText.trim().toUpperCase() !== CONFIRM_WORD}
@@ -214,7 +214,7 @@ export const BackupRestoreCard: React.FC = () => {
             >
               Remove Changes
             </button>
-            <button
+            <button data-weight="medium"
               type="button"
               className="cc-btn-ghost"
               onClick={() => {
@@ -239,7 +239,7 @@ export const BackupRestoreCard: React.FC = () => {
             </div>
           ))}
           <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-            <button type="button" className="cc-btn" onClick={() => invoke("quit_lens").catch(() => {})}>
+            <button data-weight="medium" type="button" className="cc-btn" onClick={() => invoke("quit_lens").catch(() => {})}>
               Quit Lens
             </button>
           </div>

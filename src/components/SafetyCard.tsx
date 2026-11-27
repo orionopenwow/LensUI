@@ -49,10 +49,10 @@ export const SafetyCard: React.FC<{ demo?: { manifest: ChangeInfo[]; report: Fai
           <div className="cc-desc">What Lens changes on this PC, what it never touches, and the ways back to plain Windows.</div>
         </div>
         <div className="sf-actions">
-          <button type="button" className="cc-btn-ghost" onClick={() => void openSettingsAt(SAFETY_LINKS.report)}>
+          <button data-weight="medium" type="button" className="cc-btn-ghost" onClick={() => void openSettingsAt(SAFETY_LINKS.report)}>
             Report a problem
           </button>
-          <button type="button" className="cc-btn-ghost" onClick={() => void openSettingsAt(SAFETY_LINKS.removeAll)}>
+          <button data-weight="medium" type="button" className="cc-btn-ghost" onClick={() => void openSettingsAt(SAFETY_LINKS.removeAll)}>
             Remove all…
           </button>
         </div>

@@ -38,7 +38,7 @@ export const GuideCard: React.FC<GuideCardProps> = ({ lessonCount = 11, initialP
             offline; nothing about what you use leaves this PC.
           </div>
         </div>
-        <button
+        <button data-weight="light"
           type="button"
           role="switch"
           aria-checked={p.enabled}
@@ -55,7 +55,7 @@ export const GuideCard: React.FC<GuideCardProps> = ({ lessonCount = 11, initialP
               <div className="cc-label">Tip of the day</div>
               <div className="cc-desc">One gentle tip a day about a feature you haven't tried. Never a pop-up.</div>
             </div>
-            <button
+            <button data-weight="light"
               type="button"
               role="switch"
               aria-checked={p.tipOfTheDay}
@@ -74,12 +74,12 @@ export const GuideCard: React.FC<GuideCardProps> = ({ lessonCount = 11, initialP
               </div>
             </div>
             <div style={{ display: "flex", gap: 8, flex: "none" }}>
-              <button type="button" className="cc-btn-ghost" onClick={() => void openGuide()}>
+              <button data-weight="medium" type="button" className="cc-btn-ghost" onClick={() => void openGuide()}>
                 <Compass size={13} strokeWidth={2.2} aria-hidden="true" style={{ marginRight: 4, verticalAlign: -2 }} />
                 Open guide
               </button>
               {confirmReset ? (
-                <button
+                <button data-weight="medium"
                   type="button"
                   className="cc-btn-ghost"
                   onClick={() => {
@@ -90,7 +90,7 @@ export const GuideCard: React.FC<GuideCardProps> = ({ lessonCount = 11, initialP
                   Confirm reset
                 </button>
               ) : (
-                <button type="button" className="cc-btn-ghost" onClick={() => setConfirmReset(true)} disabled={!done && !Object.keys(p.steps).length}>
+                <button data-weight="medium" type="button" className="cc-btn-ghost" onClick={() => setConfirmReset(true)} disabled={!done && !Object.keys(p.steps).length}>
                   Reset progress
                 </button>
               )}

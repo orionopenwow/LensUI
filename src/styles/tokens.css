@@ -33,6 +33,21 @@
   --lens-radius: 14px;
   --lens-accent-tint: 0%;
 
+  /* The accent on Lens's own controls (src/themes/accentTokens.ts). These defaults are the
+     monochrome look; applyThemeToDocument overrides them on <html> when the accent has a colour,
+     with values checked for contrast on this pack (UI >= 3:1, text on a fill >= 4.5:1).
+       -ui / -on-ui      switch tracks, running marks, meter fills, rings; the knob or glyph on them
+       -fill / -on-fill  selected chips and primary buttons (Balanced and Vivid)
+       -wash / -edge / -hover   how much accent a selected row, a selected card's hairline and a
+                                hover take: use color-mix(in srgb, var(--lens-accent-ui) <pct>, <plain value>) */
+  --lens-accent-ui: var(--cc-accent);
+  --lens-on-accent-ui: var(--lens-on-fg);
+  --lens-accent-fill: var(--cc-accent);
+  --lens-on-accent-fill: var(--lens-on-fg);
+  --lens-accent-wash: 0%;
+  --lens-accent-edge: 0%;
+  --lens-accent-hover: 0%;
+
   /* Rich, dense machined obsidian monochrome base */
   --lens-surface-solid: color-mix(
     in srgb,

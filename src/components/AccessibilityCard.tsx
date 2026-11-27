@@ -30,7 +30,7 @@ export const AccessibilityCard: React.FC<Props> = ({ config, onUpdateConfig }) =
       </div>
       <div className="cc-chip-grid" role="radiogroup" aria-label={label}>
         {options.map((o) => (
-          <button
+          <button data-weight="light"
             key={o.id}
             type="button"
             role="radio"

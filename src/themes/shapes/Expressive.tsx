@@ -100,13 +100,13 @@ export const WeekBadge: React.FC<{ date: Date }> = ({ date }) => (
 );
 
 export const Fab: React.FC<{ label: string; onClick?: () => void; children?: React.ReactNode }> = ({ label, onClick, children }) => (
-  <button type="button" className="lx-fab" aria-label={label} onClick={onClick}>
+  <button data-weight="medium" type="button" className="lx-fab" aria-label={label} onClick={onClick}>
     {children ?? "+"}
   </button>
 );
 
 export const CheckRing: React.FC<{ checked: boolean; label: string; onChange?: (v: boolean) => void }> = ({ checked, label, onChange }) => (
-  <button
+  <button data-weight="medium"
     type="button"
     role="checkbox"
     aria-checked={checked}

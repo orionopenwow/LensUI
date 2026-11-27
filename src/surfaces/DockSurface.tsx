@@ -1453,6 +1453,7 @@ export const DockSurface: React.FC = () => {
             type="button"
             aria-label="System and tasks"
             data-weight="medium"
+            data-opens="settings"
             aria-expanded={settingsOpen && activeSettingsTab === "monitor"}
             className={`dock-item ${settingsOpen && activeSettingsTab === "monitor" ? "is-running" : ""} ${launchingId === "monitor" ? "is-launching" : ""}`}
             onClick={() => {
@@ -1478,6 +1479,7 @@ export const DockSurface: React.FC = () => {
             type="button"
             aria-label="Settings"
             data-weight="medium"
+            data-opens="settings"
             aria-expanded={settingsOpen && activeSettingsTab !== "monitor"}
             className={`dock-item ${settingsOpen && activeSettingsTab !== "monitor" ? "is-running" : ""} ${launchingId === "settings" ? "is-launching" : ""}`}
             onClick={() => {

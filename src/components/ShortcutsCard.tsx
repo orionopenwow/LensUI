@@ -56,7 +56,7 @@ export const ShortcutsCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
           <div className="cc-label">Keyboard shortcuts</div>
           <div className="cc-desc">Everything Lens listens for. Windows' own keys (Win+L, Ctrl+Alt+Del, Alt+Tab) are never taken.</div>
         </div>
-        <button
+        <button data-weight="medium"
           type="button"
           className="cc-btn-ghost"
           disabled={isSimple}
@@ -88,14 +88,14 @@ export const ShortcutsCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
               )}
             </div>
             {recording === s.id ? (
-              <button type="button" className="ks-keys is-recording" autoFocus onKeyDown={onKey(s.id)} onBlur={() => setRecording(null)}>
+              <button data-weight="medium" type="button" className="ks-keys is-recording" autoFocus onKeyDown={onKey(s.id)} onBlur={() => setRecording(null)}>
                 Press the new keys…
               </button>
             ) : (
               <kbd className="ks-keys">{s.keys}</kbd>
             )}
             {s.editable && recording !== s.id && (
-              <button
+              <button data-weight="medium"
                 type="button"
                 className="cc-btn-ghost ks-change"
                 aria-label={`Change the shortcut for ${s.name}`}

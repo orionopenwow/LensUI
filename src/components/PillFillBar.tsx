@@ -180,7 +180,7 @@ export const PillFillBar: React.FC<PillFillBarProps> = ({
         }}
       >
         {onIconClick ? (
-          <button
+          <button data-weight="medium"
             type="button"
             onClick={() => onIconClick()}
             disabled={disabled}

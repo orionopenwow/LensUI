@@ -92,13 +92,13 @@ export const SessionRestoreCard: React.FC<Props> = ({ config, onUpdateConfig, ac
             if (e.key === "Enter") saveNew();
           }}
         />
-        <button type="button" className="cc-btn" onClick={saveNew}>
+        <button data-weight="medium" type="button" className="cc-btn" onClick={saveNew}>
           Save Open Apps
         </button>
       </div>
       <div className="cc-chip-grid">
         {SESSION_LAYOUTS.map((l) => (
-          <button
+          <button data-weight="light"
             key={l.id}
             type="button"
             className={`cc-chip ${newLayout === l.id ? "active" : ""}`}
@@ -117,7 +117,7 @@ export const SessionRestoreCard: React.FC<Props> = ({ config, onUpdateConfig, ac
           return (
             <div key={s.id} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <div className="cc-row" style={{ padding: "6px 0" }}>
-                <button
+                <button data-weight="medium"
                   type="button"
                   aria-expanded={open}
                   onClick={() => setOpenId(open ? null : s.id)}
@@ -137,10 +137,10 @@ export const SessionRestoreCard: React.FC<Props> = ({ config, onUpdateConfig, ac
                   </span>
                 </button>
                 <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                  <button type="button" className="cc-btn-ghost" onClick={() => recapture(s)}>
+                  <button data-weight="medium" type="button" className="cc-btn-ghost" onClick={() => recapture(s)}>
                     Update
                   </button>
-                  <button
+                  <button data-weight="medium"
                     type="button"
                     className="cc-btn"
                     disabled={s.apps.length === 0 || busyId !== null}
@@ -156,7 +156,7 @@ export const SessionRestoreCard: React.FC<Props> = ({ config, onUpdateConfig, ac
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingLeft: 17 }}>
                   <div className="cc-chip-grid">
                     {SESSION_LAYOUTS.map((l) => (
-                      <button
+                      <button data-weight="light"
                         key={l.id}
                         type="button"
                         className={`cc-chip ${layout === l.id ? "active" : ""}`}
@@ -169,7 +169,7 @@ export const SessionRestoreCard: React.FC<Props> = ({ config, onUpdateConfig, ac
                   {s.apps.length > 0 && (
                     <div className="cc-chip-grid">
                       {s.apps.map((path) => (
-                        <button
+                        <button data-weight="light"
                           key={path}
                           type="button"
                           className="cc-chip"

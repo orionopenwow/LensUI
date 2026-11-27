@@ -93,7 +93,7 @@
     "Window styling": 9,
     "Workspaces & tiling": 10
   },
-  "count": 220,
+  "count": 221,
   "entries": [
     {
       "capability": "change_settings",
@@ -2525,6 +2525,27 @@
         "enum": [
           "windows",
           "custom"
+        ],
+        "maxLength": 400,
+        "type": "string"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_look",
+      "category": "Theme",
+      "default": "balanced",
+      "description": "How much of your accent colour Lens's own surfaces show: switches, marks and focus rings (subtle), also selected items and main buttons (balanced), or stronger tints (vivid).",
+      "example": "{\"args\":{\"changes\":{\"theme.accentStrength\":\"subtle\"}},\"tool\":\"lens_set\"}",
+      "label": "Accent strength",
+      "path": "theme.accentStrength",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "enum": [
+          "subtle",
+          "balanced",
+          "vivid"
         ],
         "maxLength": 400,
         "type": "string"

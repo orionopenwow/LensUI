@@ -61,7 +61,7 @@ export const MonitorPickerCard: React.FC<Props> = ({ config, onUpdateConfig, sho
         pointer, push the pointer into the top or bottom edge of a display to bring them there.
       </div>
       <div className="cc-chip-grid" role="radiogroup" aria-label="Monitor for the Dock and Top Bar">
-        <button
+        <button data-weight="light"
           type="button"
           role="radio"
           aria-checked={target === "primary"}
@@ -70,7 +70,7 @@ export const MonitorPickerCard: React.FC<Props> = ({ config, onUpdateConfig, sho
         >
           Main display
         </button>
-        <button
+        <button data-weight="light"
           type="button"
           role="radio"
           aria-checked={target === "cursor"}
@@ -80,7 +80,7 @@ export const MonitorPickerCard: React.FC<Props> = ({ config, onUpdateConfig, sho
           Follow the pointer
         </button>
         {monitors.map((m, i) => (
-          <button
+          <button data-weight="light"
             key={m.id}
             type="button"
             role="radio"
@@ -105,7 +105,7 @@ export const MonitorPickerCard: React.FC<Props> = ({ config, onUpdateConfig, sho
               {target.toLowerCase() === "cursor" ? " With Follow the pointer, the main bar moves and the others swap places so every display keeps one." : ""}
             </div>
           </div>
-          <button
+          <button data-weight="light"
             type="button"
             role="switch"
             aria-checked={!!func.perMonitorBars}

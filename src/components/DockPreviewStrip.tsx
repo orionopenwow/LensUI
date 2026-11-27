@@ -90,7 +90,7 @@ export const DockPreviewStrip: React.FC<Props> = ({ windows, iconUrl, onFocus, o
         const icon = w.iconDataUrl || iconUrl;
         const title = w.title || w.processName.replace(/\.exe$/i, "");
         return (
-          <div
+          <div data-weight="medium"
             key={w.hwnd}
             className={`dock-preview-tile ${w.isFocused ? "focused" : ""}`}
             role="button"
@@ -112,7 +112,7 @@ export const DockPreviewStrip: React.FC<Props> = ({ windows, iconUrl, onFocus, o
                 <AppWindow size={13} className="dock-preview-icon" />
               )}
               <span className="dock-preview-title">{title}</span>
-              <button
+              <button data-weight="medium"
                 type="button"
                 className="dock-preview-close"
                 aria-label="Close window"

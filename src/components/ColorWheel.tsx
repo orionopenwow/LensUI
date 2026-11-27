@@ -301,7 +301,7 @@ export const ColorWheel: React.FC<ColorWheelProps> = ({
         {SWATCHES.map(({ hex, name }) => {
           const isSelected = accentMode === "custom" && value.toUpperCase() === hex;
           return (
-            <button
+            <button data-weight="medium"
               key={hex}
               type="button"
               aria-label={`Accent ${name}`}
@@ -320,7 +320,7 @@ export const ColorWheel: React.FC<ColorWheelProps> = ({
             />
           );
         })}
-        <button
+        <button data-weight="medium"
           type="button"
           aria-label={`Win: sync Windows accent (${windowsAccentHex})`}
           onClick={onSelectWindowsLive}

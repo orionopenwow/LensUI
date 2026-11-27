@@ -131,7 +131,7 @@ export const LivingThemesRow: React.FC<Props> = ({ config, onApplyPack, visible 
 
       <div className="lv-tiles" role="radiogroup" aria-label="Living theme">
         {LIVING_PACKS.map((p) => (
-          <button
+          <button data-weight="light"
             key={p.id}
             type="button"
             role="radio"
@@ -172,10 +172,10 @@ export const LivingThemesRow: React.FC<Props> = ({ config, onApplyPack, visible 
           }}
         />
         <span className="lv-scrub-time">{scrub === null ? "Now" : fmt(scrub)}</span>
-        <button type="button" className="cc-btn-ghost tux-small-btn" onClick={() => setPlaying((v) => !v)}>
+        <button data-weight="medium" type="button" className="cc-btn-ghost tux-small-btn" onClick={() => setPlaying((v) => !v)}>
           {playing ? "Pause" : "Play a day"}
         </button>
-        <button type="button" className="cc-btn-ghost tux-small-btn" disabled={scrub === null} onClick={() => { setPlaying(false); setScrub(null); }}>
+        <button data-weight="medium" type="button" className="cc-btn-ghost tux-small-btn" disabled={scrub === null} onClick={() => { setPlaying(false); setScrub(null); }}>
           Now
         </button>
       </div>
@@ -185,7 +185,7 @@ export const LivingThemesRow: React.FC<Props> = ({ config, onApplyPack, visible 
           <div className="tux-field-label">Location</div>
           <div className="cc-chip-grid" role="radiogroup" aria-label="Location">
             {(["auto", "manual"] as const).map((m) => (
-              <button
+              <button data-weight="light"
                 key={m}
                 type="button"
                 role="radio"
@@ -213,7 +213,7 @@ export const LivingThemesRow: React.FC<Props> = ({ config, onApplyPack, visible 
                   <option key={c.name} value={c.name} />
                 ))}
               </datalist>
-              <button type="button" className="cc-btn-ghost tux-small-btn" onClick={saveLocation}>
+              <button data-weight="medium" type="button" className="cc-btn-ghost tux-small-btn" onClick={saveLocation}>
                 Use
               </button>
             </div>
@@ -228,7 +228,7 @@ export const LivingThemesRow: React.FC<Props> = ({ config, onApplyPack, visible 
           <div className="tux-field-label">Motion</div>
           <div className="cc-chip-grid" role="radiogroup" aria-label="Motion">
             {(["still", "subtle"] as const).map((m) => (
-              <button key={m} type="button" role="radio" aria-checked={s.motion === m} className={`cc-chip tux-chip ${s.motion === m ? "active" : ""}`} onClick={() => set({ motion: m })}>
+              <button data-weight="light" key={m} type="button" role="radio" aria-checked={s.motion === m} className={`cc-chip tux-chip ${s.motion === m ? "active" : ""}`} onClick={() => set({ motion: m })}>
                 {m === "still" ? "Still" : "Subtle"}
               </button>
             ))}
@@ -275,7 +275,7 @@ export const LivingThemesRow: React.FC<Props> = ({ config, onApplyPack, visible 
         {!s.weather.online && (
           <div className="cc-chip-grid" role="radiogroup" aria-label="Weather">
             {WEATHERS.map((w) => (
-              <button
+              <button data-weight="light"
                 key={w.id}
                 type="button"
                 role="radio"

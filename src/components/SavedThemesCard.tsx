@@ -107,15 +107,15 @@ export const SavedThemesCard: React.FC<Props> = ({ config, onUpdateConfig }) => 
             if (e.key === "Enter") save();
           }}
         />
-        <button type="button" className="cc-btn" onClick={save}>
+        <button data-weight="medium" type="button" className="cc-btn" onClick={save}>
           Save
         </button>
       </div>
       <div style={{ display: "flex", gap: 8 }}>
-        <button type="button" className="cc-btn-ghost" onClick={refresh}>
+        <button data-weight="medium" type="button" className="cc-btn-ghost" onClick={refresh}>
           Refresh
         </button>
-        <button
+        <button data-weight="medium"
           type="button"
           className="cc-btn-ghost"
           onClick={() => invoke("open_themes_folder_cmd").catch(() => {})}
@@ -130,10 +130,10 @@ export const SavedThemesCard: React.FC<Props> = ({ config, onUpdateConfig }) => 
             <div key={f.path} className="cc-row" style={{ padding: "6px 0" }}>
               <span className="cc-label">{f.name}</span>
               <div style={{ display: "flex", gap: 8 }}>
-                <button type="button" className="cc-btn" onClick={() => apply(f)}>
+                <button data-weight="medium" type="button" className="cc-btn" onClick={() => apply(f)}>
                   Apply
                 </button>
-                <button type="button" className="cc-btn-ghost" onClick={() => remove(f)}>
+                <button data-weight="medium" type="button" className="cc-btn-ghost" onClick={() => remove(f)}>
                   Remove
                 </button>
               </div>
