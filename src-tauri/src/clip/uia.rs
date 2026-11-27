@@ -4,7 +4,8 @@
 //! keys, clicks and pointer moves that close it; no keys, no text and no positions are stored).
 //!
 //! Never uses the clipboard trick (no simulated Ctrl+C). Every read goes through
-//! `selection_rules::may_read` first, and runs on a worker thread with a 150 ms timeout.
+//! `selection_rules::may_read` first, and runs on a worker thread with a 150 ms timeout. Classic
+//! Win32 Edit controls, which have no TextPattern, are read with their own EM_GETSEL / WM_GETTEXT.
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
@@ -253,13 +254,16 @@ unsafe fn read_on_this_thread(auto: &IUIAutomation, policy: &SelectionPolicy, ex
     let pid = el.CurrentProcessId().unwrap_or(0) as u32;
     let process = if pid == fg.pid { fg.process.clone() } else { process_path(pid).unwrap_or_default() };
     let pattern: Option<IUIAutomationTextPattern> = el.GetCurrentPatternAs::<IUIAutomationTextPattern>(UIA_TextPatternId).ok();
+    // A classic Win32 Edit control (Notepad before Windows 11, many dialogs) has no TextPattern;
+    // its selection is read with the control's own messages instead (still never the clipboard).
+    let edit = if pattern.is_none() { win32_edit(&el) } else { None };
     let candidate = Candidate {
         inaccessible: pid != 0 && process.is_empty(),
         game: crate::win_rules::is_anti_cheat_process(&process) || crate::input::paused(),
         process,
         is_password: el.CurrentIsPassword().map(|b| b.as_bool()).unwrap_or(true),
         fullscreen: fg.fullscreen,
-        has_text_pattern: pattern.is_some(),
+        has_text_pattern: pattern.is_some() || edit.is_some(),
         own_process: pid == std::process::id(),
     };
     if bubble && !candidate.has_text_pattern {
@@ -268,6 +272,22 @@ unsafe fn read_on_this_thread(auto: &IUIAutomation, policy: &SelectionPolicy, ex
         eprintln!("[Lens UI] selection bar: the focused element has no TextPattern (control type {ct}, class {class:?})");
     }
     may_read(&candidate, policy, excluded, trigger)?;
+    if let (None, Some(h)) = (&pattern, edit) {
+        let (text, rects, read_only) = read_win32_edit(h, policy.max_chars).ok_or_else(|| {
+            if bubble {
+                eprintln!("[Lens UI] selection bar: the Edit control had no selection");
+            }
+            Refusal::NoTextPattern
+        })?;
+        return Ok(SelectionFacts {
+            text,
+            fg: ForegroundInfo::default(),
+            lines: bar::usable_lines(&rects, release),
+            value_writable: !read_only,
+            text_edit: false,
+            owner: fg.hwnd,
+        });
+    }
     let pattern = pattern.ok_or(Refusal::NoTextPattern)?;
     let ranges = pattern.GetSelection().map_err(|_| Refusal::NoTextPattern)?;
     let n = ranges.Length().unwrap_or(0).min(16);
@@ -307,6 +327,66 @@ unsafe fn read_on_this_thread(auto: &IUIAutomation, policy: &SelectionPolicy, ex
         text_edit,
         owner: fg.hwnd,
     })
+}
+
+/// The focused element's window when it is a classic Win32 "Edit" control (not a password box).
+unsafe fn win32_edit(el: &windows::Win32::UI::Accessibility::IUIAutomationElement) -> Option<HWND> {
+    use windows::Win32::UI::WindowsAndMessaging::{GetClassNameW, GetWindowLongW, GWL_STYLE};
+    let h = el.CurrentNativeWindowHandle().ok()?;
+    if h.0.is_null() {
+        return None;
+    }
+    let mut buf = [0u16; 32];
+    let n = GetClassNameW(h, &mut buf).max(0) as usize;
+    let class = String::from_utf16_lossy(&buf[..n]);
+    const ES_PASSWORD: i32 = 0x20;
+    (class.eq_ignore_ascii_case("Edit") && GetWindowLongW(h, GWL_STYLE) & ES_PASSWORD == 0).then_some(h)
+}
+
+/// Reads an Edit control's selection with its own messages (`EM_GETSEL`, `WM_GETTEXT`,
+/// `EM_POSFROMCHAR`), each bounded by a short timeout. Returns the text, the first and last
+/// line rectangles, and whether the control is read-only.
+unsafe fn read_win32_edit(h: HWND, max_chars: usize) -> Option<(String, Vec<bar::Rect>, bool)> {
+    use windows::Win32::Foundation::{LPARAM, POINT, WPARAM};
+    use windows::Win32::Graphics::Gdi::ClientToScreen;
+    use windows::Win32::UI::HiDpi::GetDpiForWindow;
+    use windows::Win32::UI::WindowsAndMessaging::{GetWindowLongW, SendMessageTimeoutW, GWL_STYLE, SMTO_ABORTIFHUNG, SMTO_BLOCK};
+    const EM_GETSEL: u32 = 0x00B0;
+    const EM_POSFROMCHAR: u32 = 0x00D6;
+    const WM_GETTEXT: u32 = 0x000D;
+    const ES_READONLY: i32 = 0x0800;
+    let send = |msg: u32, w: usize, l: isize| -> Option<usize> {
+        let mut out = 0usize;
+        let ok = SendMessageTimeoutW(h, msg, WPARAM(w), LPARAM(l), SMTO_ABORTIFHUNG | SMTO_BLOCK, 80, Some(&mut out as *mut usize));
+        (ok.0 != 0).then_some(out)
+    };
+    let sel = send(EM_GETSEL, 0, 0)?;
+    let (start, end) = (sel & 0xFFFF, (sel >> 16) & 0xFFFF);
+    if end <= start {
+        return None;
+    }
+    let mut buf = vec![0u16; end + 1];
+    let got = send(WM_GETTEXT, buf.len(), buf.as_mut_ptr() as isize)?;
+    let got = got.min(end);
+    if got <= start {
+        return None;
+    }
+    let text = clean_selection(&String::from_utf16_lossy(&buf[start..got]), max_chars)?;
+    let line_h = (18 * GetDpiForWindow(h).max(96) / 96) as i32;
+    let at = |i: usize| -> Option<bar::Rect> {
+        let p = send(EM_POSFROMCHAR, i, 0)?;
+        let mut pt = POINT { x: (p & 0xFFFF) as u16 as i16 as i32, y: ((p >> 16) & 0xFFFF) as u16 as i16 as i32 };
+        let _ = ClientToScreen(h, &mut pt);
+        Some(bar::Rect::new(pt.x, pt.y, 2, line_h))
+    };
+    let mut rects = Vec::new();
+    if let (Some(a), Some(b)) = (at(start), at(end.saturating_sub(1))) {
+        let last = bar::Rect::new(b.x, b.y, 12, line_h);
+        rects.push(bar::Rect::new(a.x, a.y, 2, line_h));
+        rects.push(last);
+    }
+    let read_only = GetWindowLongW(h, GWL_STYLE) & ES_READONLY != 0;
+    Some((text, rects, read_only))
 }
 
 // ── the Magic selection bar (formerly the selection bubble) ─────────────────────────────────────
