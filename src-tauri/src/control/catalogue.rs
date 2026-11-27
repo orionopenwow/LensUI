@@ -184,7 +184,7 @@ pub const FIELDS: &[(&str, &str, &str, &str)] = &[
     ("func.hideNativeTaskbar", "Hide Windows taskbar", "Hides the Windows taskbar while Lens runs (restored when Lens quits).", "{}"),
     ("func.runOnStartup", "Start with Windows", "Starts Lens when you sign in.", "{}"),
     ("func.clipboardHistory", "Clipboard history", "Keeps a private clipboard history on this PC.", "{}"),
-    ("func.dockFocusHotkey", "Focus the Dock hotkey", "A global hotkey that moves the keyboard onto the Dock's icons (Ctrl+Alt+D by default, empty = off); checked against Windows, Lens and app keys.", r#"{"maxLength":40}"#),
+    ("func.dockFocusHotkey", "Focus the Dock hotkey", "A global hotkey that moves the keyboard onto the Dock's icons (Ctrl+Alt+D by default, empty = off). The shortcuts sheet in Settings refuses Windows' and Lens's own keys.", r#"{"maxLength":40}"#),
     ("dock.scrollVolume", "Scroll to change volume", "Mouse wheel over a running app changes that app's volume in Windows' volume mixer (Shift+wheel when scrolling switches windows). Off by default.", "{}"),
     ("dock.manyWindows", "More than four windows", "With live previews on, what the hover card shows for an app with more than four windows: a titles list or the window previews.", r#"{"enum":["list","previews"]}"#),
     ("func.popoutCloseDelay", "Pop-out close delay", "How long Quick Settings and Settings on the Dock wait before closing when the pointer leaves.", r#"{"enum":["short","normal","long"]}"#),

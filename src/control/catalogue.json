@@ -73,7 +73,7 @@
     "Command & Shelf": 1,
     "Desktop": 1,
     "Do Not Disturb": 3,
-    "Dock": 24,
+    "Dock": 27,
     "Hot corners": 8,
     "Icons & folders": 4,
     "Internal": 6,
@@ -93,7 +93,7 @@
     "Window styling": 9,
     "Workspaces & tiling": 10
   },
-  "count": 221,
+  "count": 224,
   "entries": [
     {
       "capability": "change_settings",
@@ -1061,6 +1061,26 @@
     {
       "capability": "change_look",
       "category": "Dock",
+      "default": "list",
+      "description": "With live previews on, what the hover card shows for an app with more than four windows: a titles list or the window previews.",
+      "example": "{\"args\":{\"changes\":{\"dock.manyWindows\":\"previews\"}},\"tool\":\"lens_set\"}",
+      "label": "More than four windows",
+      "path": "dock.manyWindows",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "enum": [
+          "list",
+          "previews"
+        ],
+        "maxLength": 400,
+        "type": "string"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_look",
+      "category": "Dock",
       "default": false,
       "description": "Sets the minimize feedback option under Dock.",
       "example": "{\"args\":{\"changes\":{\"dock.minimizeFeedback\":true}},\"tool\":\"lens_set\"}",
@@ -1150,6 +1170,21 @@
       "example": "{\"args\":{\"changes\":{\"dock.scrollCyclesWindows\":true}},\"tool\":\"lens_set\"}",
       "label": "Scroll cycles windows",
       "path": "dock.scrollCyclesWindows",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_look",
+      "category": "Dock",
+      "default": false,
+      "description": "Mouse wheel over a running app changes that app's volume in Windows' volume mixer (Shift+wheel when scrolling switches windows). Off by default.",
+      "example": "{\"args\":{\"changes\":{\"dock.scrollVolume\":true}},\"tool\":\"lens_set\"}",
+      "label": "Scroll to change volume",
+      "path": "dock.scrollVolume",
       "reversible": true,
       "risk": "low",
       "schema": {
@@ -1333,6 +1368,22 @@
       "risk": "confirm",
       "schema": {
         "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Dock",
+      "default": "Ctrl+Alt+D",
+      "description": "A global hotkey that moves the keyboard onto the Dock's icons (Ctrl+Alt+D by default, empty = off). The shortcuts sheet in Settings refuses Windows' and Lens's own keys.",
+      "example": "{\"args\":{\"changes\":{\"func.dockFocusHotkey\":\"Ctrl+Alt+D\"}},\"tool\":\"lens_set\"}",
+      "label": "Focus the Dock hotkey",
+      "path": "func.dockFocusHotkey",
+      "reversible": true,
+      "risk": "confirm",
+      "schema": {
+        "maxLength": 40,
+        "type": "string"
       },
       "store": "config"
     },
