@@ -145,21 +145,80 @@ pub fn read_selection(policy: &SelectionPolicy, excluded: &[String], trigger: Tr
 pub fn read_facts(policy: &SelectionPolicy, excluded: &[String], trigger: Trigger, release: (i32, i32)) -> Result<SelectionFacts, Refusal> {
     let fg = foreground().unwrap_or_default();
     let (tx, rx) = mpsc::channel();
-    let policy = policy.clone();
-    let excluded = excluded.to_vec();
-    let fg2 = fg.clone();
-    std::thread::spawn(move || {
-        let r = unsafe { read_on_this_thread(&policy, &excluded, trigger, &fg2, release) };
-        let _ = tx.send(r);
-    });
+    let job = ReadJob { policy: policy.clone(), excluded: excluded.to_vec(), trigger, fg: fg.clone(), release, reply: tx };
+    // The warm reader keeps one UI Automation client (creating it costs more than the whole
+    // budget on a cold PC). If it is busy with a read that hangs, a fresh thread does this one.
+    let job = match reader().try_lock().ok().and_then(|r| r.clone()) {
+        Some(r) if !READER_BUSY.load(Ordering::SeqCst) => match r.send(job) {
+            Ok(()) => None,
+            Err(mpsc::SendError(j)) => Some(j),
+        },
+        _ => Some(job),
+    };
+    if let Some(j) = job {
+        std::thread::spawn(move || {
+            let _ = unsafe { CoInitializeEx(None, COINIT_MULTITHREADED) };
+            let created: windows::core::Result<IUIAutomation> = unsafe { CoCreateInstance(&CUIAutomation, None, CLSCTX_INPROC_SERVER) };
+            let r = created
+                .map_err(|_| Refusal::NoTextPattern)
+                .and_then(|auto| unsafe { read_on_this_thread(&auto, &j.policy, &j.excluded, j.trigger, &j.fg, j.release) });
+            let _ = j.reply.send(r);
+        });
+    }
     match rx.recv_timeout(READ_TIMEOUT) {
         Ok(Ok(mut f)) => {
             f.fg = fg;
             Ok(f)
         }
         Ok(Err(e)) => Err(e),
-        Err(_) => Err(Refusal::NoTextPattern),
+        Err(_) => {
+            if trigger == Trigger::Bubble {
+                eprintln!("[Lens UI] selection bar: the selection read took longer than {} ms", READ_TIMEOUT.as_millis());
+            }
+            Err(Refusal::NoTextPattern)
+        }
     }
+}
+
+struct ReadJob {
+    policy: SelectionPolicy,
+    excluded: Vec<String>,
+    trigger: Trigger,
+    fg: ForegroundInfo,
+    release: (i32, i32),
+    reply: mpsc::Sender<Result<SelectionFacts, Refusal>>,
+}
+
+static READER_BUSY: AtomicBool = AtomicBool::new(false);
+
+/// The warm reader thread (started on first use, and by the bar when it turns on).
+fn reader() -> &'static Mutex<Option<mpsc::Sender<ReadJob>>> {
+    static R: OnceLock<Mutex<Option<mpsc::Sender<ReadJob>>>> = OnceLock::new();
+    R.get_or_init(|| {
+        let (tx, rx) = mpsc::channel::<ReadJob>();
+        let ok = std::thread::Builder::new()
+            .name("lens-uia-reader".into())
+            .spawn(move || {
+                let _ = unsafe { CoInitializeEx(None, COINIT_MULTITHREADED) };
+                let auto: Option<IUIAutomation> = unsafe { CoCreateInstance(&CUIAutomation, None, CLSCTX_INPROC_SERVER) }.ok();
+                while let Ok(j) = rx.recv() {
+                    READER_BUSY.store(true, Ordering::SeqCst);
+                    let r = match &auto {
+                        Some(a) => unsafe { read_on_this_thread(a, &j.policy, &j.excluded, j.trigger, &j.fg, j.release) },
+                        None => Err(Refusal::NoTextPattern),
+                    };
+                    READER_BUSY.store(false, Ordering::SeqCst);
+                    let _ = j.reply.send(r);
+                }
+            })
+            .is_ok();
+        Mutex::new(ok.then_some(tx))
+    })
+}
+
+/// Starts the warm reader ahead of the first selection.
+pub fn warm_reader() {
+    let _ = reader();
 }
 
 /// The selection's line rectangles: a SAFEARRAY of doubles, four per line (x, y, w, h).
@@ -183,10 +242,14 @@ unsafe fn line_rects(range: &IUIAutomationTextRange) -> Vec<bar::Rect> {
     out
 }
 
-unsafe fn read_on_this_thread(policy: &SelectionPolicy, excluded: &[String], trigger: Trigger, fg: &ForegroundInfo, release: (i32, i32)) -> Result<SelectionFacts, Refusal> {
-    let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
-    let auto: IUIAutomation = CoCreateInstance(&CUIAutomation, None, CLSCTX_INPROC_SERVER).map_err(|_| Refusal::NoTextPattern)?;
-    let el = auto.GetFocusedElement().map_err(|_| Refusal::NoTextPattern)?;
+unsafe fn read_on_this_thread(auto: &IUIAutomation, policy: &SelectionPolicy, excluded: &[String], trigger: Trigger, fg: &ForegroundInfo, release: (i32, i32)) -> Result<SelectionFacts, Refusal> {
+    let bubble = trigger == Trigger::Bubble;
+    let el = auto.GetFocusedElement().map_err(|_| {
+        if bubble {
+            eprintln!("[Lens UI] selection bar: no focused element");
+        }
+        Refusal::NoTextPattern
+    })?;
     let pid = el.CurrentProcessId().unwrap_or(0) as u32;
     let process = if pid == fg.pid { fg.process.clone() } else { process_path(pid).unwrap_or_default() };
     let pattern: Option<IUIAutomationTextPattern> = el.GetCurrentPatternAs::<IUIAutomationTextPattern>(UIA_TextPatternId).ok();
@@ -199,6 +262,11 @@ unsafe fn read_on_this_thread(policy: &SelectionPolicy, excluded: &[String], tri
         has_text_pattern: pattern.is_some(),
         own_process: pid == std::process::id(),
     };
+    if bubble && !candidate.has_text_pattern {
+        let ct = el.CurrentControlType().map(|c| c.0).unwrap_or(0);
+        let class = el.CurrentClassName().map(|c| c.to_string()).unwrap_or_default();
+        eprintln!("[Lens UI] selection bar: the focused element has no TextPattern (control type {ct}, class {class:?})");
+    }
     may_read(&candidate, policy, excluded, trigger)?;
     let pattern = pattern.ok_or(Refusal::NoTextPattern)?;
     let ranges = pattern.GetSelection().map_err(|_| Refusal::NoTextPattern)?;
@@ -213,12 +281,17 @@ unsafe fn read_on_this_thread(policy: &SelectionPolicy, excluded: &[String], tri
                 }
                 out.push_str(&text.to_string());
             }
-            if trigger == Trigger::Bubble {
+            if bubble {
                 rects.extend(line_rects(&range));
             }
         }
     }
-    let text = clean_selection(&out, policy.max_chars).ok_or(Refusal::NoTextPattern)?;
+    let text = clean_selection(&out, policy.max_chars).ok_or_else(|| {
+        if bubble {
+            eprintln!("[Lens UI] selection bar: the selection was empty ({n} range(s))");
+        }
+        Refusal::NoTextPattern
+    })?;
     let value_writable = el
         .GetCurrentPatternAs::<IUIAutomationValuePattern>(UIA_ValuePatternId)
         .ok()
@@ -546,6 +619,7 @@ pub fn start_bubble(get_policy: impl Fn() -> (SelectionPolicy, Vec<String>) + Se
             }
         }
     });
+    warm_reader();
     crate::input::claim_mouse(crate::input::Feature::ClipBubble);
 }
 
