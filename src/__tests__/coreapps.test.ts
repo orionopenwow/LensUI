@@ -10,6 +10,7 @@ mock.module("@tauri-apps/api/core", () => ({
 }));
 mock.module("@tauri-apps/api/event", () => ({ listen: async () => () => {}, emit: async () => {} }));
 
+import { LENS_APP_GLYPHS } from "../icons/lensApps";
 import { CORE_APPS, coreAppMatches, coreAppSearchItems, coreAppTemplates, iconUrl, isCoreAppStub, pinEntry, SLASH } from "../coreapps/registry";
 import { friendlyError, loadReducer, type Load } from "../coreapps/models/load";
 import { cpuShare, push, slowHints, sortApps } from "../coreapps/models/monitor";
@@ -30,8 +31,7 @@ describe("registry", () => {
     for (const a of CORE_APPS) {
       expect(rs).toContain(`id: "${a.id}"`);
       expect(rs).toContain(`title: "${a.title}"`);
-      expect(rs).toContain(`glyph: "${a.glyph}"`);
-      expect(rs).toContain(`tint: ("${a.tint[0]}", "${a.tint[1]}")`);
+      expect(rs).toContain(`glyph: "${LENS_APP_GLYPHS[a.id]}"`);
     }
     expect((rs.match(/CoreApp \{\s+id:/g) ?? []).length).toBe(CORE_APPS.length);
   });

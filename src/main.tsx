@@ -90,6 +90,8 @@ const surfaces: Record<string, React.LazyExoticComponent<React.ComponentType>> =
   conversation: lazy(() =>
     import("./surfaces/ConversationSurface").then((m) => ({ default: m.ConversationSurface }))
   ),
+  // Test-only: Lens's app-icon sheet for the visual suite (src/icons/lensApps.ts).
+  iconsheet: lazy(() => import("./icons/IconSheetSurface").then((m) => ({ default: m.IconSheetSurface }))),
   // Lens Mission Control (docs/MISSION_CONTROL.md): dev builds only. `__LENS_ADMIN__` is false in
   // every `vite build`, so this entry and its chunk are not in any release bundle.
   ...(typeof __LENS_ADMIN__ !== "undefined" && __LENS_ADMIN__
