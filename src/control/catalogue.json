@@ -77,7 +77,7 @@
     "Hot corners": 8,
     "Icons & folders": 4,
     "Internal": 6,
-    "Magic (preview)": 8,
+    "Magic (preview)": 9,
     "Pointer effects": 11,
     "Quick settings": 5,
     "Sessions": 2,
@@ -92,7 +92,7 @@
     "Window styling": 9,
     "Workspaces & tiling": 10
   },
-  "count": 194,
+  "count": 195,
   "entries": [
     {
       "capability": "change_settings",
@@ -1825,6 +1825,21 @@
       "example": "{\"args\":{\"changes\":{\"magicWaves.dashboard\":true}},\"tool\":\"lens_set\"}",
       "label": "Magic Dashboard",
       "path": "magicWaves.dashboard",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Magic (preview)",
+      "default": false,
+      "description": "Pins widgets on the desktop, above the wallpaper and below your windows; local data only.",
+      "example": "{\"args\":{\"changes\":{\"magicWaves.desktopWidgets\":true}},\"tool\":\"lens_set\"}",
+      "label": "Desktop widgets",
+      "path": "magicWaves.desktopWidgets",
       "reversible": true,
       "risk": "low",
       "schema": {

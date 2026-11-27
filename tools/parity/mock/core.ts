@@ -469,3 +469,78 @@ export function isTauri() { return false; }
     browser_import_receipts: () => [],
   });
 }
+
+// Desktop widgets (docs/features/desktop-widgets.md). An in-memory layout for the `deskwidgets`
+// surface. ?desk=sample starts with one widget of each local kind (and a Weather widget from the
+// Dashboard sample when ?widgets=sample is set too); ?desk=edit opens edit mode as well. Notes and
+// today's calendar get clearly invented sample data. Nothing here touches the network.
+{
+  // The host window only exists while the flag is on, so opening it bare (the hyper suite) turns
+  // the flag on and shows the sample layout.
+  if (params.get("surface") === "deskwidgets" && !params.get("magic")) (config as any).magicWaves = { ...((config as any).magicWaves ?? {}), desktopWidgets: true };
+  const desk = params.get("desk") ?? (params.get("surface") === "deskwidgets" ? "sample" : null);
+  const sample = [
+    { id: "clock-1", kind: "clock", size: "small", col: -1, row: -1, params: {} },
+    { id: "today-1", kind: "today", size: "medium", col: -1, row: -1, params: {} },
+    { id: "music-1", kind: "music", size: "medium", col: -1, row: -1, params: {} },
+    { id: "batteries-1", kind: "batteries", size: "small", col: -1, row: -1, params: {} },
+    { id: "notes-1", kind: "notes", size: "small", col: -1, row: -1, params: {} },
+    { id: "clock-2", kind: "clock", size: "medium", col: -1, row: -1, params: { zones: "local,America/New_York,Europe/London,Asia/Tokyo" } },
+    ...(params.get("widgets") === "sample" ? [{ id: "weather-1", kind: "weather", size: "small", col: -1, row: -1, params: { ref: "w1" } }] : []),
+  ];
+  const state = {
+    key: "DISPLAY1@1920x1080",
+    items: desk === "sample" || desk === "edit" ? sample : [{ id: "clock-1", kind: "clock", size: "small", col: -1, row: -1, params: {} }],
+    editing: desk === "edit",
+  };
+  const on = () => !!(config as any).magicWaves?.desktopWidgets;
+  handlers.desktop_widgets_available = () => on();
+  handlers.desktop_widgets_state = () => {
+    if (!on()) return Promise.reject("Turn on desktop widgets first.");
+    return { key: state.key, items: JSON.parse(JSON.stringify(state.items)), editing: state.editing, shown: true, covered: false };
+  };
+  handlers.desktop_widgets_save = (a) => {
+    if (!on()) return Promise.reject("Turn on desktop widgets first.");
+    state.items = JSON.parse(JSON.stringify(a.items ?? []));
+    return state.items;
+  };
+  handlers.desktop_widgets_hits = (a) => {
+    (W as any).__deskHits = a;
+    return null;
+  };
+  handlers.desktop_widgets_edit = (a) => {
+    if (!on()) return Promise.reject("Turn on desktop widgets first.");
+    state.editing = a.on === null || a.on === undefined ? !state.editing : !!a.on;
+    emitLocal("lens://deskwidgets-edit", state.editing);
+    return state.editing;
+  };
+  handlers.desktop_widgets_status = () => ({ running: on(), shown: on(), editing: state.editing, covered: false, clickThrough: true, hiddenReason: null, key: state.key, rect: [0, 0, 1920, 1040], hwnd: 0, widgets: state.items.length });
+  if (desk) {
+    const now = Date.now();
+    handlers.shelves_list = () => [
+      { id: "default", name: "Shelf", created_ms: now, item_count: 0, approx_tokens: 0 },
+      { id: "notes", name: "Notes", created_ms: now, item_count: 2, approx_tokens: 20 },
+    ];
+    handlers.shelf_list = (a) =>
+      a?.shelf === "notes"
+        ? [
+            { id: "n1", shelf: "notes", kind: "text", title: "Sample: Groceries", text: "Sample: Groceries\nOat milk, lemons, coffee", tags: ["lens-note"], pinned: false, local_only: false, created_ms: now - 3_600_000, updated_ms: now - 60_000, order: 0, chars: 40, approx_tokens: 10 },
+            { id: "n2", shelf: "notes", kind: "text", title: "Sample: Design review", text: "Sample: Design review\nBring the new Dock sketches", tags: ["lens-note"], pinned: false, local_only: false, created_ms: now - 7_200_000, updated_ms: now - 600_000, order: 1, chars: 44, approx_tokens: 11 },
+          ]
+        : [];
+    try {
+      const d = new Date();
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      localStorage.setItem(
+        "lens_calendar_events_v1",
+        JSON.stringify([
+          { id: "e1", dateKey: key, time: "09:30", title: "Sample: Stand-up", done: false },
+          { id: "e2", dateKey: key, time: "13:00", title: "Sample: Design review", done: false },
+          { id: "e3", dateKey: key, time: "", title: "Sample: Water the plants", done: false },
+        ]),
+      );
+    } catch {
+      /* no storage in this context */
+    }
+  }
+}

@@ -43,13 +43,16 @@ Add: **Add a widget** → pick one → settings → a **consent screen** that li
 **Sources** lists every site approved for every widget, each with **Remove**, and the **Stop all widget fetching** switch (the kill switch). Removing a site or a widget forgets its cached answers.
 
 Fetch rules, enforced in Rust (`magic_waves/widgets.rs`), not in the page:
-- Only while both flags are on and the kill switch is off.
+- Only while `magicWaves.widgets` and either the Dashboard or desktop widgets are on, and the kill switch is off.
 - Only `https://` addresses on a host approved for that widget. Never this PC or the local network: `localhost`, `*.local`, `*.lan`, single-label names and IP literals are refused before any request, and an answer from a private address is thrown away.
 - Redirects must stay on the same host (at most 3). 8 s timeout, 512 KB cap, answers cached for at least 5 minutes.
 - Approvals and the kill switch live in `%APPDATA%\LensUI\widgets.json`, not in config.json, so agents using the control catalogue can't approve a site for you.
 - Remote images in cards are not shown yet (the window's CSP keeps images local).
 
 Plugin widgets (richer, code-based) use the existing plugin sandbox (`<PluginSlot slot="widgets"/>`): sandboxed frames without network access.
+
+## Desktop widgets
+The Widgets lane's header has a **Desktop widgets** switch (`magicWaves.desktopWidgets`) and, while it's on, **Edit widgets…**, which closes the Dashboard and opens the widget gallery on the desktop. A Weather or other gallery widget you added here can also sit on the desktop: it is the same widget with the same approved sites, fetched by Lens under the rules above while it is on screen (`widgets_fetch` is allowed while `magicWaves.widgets` is on and either the Dashboard or desktop widgets is on). See [features/desktop-widgets.md](features/desktop-widgets.md).
 
 ## X (M2)
 Embed-only, by owner decision. With your OK and a handle, the lane shows X's own public timeline embed (`syndication.twitter.com`) in an isolated, sandboxed frame; **Open X** opens the X web app in Lens Browser with your own sign-in. No API key, no scraping; Lens stores only the handle, on this PC, and hides the embed while widget fetching is off.
@@ -62,7 +65,7 @@ Warm open (Lens says "open" → lanes rebuilt and painted) is budgeted at **< 15
 - Everything stays on this PC. Nothing is captured in the background; the context strip is built from Lens's own data at the moment the Dashboard opens.
 - Each source connects only after you choose it, and can be disconnected.
 - X/Twitter: official embeds and the web app with your own sign-in only. No API key, no scraping.
-- Widgets never get network access. Lens fetches their data only from hosts you approved for that widget, and only while the Dashboard is open.
+- Widgets never get network access. Lens fetches their data only from hosts you approved for that widget, and only while the Dashboard (or that widget on your desktop) is showing.
 - Learned ordering (`magicWaves.learn`) is off by default; moved cards say why ("Why this is here"); turning it off forgets what it learned.
 
 ## Code
