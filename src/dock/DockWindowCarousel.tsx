@@ -165,10 +165,10 @@ export const DockWindowCarousel: React.FC<Props> = ({ title, windows, iconUrl, o
         {headIcon ? <img src={headIcon} alt="" className="dwc-head-icon" /> : <AppWindow size={14} className="dwc-head-icon" />}
         <span className="dwc-head-name">{title}</span>
         <span className="dwc-count" aria-live="polite">{counterText(cur, n)}</span>
-        <button type="button" className="dwc-nav" aria-label="Previous window" onClick={() => go(-1)}>
+        <button type="button" data-weight="medium" className="dwc-nav" aria-label="Previous window" onClick={() => go(-1)}>
           <ChevronLeft size={14} strokeWidth={2.6} />
         </button>
-        <button type="button" className="dwc-nav" aria-label="Next window" onClick={() => go(1)}>
+        <button type="button" data-weight="medium" className="dwc-nav" aria-label="Next window" onClick={() => go(1)}>
           <ChevronRight size={14} strokeWidth={2.6} />
         </button>
       </div>
@@ -205,6 +205,7 @@ export const DockWindowCarousel: React.FC<Props> = ({ title, windows, iconUrl, o
                 {d === 0 && (
                   <button
                     type="button"
+                    data-weight="medium"
                     className="dwc-close"
                     aria-label={`Close ${name(w)}`}
                     onClick={(e) => {
@@ -226,6 +227,7 @@ export const DockWindowCarousel: React.FC<Props> = ({ title, windows, iconUrl, o
           <button
             key={w.hwnd}
             type="button"
+            data-weight="medium"
             role="tab"
             aria-selected={i === cur}
             aria-label={`Window ${i + 1} of ${n}: ${name(w)}`}

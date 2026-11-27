@@ -114,6 +114,27 @@ export function setStyleIconSize(config: LensConfig, style: string, size: number
   return withDockPatch(config, { iconSizes: sizes });
 }
 
+/** Sizes the Dock's right-click menu offers. */
+export const MENU_ICON_SIZES = [34, 40, 46, 52] as const;
+
+/** The icon size in force for the style in use: what the menu marks as chosen. */
+export function menuIconSize(config: LensConfig): number {
+  return resolveDockIconSize(config.dock, normalizeDockStyle(config.dock.style));
+}
+
+/**
+ * A size picked in the Dock's right-click menu (B-109). The shared size is changed when that is
+ * what the style in use follows; a style with a size of its own, or one that caps the shared size
+ * below the pick (Slim, Taskbar, Studio, Islands, Unified), gets the pick as its own size, so the
+ * button always does what it says.
+ */
+export function pickMenuIconSize(config: LensConfig, size: number): LensConfig {
+  const style = normalizeDockStyle(config.dock.style);
+  const own = validSize(config.dock.iconSizes?.[style]);
+  if (own || dockStyleIconSize(style, size) !== size) return setStyleIconSize(config, style, size);
+  return withDockPatch(config, { iconSize: size });
+}
+
 /** The size a style falls back to when it has none of its own. */
 export function sharedStyleIconSize(config: LensConfig, style: string): number {
   return dockStyleIconSize(normalizeDockStyle(style), config.dock.iconSize);
