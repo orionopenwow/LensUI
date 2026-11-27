@@ -10237,6 +10237,23 @@
   {
    "id": "doc.cursors.15",
    "kind": "doc",
+   "title": "Cursor Suite: Magic Mouse pointer (preview, off by default)",
+   "text": "Magic Mouse ( config.magicWaves.mouse , docs/plans/MAGIC WAVES.md §4.2, wave M3) applies its own set through this suite's registry layer, so it shares the suite's backup and exact restore. The set ( src-tauri/src/magic waves/cursor art.rs ): the Lens cloud (the logo's six hues) breathing inside a dark ring, with a short pointer tip that carries the hotspot. Arrow and AppStarting are an 8-frame .ani (6 fps); Wait is the ring alone (hotspot in the middle). Every frame holds all five Windows sizes (32/48/64/96/128). Text, hand, resize and the rest use the familiar Obsidian shapes. High contrast on in Windows → the high-contrast variant (white rim, black halo). The files are built at run time into cursors/magic/<magic magic-hc , outside cursors/sets/ so a Look change can't prune them. Before Windows is pointed at a file, Lens loads it with Windows' own LoadCursorFromFile and keeps the first ",
+   "path": [
+    "Docs",
+    "Cursor Suite",
+    "Magic Mouse pointer (preview, off by default)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CURSORS.md",
+    "heading": "Magic Mouse pointer (preview, off by default)"
+   },
+   "source": "docs/CURSORS.md"
+  },
+  {
+   "id": "doc.cursors.16",
+   "kind": "doc",
    "title": "Cursor Suite: Persistence and exit",
    "text": "Pointer sets and pointer settings are Windows settings, so — like Windows' own Mouse control panel — they stay after Lens closes. They are undone by Restore my Windows pointers , Reset to my original settings , and Remove all Lens changes . The effects overlay and both hooks exist only while Lens runs and are removed on exit and from the panic hook.",
    "path": [
@@ -10252,10 +10269,10 @@
    "source": "docs/CURSORS.md"
   },
   {
-   "id": "doc.cursors.16",
+   "id": "doc.cursors.17",
    "kind": "doc",
    "title": "Cursor Suite: Testing",
-   "text": "cargo test --lib win cursor — encoders (byte-for-byte), rasteriser (hotspots on the shape, clear edges, anti-aliasing, retro blocks, spinner frames, high visibility), registry plans, backup / apply / restore against an in-memory registry and a temp dir, SPI mapping and minimal writes, pointer backup / reset, JSON round trips, hook message filtering, throttling, shake detection, key-label privacy, monitor picking, pause rules and frame building. Both modules also compile and test without Cargo: rustc --edition 2021 --test --cfg lens standalone lib t.rs where lib t.rs declares the two modules (the lens standalone cfg drops the serde derives). Adding --cfg lens win check with --emit=metadata type-checks the Win32 code on any OS. Needs real Windows hardware: the registry apply / restore round trip and how Explorer and apps pick the new pointers up, CursorBaseSize on Windows 10 1903+ and Wind",
+   "text": "cargo test --lib win cursor — encoders (byte-for-byte), rasteriser (hotspots on the shape, clear edges, anti-aliasing, retro blocks, spinner frames, high visibility), registry plans, backup / apply / restore against an in-memory registry and a temp dir, SPI mapping and minimal writes, pointer backup / reset, JSON round trips, hook message filtering, throttling, shake detection, key-label privacy, monitor picking, pause rules and frame building. Both modules also compile and test without Cargo: rustc --edition 2021 --test --cfg lens standalone lib t.rs where lib t.rs declares the two modules (the lens standalone cfg drops the serde derives). Adding --cfg lens win check with --emit=metadata type-checks the Win32 code on any OS. Magic Mouse: cargo test --lib magic waves covers the gesture machine (short click, early drag, hold, grab, tiny grab, cancel, hold time, \"only an armed up is ever s",
    "path": [
     "Docs",
     "Cursor Suite",
