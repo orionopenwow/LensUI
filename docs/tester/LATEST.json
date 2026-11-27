@@ -1,227 +1,417 @@
 {
-  "date": "2026-11-26",
-  "build_ref": "main@718ae8b",
+  "date": "2026-11-27",
+  "build_ref": "main@a0c18d2",
   "changes": [
     {
       "area": "Dock",
-      "title": "Menus open and close from their own button",
-      "detail": "The gear and Quick Settings close on a second press; Settings and Search have a visible ×; a quick click elsewhere closes them.",
-      "pr": 102
+      "title": "New Unified Dock style",
+      "detail": "One floating pill: Launcher, apps, tray, Quick Settings, a notification bell and a two-line clock. Settings › Dock & Bar › Dock style. Floating stays the default.",
+      "pr": 117
     },
     {
       "area": "Dock",
-      "title": "Window previews on by default",
-      "detail": "Live previews on hover, like Windows; turning them off again sticks.",
-      "pr": 102
+      "title": "Window marks and carousel",
+      "detail": "A dash means one window and three dots mean two or more. Apps with several windows show a carousel you can scroll, click or arrow through.",
+      "pr": 117
     },
     {
       "area": "Dock",
-      "title": "Smoother Dock, no white flash",
-      "detail": "Faster magnification, hover and reorder; no thin bright line when Search opens or the style changes.",
-      "pr": 83
+      "title": "Smooth reflow and Launcher pins",
+      "detail": "Pin, unpin, reorder, open and close glide into place. The Launcher marks pinned apps and offers Pin/Unpin on right-click.",
+      "pr": 117
     },
     {
       "area": "Dock",
-      "title": "Dock styles keep menu sizes",
-      "detail": "Styles no longer change drop-up widths; the Taskbar style opens Settings and Search like Windows 11.",
-      "pr": 95
+      "title": "Dock keys",
+      "detail": "With an icon focused, use the arrows, Home/End or type a name to find an app. The arrow into the screen opens its window list.",
+      "pr": 137
+    },
+    {
+      "area": "Dock",
+      "title": "Dock fixes",
+      "detail": "Failed clicks say \"Couldn't open …\". Admin windows no longer land on the wrong pin. Side-Dock menus stay on screen. Icon size works on every style.",
+      "pr": 137
+    },
+    {
+      "area": "Dock",
+      "title": "New music pop-out",
+      "detail": "Hover a player in the Dock for artwork, a level meter, a seek bar, bigger controls and a soft sound glow. The glow and meter can be turned off in Settings › Music.",
+      "pr": 120
+    },
+    {
+      "area": "Dock",
+      "title": "Simpler Lens app icons",
+      "detail": "Thick white symbols on a plain dark tile. Lens Browser keeps the colourful Lens logo.",
+      "pr": 139
+    },
+    {
+      "area": "Dock",
+      "title": "Dock & Bar › Advanced",
+      "detail": "Magnification, launch animation, app names, scroll-to-switch, icon size per style and more, all in one place.",
+      "pr": 113
+    },
+    {
+      "area": "Dock",
+      "title": "Side-Dock pop-outs",
+      "detail": "With the Dock on the left or right edge, Settings and Quick Settings open beside it and inside the screen.",
+      "pr": 119
     },
     {
       "area": "Themes",
-      "title": "Setup starts from your desktop",
-      "detail": "First run picks your light/dark mode, wallpaper colour and nearest look; Skip changes nothing.",
-      "pr": 99
+      "title": "Back to first theme restores all",
+      "detail": "Going back to your first theme choice restores folder colours and the Day & night schedule too (B-39 fixed).",
+      "pr": 113
     },
     {
       "area": "Themes",
-      "title": "Windows accent only on request",
-      "detail": "Lens copies its accent into Windows only with 'Also use this accent in Windows' ticked (off by default).",
-      "pr": 102
+      "title": "Themes don't change the Dock",
+      "detail": "Themes are colours only. CRT merged into Green Phosphor and Claude Light Brand into Claude Light; old choices still work.",
+      "pr": 113
     },
     {
       "area": "Themes",
-      "title": "Clean theme switching",
-      "detail": "Theme switches in Settings are instant with no growing or flashing; themes change colours only.",
-      "pr": 88
+      "title": "Readable text in every pack",
+      "detail": "All 87 packs checked: 18 dark packs got lighter secondary text, and two light accents are darker.",
+      "pr": 118
+    },
+    {
+      "area": "Themes",
+      "title": "Faster theme switching",
+      "detail": "Theme switches are quicker, with no visual change.",
+      "pr": 142
     },
     {
       "area": "Windows",
-      "title": "Window dots cover the real buttons",
-      "detail": "The native Close button no longer lights up under the dots; they follow move, maximise, snap and restore; the green dot opens Snap Layouts.",
-      "pr": 99
+      "title": "Window buttons honour settings",
+      "detail": "Excluded apps, button style and left/right position now apply to other apps. The left side has only been checked in tests.",
+      "pr": 115
+    },
+    {
+      "area": "Windows",
+      "title": "Per-app window buttons",
+      "detail": "Settings › Windows & Keys › Window styling has a switch per app. Protected apps show a locked badge.",
+      "pr": 115
+    },
+    {
+      "area": "Windows",
+      "title": "One anti-cheat list everywhere",
+      "detail": "Every Lens feature uses the same list of protected games, so Alt+drag can no longer move a protected game's window.",
+      "pr": 115
     },
     {
       "area": "Desktop",
-      "title": "Safer sign-in",
-      "detail": "With Start with Windows on, Lens waits for the real desktop; hold Shift at sign-in to skip Lens.",
-      "pr": 101
+      "title": "Multi-monitor fixes",
+      "detail": "The Dock appears on a second monitor with different scaling (B-62). Settings and Search no longer cover the Dock on small high-scaling screens (B-64).",
+      "pr": 119
     },
     {
       "area": "Desktop",
-      "title": "Protected Windows keys",
-      "detail": "Ctrl+Alt+Del, Ctrl+Shift+Esc, Alt+F4, Win+L, Win+D and Win+Tab always reach Windows.",
-      "pr": 101
+      "title": "Top Bar auto-hide fix",
+      "detail": "After a start-up hiccup, an auto-hidden Top Bar no longer stays drawn (B-126). The Launcher closes on a click outside (B-128).",
+      "pr": 140
     },
     {
       "area": "Desktop",
-      "title": "Click through the Top Bar",
-      "detail": "Only the bar's buttons take clicks; elsewhere the click goes to the app underneath.",
-      "pr": 102
+      "title": "Top Bar switches",
+      "detail": "A single on/off switch controls the Top Bar. New Pointer halo switch; the halo also goes away when Windows transparency is off.",
+      "pr": 118
     },
     {
       "area": "Desktop",
-      "title": "Monitor changes handled",
-      "detail": "The Dock and Top Bar are re-placed on monitor, resolution, scaling or sleep changes; new 'Follow the pointer'.",
-      "pr": 101
+      "title": "No stuck pop-outs",
+      "detail": "Menus close after lock/unlock and focus changes. After an Explorer restart the Dock still shows apps flashing for attention (B-65).",
+      "pr": 119
     },
     {
       "area": "Desktop",
-      "title": "Pop-outs close by themselves",
-      "detail": "Quick Settings and Settings close about 1.5 s after the pointer leaves.",
-      "pr": 101
+      "title": "Magic button (off by default)",
+      "detail": "A Windows-key tap opens Lens Magic Start: search, pins, Magic actions, recents, Lock. Ctrl+Esc always opens Windows Start.",
+      "pr": 107
     },
     {
       "area": "Desktop",
-      "title": "Auto-hidden Top Bar stays hidden",
-      "detail": "It no longer pops back up after a settings save or Search.",
-      "pr": 94
+      "title": "Magic Mouse (off by default)",
+      "detail": "An animated Lens pointer. Hold, then drag, to grab part of the screen into Snip; hold to open Magic. Your pointers come back when it's off.",
+      "pr": 109
+    },
+    {
+      "area": "Desktop",
+      "title": "Desktop widgets (off by default)",
+      "detail": "Widgets on the desktop, below your windows: clock, today, notes, now playing, battery, weather. Add, resize and move them in edit mode.",
+      "pr": 123
+    },
+    {
+      "area": "Desktop",
+      "title": "Magic Dashboard (off by default)",
+      "detail": "A side panel with Inbox, Feeds, Today, Shelf, Now playing, an approved-sources Widgets lane and an X lane.",
+      "pr": 108
     },
     {
       "area": "AI and Command",
-      "title": "Lens › row in right-click menus",
-      "detail": "One Lens row slides into Magic actions; Explorer has a Lens menu inside folders and on drives.",
-      "pr": 84
+      "title": "Selection bar + Magic Search",
+      "detail": "Off by default. Select text in almost any app for Cut, Copy, Paste, Magic Search and your actions. Magic Search answers with web and local results.",
+      "pr": 128
+    },
+    {
+      "area": "AI and Command",
+      "title": "Approvals tied to the exact step",
+      "detail": "An OK only works for the action it was shown for. If a page changes after you approved, Lens asks again.",
+      "pr": 114
+    },
+    {
+      "area": "AI and Command",
+      "title": "Plan view",
+      "detail": "When Lens proposes several steps at once, you see the whole plan and can Allow or Deny each step.",
+      "pr": 114
+    },
+    {
+      "area": "AI and Command",
+      "title": "Undo survives restart",
+      "detail": "Command's undo history (last 50 steps) is kept across restarts.",
+      "pr": 114
+    },
+    {
+      "area": "AI and Command",
+      "title": "Teach me and examples",
+      "detail": "After Command changes a setting, it says where the setting lives, with Show me. There are example commands under the empty Do field.",
+      "pr": 115
+    },
+    {
+      "area": "AI and Command",
+      "title": "Magic window and Shelf fixes",
+      "detail": "Snip this window and Open in Lens Browser now show (B-70). The Shelf has Undo and Menu-key menus. Shelf to Notes is off by default.",
+      "pr": 136
+    },
+    {
+      "area": "Voice",
+      "title": "Voice conversation stays light",
+      "detail": "Interrupting no longer leaves listeners behind, and the hidden window stays idle (B-120).",
+      "pr": 136
     },
     {
       "area": "Browser",
-      "title": "Site permission prompts",
-      "detail": "Camera, mic, location, notifications and clipboard requests show a Lens bar: Block, Allow once, Allow on this site.",
-      "pr": 74
+      "title": "Reader view",
+      "detail": "The toolbar's Reader button shows the page's text cleanly; size, width and font are remembered.",
+      "pr": 114
     },
     {
       "area": "Browser",
-      "title": "Simpler sidebar",
-      "detail": "Tabs first, pinned icons in one row, Find a tab with Ctrl+Shift+A.",
-      "pr": 86
+      "title": "Clearer browser errors",
+      "detail": "Failed browser actions show a message. An unanswered permission request says so after 60 s.",
+      "pr": 114
+    },
+    {
+      "area": "Browser",
+      "title": "Messenger badges",
+      "detail": "Unread counts from Slack, Discord and other web messengers in Lens Browser reach the Messages badge.",
+      "pr": 112
+    },
+    {
+      "area": "Snip",
+      "title": "Live text",
+      "detail": "In the Snip studio press L to select words on the image, then Copy, Highlight or Hide them. Links, emails and codes get one-press copy.",
+      "pr": 136
+    },
+    {
+      "area": "Snip",
+      "title": "New Snip shortcut",
+      "detail": "The default is now Ctrl+Alt+X (it clashed with Save As). A shortcut you chose yourself is kept.",
+      "pr": 115
+    },
+    {
+      "area": "Snip",
+      "title": "Crop, keys and history fixes",
+      "detail": "Cropped-out text stays out of Copy text, previews aren't stretched after a crop, Enter only runs the focused button, and history has Undo.",
+      "pr": 136
     },
     {
       "area": "Settings",
-      "title": "One Simple / Advanced switch",
-      "detail": "At the top of the sidebar; plus one plain shortcuts cheat sheet.",
-      "pr": 99
+      "title": "Weighted presses",
+      "detail": "On for everyone: controls sink briefly and spring back; Quick Settings and Search grow from the Top Bar button. Instant with reduced motion.",
+      "pr": 131
     },
     {
       "area": "Settings",
-      "title": "Restart to update and Report a problem",
-      "detail": "Updates are announced outside Settings; a built-in bug report.",
-      "pr": 82
+      "title": "Switches keep focus",
+      "detail": "Switches no longer vanish or lose focus after a click (B-40). Hot corners can be set up while off (B-41).",
+      "pr": 118
+    },
+    {
+      "area": "Settings",
+      "title": "Pop-out close delay",
+      "detail": "Short, Normal or Long in Dock & Bar › Advanced › Close after.",
+      "pr": 118
+    },
+    {
+      "area": "Settings",
+      "title": "Tidier sidebar",
+      "detail": "One Notifications page under Focus & Notifications. \"Apps\" is now \"Lens Apps\".",
+      "pr": 113
+    },
+    {
+      "area": "Settings",
+      "title": "Safety net card",
+      "detail": "About & Testing lists what Lens touches and never touches. The Updates card says when updates aren't available yet.",
+      "pr": 115
+    },
+    {
+      "area": "Settings",
+      "title": "Lens Music Immersive",
+      "detail": "Settings › Music (off by default): full-screen Immersive (F11), artwork colours, per-song lyric timing, opt-in translation and Discord status.",
+      "pr": 127
+    },
+    {
+      "area": "Settings",
+      "title": "Music Equalizer and Remote",
+      "detail": "Switches Equalizer APO presets if it's installed. Lens Remote (phone control) is Tester mode only.",
+      "pr": 130
+    },
+    {
+      "area": "Settings",
+      "title": "Lens Apps Library",
+      "detail": "See what you have and what's new, and run Update all with one approval. Every app page has credits and licence notes.",
+      "pr": 134
+    },
+    {
+      "area": "Settings",
+      "title": "Alarms and reminders",
+      "detail": "Alarms are right after a time-zone or DST change and say when they're late after sleep. Remind me on a Notes to-do sets a Timer.",
+      "pr": 134
+    },
+    {
+      "area": "Settings",
+      "title": "Cleaner delete code",
+      "detail": "Permanent delete needs a typed 4-digit code, then a hold. Spotify sign-in works when port 43117 is busy.",
+      "pr": 112
     },
     {
       "area": "Under the hood",
-      "title": "Renderer crash recovery",
-      "detail": "A renderer that exits during start-up is reloaded; the Dock always comes back.",
-      "pr": 91
+      "title": "More errors shown",
+      "detail": "Many swallowed errors in the Dock, Settings, Lens Apps, Snip and Shelf now show a message (B-18 ongoing).",
+      "pr": 137
     },
     {
       "area": "Under the hood",
-      "title": "Magic waves scaffold",
-      "detail": "Groundwork for Dashboard, Magic Mouse and more; everything off.",
-      "pr": 103
+      "title": "Steadier automated tests",
+      "detail": "Top Bar auto-hide, theme toggle and Control Center checks are deterministic, and the theme-switch speed gate is fairer.",
+      "pr": 140
+    },
+    {
+      "area": "Under the hood",
+      "title": "Mission Control (dev only)",
+      "detail": "A developer-only admin window; it is not in tester builds.",
+      "pr": 133
+    },
+    {
+      "area": "Under the hood",
+      "title": "Website and docs",
+      "detail": "Site updates (#106, #116, #121, #135, #138, #141); feature dossiers and plans (#110, #111, #122, #124).",
+      "pr": 121
     }
   ],
   "test_steps": [
     {
       "id": "t1",
-      "area": "Desktop",
-      "steps": "Turn on Start with Windows (Settings › Quick), sign out and in; then repeat holding Shift.",
-      "expected": "No error windows; Lens appears only after the normal desktop; with Shift, Lens does not start.",
+      "area": "Settings",
+      "steps": "Click buttons, switches, chips and tabs in Settings, Quick Settings and Search, quickly and held. Repeat with Settings › Accessibility › Animation effects off.",
+      "expected": "Each press sinks and springs back. One click does one thing. Pop-outs grow from the Top Bar button; no movement with reduced motion.",
       "risk": "high"
     },
     {
       "id": "t2",
-      "area": "Desktop",
-      "steps": "Put a browser right under the Top Bar and click its tabs and title bar through the bar.",
-      "expected": "The browser gets the clicks; the bar's own buttons still work; no dead zones.",
+      "area": "AI and Command",
+      "steps": "Turn on Settings › AI & Command › Selection bar. Select text in Notepad, Word, a browser and VS Code; press Copy, then Magic Search. Try a terminal and a password field.",
+      "expected": "The bar shows below the selection without taking the keyboard. Copy works, Esc hides it. Magic Search names its sources. No bar in terminals or password fields.",
       "risk": "high"
     },
     {
       "id": "t3",
-      "area": "Windows",
-      "steps": "Open Notepad, hover the top-right corner; maximise, snap (Win+Left), restore, resize; rest on the green dot.",
-      "expected": "Native Close never turns red or shows a tooltip; dots stay on the corner; green dot opens Snap Layouts.",
+      "area": "Desktop",
+      "steps": "Settings › Dock & Bar › Top Bar › Auto-hide: Always hide. Restart Lens and don't touch the top edge for 10 s. Then open the Launcher and click the desktop.",
+      "expected": "The bar hides and stays hidden until the pointer reaches the top. The Launcher closes on the outside click.",
       "risk": "high"
     },
     {
       "id": "t4",
       "area": "Desktop",
-      "steps": "With two screens: unplug one or change resolution or scaling; sleep and wake; try Monitor › Follow the pointer.",
-      "expected": "Dock and Top Bar land on a real screen in the right place; Follow the pointer moves on an edge push.",
+      "steps": "Two monitors at 100 % and 150 %: choose the second in Settings › Dock & Bar › Monitor, then Follow the pointer. Try a monitor left of/above the main one; unplug and replug.",
+      "expected": "The Dock appears on the chosen monitor at the right size and reveals from auto-hide. Settings and Quick Settings open beside it, on screen.",
       "risk": "high"
     },
     {
       "id": "t5",
       "area": "Desktop",
-      "steps": "With a Lens menu open press Ctrl+Shift+Esc, Alt+F4, Win+D, Win+L.",
-      "expected": "Windows reacts every time.",
+      "steps": "Tester mode on, then About & Testing › Magic (preview) › Magic button on. Tap Win twice; press Esc right after opening; try Ctrl+Esc, Win+L, Win+D. Turn it off.",
+      "expected": "A tap opens Magic Start; a second tap or Esc closes it. Ctrl+Esc opens Windows Start and Win+keys work. Off gives the key back to Windows.",
       "risk": "high"
     },
     {
       "id": "t6",
-      "area": "Dock",
-      "steps": "Press the Dock gear twice, Top Bar Quick Settings twice; open Search and use × and Esc.",
-      "expected": "Second press closes; × and Esc close Search; nothing reopens by itself.",
-      "risk": "med"
+      "area": "Settings",
+      "steps": "Turn on Settings › Music › Music and play a track. Open Immersive (F11 or the Dock music card). With Equalizer APO installed, pick a preset, then Off, then Remove all Lens changes.",
+      "expected": "Immersive fills the monitor under the pointer; Esc/F11/× close it. The EQ preset applies; Off and Remove all remove only Lens's line and keep your own config.txt edits.",
+      "risk": "high"
     },
     {
       "id": "t7",
       "area": "Desktop",
-      "steps": "Set the Top Bar to auto-hide; while hidden change a setting, then open and close Search.",
-      "expected": "The bar hides again and never stays stuck.",
-      "risk": "med"
+      "steps": "Magic (preview) › Magic Mouse on (confirm). Hold ~0.5 s and drag; hold without moving; normal clicks and drags in Explorer and a browser. Turn it off.",
+      "expected": "The Lens pointer shows. Hold-drag opens Snip and hold opens Magic. Normal clicks are unchanged. Off restores your exact previous pointers.",
+      "risk": "high"
     },
     {
       "id": "t8",
-      "area": "Desktop",
-      "steps": "Open Quick Settings from the Dock and move the pointer away.",
-      "expected": "Closes after about 1.5 s; never while the pointer is over it.",
+      "area": "Dock",
+      "steps": "Settings › Dock & Bar › Dock style › Unified. Open 3 Notepad windows and hover Notepad; use the wheel, ‹ › and arrows. Pin, unpin and reorder an app.",
+      "expected": "One pill with Launcher, apps, tray, bell and clock, not full width. The carousel shows the right live picture, no stale thumbnails. Icons glide.",
       "risk": "med"
     },
     {
       "id": "t9",
-      "area": "Dock",
-      "steps": "Hover a running app on the Dock, then move away.",
-      "expected": "Live previews appear beside the Dock and go away; none stuck in a corner.",
+      "area": "Desktop",
+      "steps": "Magic (preview) › Desktop widgets on, then Arrange desktop widgets. Add Clock, Today and Batteries; resize to Large; move; Done. Press Win+D; open a fullscreen game.",
+      "expected": "Widgets stay below windows and never take focus. Clicks between widgets reach desktop icons. They hide under fullscreen apps.",
       "risk": "med"
     },
     {
       "id": "t10",
-      "area": "Themes",
-      "steps": "Settings › About & Testing › Setup: press Skip; reopen and press Finish.",
-      "expected": "Opens in your desktop's colours; Skip changes nothing; Finish changes only what you picked.",
+      "area": "Snip",
+      "steps": "Turn on Settings › AI & Command › Lens Snip. Ctrl+Alt+X, snip a web page, press L, drag across two lines, Copy; Hide a sentence; crop out an email, then Copy text.",
+      "expected": "The selection sits on the words at 100/150/200 %. Copy gives exactly those words. Hidden words copy as •••. The cropped email isn't copied.",
       "risk": "med"
     },
     {
       "id": "t11",
-      "area": "Browser",
-      "steps": "In Lens Browser open a site that asks for camera or location.",
-      "expected": "A Lens bar under the address bar; Esc blocks; 'Allow on this site' is remembered and can be forgotten in Settings.",
+      "area": "Dock",
+      "steps": "Alt+Space, then Tab to a Dock icon. Use the arrows, type \"sp\", and press the arrow into the screen on a running app. Run Task Manager as administrator.",
+      "expected": "Focus moves along the Dock and the match is ringed. The window list opens and Enter switches. The admin window gets its own icon.",
       "risk": "med"
     },
     {
       "id": "t12",
-      "area": "Themes",
-      "steps": "Change the Lens accent with 'Also use this accent in Windows' off, then on.",
-      "expected": "Windows' accent changes only when the box is ticked.",
+      "area": "Settings",
+      "steps": "In Cleaner, start a permanent delete of a test file, type a wrong code three times, then close without confirming.",
+      "expected": "Nothing is deleted without the correct 4-digit code and a hold.",
       "risk": "low"
     }
   ],
   "known_issues": [
-    "A renderer crash during start-up can freeze Lens for up to a minute before recovery (B-31b); seen only in automated tests.",
-    "Lens's File Explorer entries are under Show more options on Windows 11; with the new 'Customize menu' (KB5127936) hiding app extensions may hide them.",
-    "The desktop tab and edge Shelf may still briefly resize their window (B-30).",
+    "Selection bar: the first selection after start-up (or in a new app) sometimes shows no bar (B-129); the fix is in open PR #144.",
+    "Selection bar not finished: drag-to-reorder actions, the per-app editor and the closing animation. Mixed-scaling placement is unchecked on a real PC.",
+    "Magic Mouse: the fixed hold-drag automated test has not re-run in CI; 100–200 % scaling and monitors left of/above the main one are unchecked.",
+    "Desktop widgets only show on Lens's monitor. Bluetooth batteries, screen time and photos aren't built, and widgets show no remote images.",
+    "Lens Remote (Tester mode only) uses plain HTTP on your home network; use it only on a trusted network and allow Private networks only.",
+    "Equalizer needs Equalizer APO installed. Windows Sonic can't be switched by apps, so that row opens Sound settings.",
+    "Window buttons on the left may cover the app icon and title on classic title bars; this has only been checked in tests.",
+    "No hotkey focuses the Dock yet; use Alt+Space then Tab, a click, or Alt+1–9.",
+    "Extra Top Bars on other monitors don't auto-hide or click through yet. Pinned folders are not drawn on the Dock.",
+    "Cleaner doesn't review a Downloads folder that has been moved, for example into OneDrive.",
+    "No signed release is published yet, so the Updates card offers no Check now.",
     "One-click transcription setup is blocked until download hashes are pinned (B-07).",
-    "After KB5132061 some other Windhawk taskbar mods stop loading; turn them off and on. Lens's own mod is unaffected.",
-    "Going back to the first theme pack doesn't restore folder colours (B-39).",
-    "Top Bar click-through and its halo were verified only by automated tests; please confirm on a real PC."
+    "A renderer crash during start-up can freeze Lens for up to a minute (B-31b); seen only in automated tests.",
+    "The desktop tab and the edge Shelf may briefly resize their window (B-30). The first Enter in Command after a cold start may do nothing (B-12b).",
+    "The options under Alt+drag, Magic and App hotkeys can't be clicked while each feature is off (B-58); the fix is in open PR #143.",
+    "Lens's File Explorer entries are under Show more options on Windows 11; with the 'Customize menu' (KB5127936), hiding app extensions may hide them.",
+    "Some user-action errors in Quick Settings, Command and Messages still fail silently (B-18, ongoing)."
   ]
 }
