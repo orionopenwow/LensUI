@@ -124,6 +124,8 @@ describe("licences in plain words", () => {
     const free = licenceInfo({ license: "Proprietary (free for personal use)", licenseVerified: false, openSource: false });
     expect(free.label).toBe("Free, not open source");
     expect(free.plain).toContain("free for personal use");
+    expect(free.caveat).toBe("Lens hasn't read the publisher's terms yet.");
+    expect(free.kind).toBe(free.label);
     const vague = licenceInfo({ license: "Permissive (see repo)", licenseVerified: false, openSource: true });
     expect(vague.label).toBe("Open source");
     expect(vague.plain).toContain("describes itself as permissively licensed");

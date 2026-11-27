@@ -83,7 +83,7 @@ export function licenceInfo(app: Pick<CatalogApp, "license" | "licenseVerified" 
     kind: base.kind,
     plain,
     verified: app.licenseVerified,
-    caveat: app.licenseVerified ? null : "Lens hasn't read this licence in the project's repository yet.",
+    caveat: app.licenseVerified ? null : family === "freeware" ? "Lens hasn't read the publisher's terms yet." : "Lens hasn't read this licence in the project's repository yet.",
   };
 }
 

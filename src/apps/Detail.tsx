@@ -141,7 +141,8 @@ export function Detail({
             </dd>
             <dt>Licence</dt>
             <dd>
-              {licence.label} <span className="la-muted">· {licence.kind}</span>
+              {licence.label}
+              {licence.kind !== licence.label && <span className="la-muted"> · {licence.kind}</span>}
             </dd>
             <dt>Install</dt>
             <dd>
