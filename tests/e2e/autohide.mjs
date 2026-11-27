@@ -33,6 +33,7 @@ function d(cmd) {
 }
 
 import { startLens, surfaces, page, invoke, setConfig, quit, sleep } from "./lens.mjs";
+import { pointOutside } from "./points.mjs";
 
 // ---- state readers --------------------------------------------------------------------------
 const BAR = "Lens Top Bar";
@@ -344,11 +345,25 @@ const SCENARIOS = [
         } else {
           await invoke(bar, "open_surface", { label: "launcher" }).catch(() => {});
           await sleep(500);
-          await d(`click ${Math.round(SCREEN.w * 0.25)} ${Math.round(SCREEN.h * 0.7)}`);
+          // Click outside the Launcher for real: it is a centred 780x640 window, so the fixed
+          // point used above lands on its app grid (it opened an app on the runner and the
+          // Launcher closed only when that launch came back in time, B-131).
+          const lw = await d("win Lens Launcher");
+          if (!lw.found || !lw.visible) throw new Error(`other-flyout: the Launcher did not open: ${JSON.stringify(lw)}`);
+          const pt = pointOutside(lw, { x: 0, y: 0, w: SCREEN.w, h: SCREEN.h });
+          if (!pt) throw new Error(`other-flyout: no room outside the Launcher to click: ${JSON.stringify(lw)}`);
+          await d(`click ${pt.x} ${pt.y}`);
         }
         await expectWithin(`${how}: bar hides`, () => barState(s), false, 4500);
         await sleep(300);
-        await noFlyoutOpen(s, how);
+        try {
+          await noFlyoutOpen(s, how);
+        } catch (e) {
+          // Say what the Launcher's page knew: whether it ever had the focus (no focus, no blur).
+          const lp = surfaces(s).launcher;
+          const focus = lp ? await lp.evaluate(() => document.hasFocus()).catch(() => "?") : "no page";
+          throw new Error(`${e.message} (Launcher page focused: ${focus}; clicked at ${JSON.stringify(await d("pos").catch(() => null))})`);
+        }
         await d("notepad close");
       }
     },

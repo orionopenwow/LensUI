@@ -86,6 +86,25 @@ pub(crate) fn glide_show_surface(app: &AppHandle, label: &str, focus: bool) {
         serde_json::json!({ "label": label, "state": "open" }),
     );
     surface_state::mark_shown(label, generation);
+    note_shown(label);
+}
+
+/// When each surface was last shown by `glide_show_surface`. The watcher's click-outside rule for
+/// the Launcher (B-128) waits a moment after the show so the click that opened it can't close it;
+/// it used to time that from the first watcher pass that noticed the window, which on a busy pass
+/// came 100 ms or more after the show, so a real click outside could be ignored (B-131).
+static LAST_SHOW: std::sync::Mutex<Option<std::collections::HashMap<String, std::time::Instant>>> =
+    std::sync::Mutex::new(None);
+
+pub(crate) fn note_shown(label: &str) {
+    let mut g = LAST_SHOW.lock().unwrap_or_else(|e| e.into_inner());
+    g.get_or_insert_with(Default::default).insert(label.to_string(), std::time::Instant::now());
+}
+
+/// Milliseconds since `label` was last shown through `glide_show_surface`, if it ever was.
+pub(crate) fn shown_for_ms(label: &str) -> Option<u128> {
+    let g = LAST_SHOW.lock().unwrap_or_else(|e| e.into_inner());
+    g.as_ref().and_then(|m| m.get(label)).map(|t| t.elapsed().as_millis())
 }
 
 /// When each flyout last started hiding. A flyout's own button blurs it first (which hides it),
@@ -483,6 +502,11 @@ pub(crate) fn open_quicksettings_tab_cmd(
             if qs_open {
                 glide_hide_surface(&app, "quicksettings");
             }
+            // A press on the Quick Settings button never leaves another flyout behind, even when
+            // it counts as closing the panel: "hidden just now" is also true when the panel was
+            // just dismissed by the Launcher (or any flyout) opening, and this early return used
+            // to skip the dismissal, leaving the Launcher open (B-131).
+            dismiss_other_surfaces(&app, "quicksettings");
             return;
         }
         dismiss_other_surfaces(&app, "quicksettings");

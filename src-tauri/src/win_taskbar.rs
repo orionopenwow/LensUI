@@ -2,9 +2,33 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 static TASKBAR_HIDDEN_BY_LENS: AtomicBool = AtomicBool::new(false);
 static DESKTOP_ICONS_HIDDEN_BY_LENS: AtomicBool = AtomicBool::new(false);
+/// Set once Lens starts handing Windows back on exit. From then on nothing may hide the taskbar
+/// again: the watcher re-hides a taskbar it finds visible while "hide the Windows taskbar" is on,
+/// and the tray peek re-hides after its timer, and both kept running between Quit's restore and the
+/// end of the process, so the taskbar could be hidden again after Lens had restored it (B-132).
+static EXITING: AtomicBool = AtomicBool::new(false);
+
+/// True once `restore_taskbar_for_exit` ran: hiding the taskbar is refused from then on.
+pub fn exiting() -> bool {
+    EXITING.load(Ordering::SeqCst)
+}
+
+/// Restores the taskbar and desktop icons for good: every exit path (Quit, the tray's Quit,
+/// `RunEvent::Exit`, the panic hook, closing the console) calls this, never the plain restore.
+pub fn restore_taskbar_for_exit() {
+    EXITING.store(true, Ordering::SeqCst);
+    restore_taskbar_if_hidden();
+}
 
 #[cfg(windows)]
 pub fn set_native_taskbar_hidden(hide: bool) {
+    // One change at a time, and the exit check inside the lock: a hide that already passed the
+    // check finishes before the exit's restore starts, so the restore always comes last (B-132).
+    static ONE_AT_A_TIME: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    let _turn = ONE_AT_A_TIME.lock().unwrap_or_else(|e| e.into_inner());
+    if hide && exiting() {
+        return; // Lens is exiting and has given the taskbar back
+    }
     use windows::core::PCWSTR;
     use windows::Win32::Foundation::HWND;
     use windows::Win32::UI::Shell::{SHAppBarMessage, ABM_SETSTATE, ABS_AUTOHIDE, APPBARDATA};
@@ -189,7 +213,7 @@ pub fn install_exit_restore_handler() {
     unsafe extern "system" fn ctrl_handler(_ctrl_type: u32) -> BOOL {
         // Runs on a thread Windows creates; a panic here must not cross into it.
         crate::failsafe::guard::ffi_guard("taskbar.ctrl_handler", (), || {
-            restore_taskbar_if_hidden();
+            restore_taskbar_for_exit();
             // Closing the console is the person stopping Lens, not a failed start.
             crate::app::safe_start::mark_started();
         });
@@ -308,4 +332,24 @@ pub fn native_taskbar_visible() -> bool {
 /// True while Lens has the native taskbar hidden (read-only; used by the self-test).
 pub fn taskbar_hidden_by_lens() -> bool {
     TASKBAR_HIDDEN_BY_LENS.load(Ordering::SeqCst)
+}
+
+#[cfg(test)]
+mod exit_tests {
+    #[test]
+    fn every_exit_path_latches_the_restore() {
+        // B-132: Quit restored the taskbar while the watcher (and the tray peek) could still hide it
+        // again before the process ended. Every exit path must use the latching restore.
+        let lib = include_str!("lib.rs");
+        let power = include_str!("commands/power.rs");
+        let me = include_str!("win_taskbar.rs");
+        let exit = &lib[lib.find("RunEvent::Exit = event").unwrap()..];
+        assert!(exit[..exit.find("});").unwrap()].contains("restore_taskbar_for_exit()"));
+        let quit = &power[power.find("fn restore_before_exit").unwrap()..];
+        assert!(quit[..quit.find("\n}").unwrap()].contains("restore_taskbar_for_exit()"));
+        let ctrl = &me[me.find("fn ctrl_handler").unwrap()..];
+        assert!(ctrl[..ctrl.find("BOOL(0)").unwrap()].contains("restore_taskbar_for_exit()"));
+        let hide = &me[me.find("pub fn set_native_taskbar_hidden(hide: bool)").unwrap()..];
+        assert!(hide[..hide.find("unsafe {").unwrap()].contains("if hide && exiting()"));
+    }
 }
