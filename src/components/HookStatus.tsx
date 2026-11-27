@@ -1,4 +1,4 @@
-// One quiet line under the "Legacy In-App Window Styling" switch: is the helper actually in use
+// One quiet line under the "Legacy in-app window styling" switch: is the helper actually in use
 // right now? Lens keeps it out while a fullscreen app or an anti-cheat protected game is running.
 import React, { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";

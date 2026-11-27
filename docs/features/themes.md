@@ -3,6 +3,8 @@
 > Batch 1 of the feature dossiers for the Fable pass. Status words: **works**, **partly**, **broken**, **not built**. Reviewed against `main` on 2026-11-26.
 >
 > **Fable pass (PR #113, 2026-11-26):** quick wins 1 and 2 done: the Dock is out of the theme distance, the two pairs that only differed by Dock are merged (CRT → Green Phosphor, Claude Light Brand → Claude Light), audit regenerated, B-38 closed, B-39 fixed. Backdrop Lab has a "Lens Cloud" preset. Left: full-pack contrast audit, the Lens Cloud featured look, wallpaper quick wins.
+>
+> **Settings wave (2026-11-26):** contrast audit covers every pack (`src/themes/contrastAudit.ts`, `themeContrast.test.ts`, THEMES_AUDIT "Contrast, every pack"): body text 4.5:1, muted text, icons and accent 3:1, surface and cards. Fixes: dark packs with lighter bases get the lifted text tones by rule (`data-text-lift`), Everforest Light and Base16 Cupcake accents a shade darker. Left: Lens Cloud featured look, wallpaper quick wins.
 
 ## Rundown
 

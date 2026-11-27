@@ -10,7 +10,16 @@ const SITE = new URL("../", import.meta.url);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const CHIPS = ["Show me the docks", "Make it dark", "Tile two windows", "Show me the magic right-click", "How do I connect Claude?", "What's open source here?", "How do I install?", "Take the tour"];
 const HOME = new URL("index.html", SITE).href;
-const onHome = () => !!window.lensSite?.desk;
+const onHome = () => !!(window.lensSite?.desk || window.lensSite?.dock);
+// The page's sections for each part (the hero desk's tours are off for now: each section plays its own).
+const SECTION = { docks: "f-dock", browser: "f-browser", magic: "f-magic", themes: "themes", agent: "byo" };
+/** A desk to act on: the hero desk when it's on, otherwise the Theme lab's (loaded on the way). */
+async function deskNow() {
+  const L = window.lensSite;
+  if (L.desk) return L.desk;
+  document.getElementById("themes")?.scrollIntoView({ block: "start", behavior: reducedMotion() ? "auto" : "smooth" });
+  return L.labReady ? await L.labReady : L.lab;
+}
 let search, launcher, win, thread, input, lastFocus, busy = null;
 
 async function load() {
@@ -172,6 +181,11 @@ async function ask(q) {
 
   if (/\btour\b/.test(ql)) {
     if (!onHome()) return goHome("#tour/desktop");
+    if (!L.desk) {
+      await say("lens", "Each part of this page plays its own short demo, three steps on repeat. I'll start with the Dock: pick a style or an edge and the real dock changes.", { stream: true });
+      await flyTo(document.getElementById("f-dock"));
+      return;
+    }
     await say("lens", "Pick a tour under the desk. Each one goes one step at a time: press Next, or do the highlighted thing yourself. I'll start with the desktop.", { stream: true });
     await flyTo(document.getElementById("sc-tabs"));
     L.playScene("desktop");
@@ -182,14 +196,14 @@ async function ask(q) {
   const SC = (await import("./showcases.js")).SHOWCASES;
   const sceneHit = SC.find((s) => ql.includes(s.id) || ql.includes(s.title.toLowerCase())) ?? (/\bclaude|agent|mcp\b/.test(ql) ? SC.find((s) => s.id === "agent") : /right.?click/.test(ql) ? SC.find((s) => s.id === "magic") : null);
   if (/\bdocks?\b/.test(ql) && !/\bdark|tile\b/.test(ql)) {
-    if (!onHome()) return goHome("#docks");
-    await say("lens", "Lens has nine dock styles. These are the real docks, live. I'll put Islands on the desk.", { stream: true });
-    const st = steps(["Scroll to the dock styles", "Pick Islands", "Apply it to the desk"]);
+    if (!onHome()) return goHome("#f-dock");
+    await say("lens", "Lens has nine dock styles. This is the real dock, live. I'll switch it to Islands.", { stream: true });
+    const st = steps(["Scroll to the dock styles", "Pick Islands", "Apply it to the dock"]);
     st.tick(0, "doing");
-    const rail = document.getElementById("dock-rail");
+    const rail = document.getElementById("dock-rail") ?? document.getElementById("dw-styles");
     await flyTo(rail);
     st.tick(0, "done"); st.tick(1, "doing");
-    const tile = [...rail.querySelectorAll(".dr")].find((b) => /Islands/.test(b.textContent));
+    const tile = [...rail.querySelectorAll(".dr, [role=radio]")].find((b) => /Islands/.test(b.textContent));
     await flyTo(tile);
     st.tick(1, "done"); st.tick(2, "doing");
     tile?.click();
@@ -198,9 +212,14 @@ async function ask(q) {
   }
   if (sceneHit && /\b(show|how|play|see|connect)\b/.test(ql)) {
     if (!onHome()) return goHome(`#scene/${sceneHit.id}`); // home maps #scene/… to the nearest tour
-    await say("lens", `${esc(sceneHit.line)} I've opened that tour on the desk: press Next to go step by step.`, { stream: true });
-    await flyTo(document.getElementById("stage"));
-    L.playScene(sceneHit.id);
+    if (!L.desk) {
+      await say("lens", `${esc(sceneHit.line)} It's playing in its section, three steps on repeat.`, { stream: true });
+      await flyTo(document.getElementById(SECTION[sceneHit.id] ?? "f-dock"));
+    } else {
+      await say("lens", `${esc(sceneHit.line)} I've opened that tour on the desk: press Next to go step by step.`, { stream: true });
+      await flyTo(document.getElementById("stage"));
+      L.playScene(sceneHit.id);
+    }
     if (sceneHit.id === "agent") say("lens", `To connect for real: in Lens, Settings › AI › Claude, then add Lens to Claude Desktop's MCP config (<a href="${new URL("docs/", SITE)}">docs</a>). Every risky action still asks you first.`);
     return;
   }
@@ -209,18 +228,20 @@ async function ask(q) {
     await say("lens", "On the desk: I'll put the open windows side by side.", { stream: true });
     const st = steps(["Scroll to the desk", "Tile the open windows"]);
     st.tick(0, "doing");
-    if (L.shows.current) L.shows.exit();
-    await flyTo(document.getElementById("stage"));
+    if (L.shows?.current) L.shows.exit();
+    const d = await deskNow();
+    await flyTo(document.getElementById("stage") ?? document.getElementById("lab-desk"));
     st.tick(0, "done"); st.tick(1, "doing");
-    L.desk.tileAll();
+    d?.tileAll();
     st.tick(1, "done"); st.end("Done · drag a window off its side to undo");
     return;
   }
   if (onHome() && /\b(dark|light)\b/.test(ql) && /\b(make|mode|theme|turn|switch)\b/.test(ql)) {
     const m = /\blight\b/.test(ql) ? "light" : "dark";
-    await L.desk.setMode(m);
+    const d = await deskNow();
+    await d?.setMode(m);
     await say("lens", `The desk is in ${m} mode now: every window on it re-themed, like in Lens.`, { stream: true });
-    await flyTo(document.getElementById("stage"));
+    await flyTo(document.getElementById("stage") ?? document.getElementById("lab-desk"));
     return;
   }
   if (/\bopen.?source\b/.test(ql)) {

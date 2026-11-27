@@ -144,6 +144,35 @@
   border-color: transparent;
 }
 
+/* Hover and disabled states for every Settings control (DESIGN.md §5: every clickable element has
+   an immediate hover state; a control that can't be used looks it and never reacts). */
+.cc-toggle:hover:not(:disabled):not(.on) {
+  background: rgb(var(--lens-ink) / 0.18);
+}
+.cc-toggle.on:hover:not(:disabled) {
+  opacity: 0.9;
+}
+.cc-toggle:disabled,
+.cc-btn:disabled,
+.cc-btn-ghost:disabled,
+.cc-chip:disabled,
+.tux-seg button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.cc-btn:active:not(:disabled),
+.cc-btn-ghost:active:not(:disabled),
+.cc-chip:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* A hairline between groups inside one card. */
+.cc-divider {
+  height: 1px;
+  background: var(--lens-border);
+  flex-shrink: 0;
+}
+
 .cc-toggle::after {
   content: "";
   position: absolute;
@@ -181,7 +210,7 @@
     transform var(--lens-dur-fast) var(--lens-ease-out);
 }
 
-.cc-chip:hover {
+.cc-chip:hover:not(:disabled):not(.active) {
   background: rgb(var(--lens-ink) / 0.08);
   color: var(--lens-fg);
 }
@@ -214,10 +243,12 @@
   color: var(--lens-on-fg);
   font-weight: 600;
   font-size: 12px;
-  transition: opacity var(--lens-dur-fast) var(--lens-ease-out);
+  transition:
+    opacity var(--lens-dur-fast) var(--lens-ease-out),
+    transform var(--lens-dur-fast) var(--lens-ease-out);
 }
 
-.cc-btn:hover {
+.cc-btn:hover:not(:disabled) {
   opacity: 0.88;
 }
 
@@ -228,9 +259,13 @@
   border: 1px solid var(--lens-border);
   color: var(--lens-fg-secondary);
   font-size: 12px;
+  transition:
+    background-color var(--lens-dur-fast) var(--lens-ease-out),
+    color var(--lens-dur-fast) var(--lens-ease-out),
+    transform var(--lens-dur-fast) var(--lens-ease-out);
 }
 
-.cc-btn-ghost:hover {
+.cc-btn-ghost:hover:not(:disabled) {
   background: rgb(var(--lens-ink) / 0.11);
   color: var(--lens-fg);
 }
@@ -615,9 +650,12 @@
   font-size: 12px;
   color: var(--lens-fg-secondary);
   white-space: nowrap;
+  transition:
+    background-color var(--lens-dur-fast) var(--lens-ease-out),
+    color var(--lens-dur-fast) var(--lens-ease-out);
 }
 
-.tux-seg button:hover {
+.tux-seg button:hover:not(:disabled):not(.active) {
   color: var(--lens-fg);
 }
 
@@ -1191,7 +1229,7 @@
 
 @media (min-width: 960px) {
   .wiz-dock-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 

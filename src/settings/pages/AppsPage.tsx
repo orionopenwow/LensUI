@@ -26,7 +26,7 @@ export const AppsPage: React.FC<PageProps> = ({ section }) => {
 
   const toggle = (name: string, enabled: boolean) => {
     const next = list.map((s) => (s.name === name ? { ...s, enabled } : s));
-    optimistic(list, next, startup.set, () => invoke<StartupEntry[]>("sys_startup_set_cmd", { name, enabled }).then(startup.set), setErr, name);
+    optimistic(list, next, startup.set, () => invoke<StartupEntry[]>("sys_startup_set_cmd", { name, enabled }).then(startup.adopt), setErr, name);
   };
 
   return (

@@ -56,7 +56,7 @@ export interface DockConfig {
   /** Live window thumbnails in the Dock hover card. */
   livePreviews?: boolean;
   /** Dock shape (see src/dock/styles.ts). Missing = "floating". */
-  style?: "floating" | "slim" | "taskbar" | "studio" | "minimal" | "split" | string;
+  style?: "floating" | "slim" | "taskbar" | "studio" | "minimal" | "split" | "islands" | "unified" | string;
   /** Taskbar icon alignment. Missing = "center". */
   alignment?: "center" | "left" | string;
   /** Where the clock and system icons live. Missing = "auto". */
@@ -92,6 +92,8 @@ export interface FuncConfig {
   middleClickNewInstance: boolean;
   /** Settings and Search pop-outs close a moment after the pointer leaves them. Missing = on. */
   autoClosePopouts?: boolean;
+  /** How long a pop-out waits before closing: "short" | "normal" (default) | "long". */
+  popoutCloseDelay?: "short" | "normal" | "long" | string;
   /** Legacy in-process window styling (loads a DLL into every app). Off by default. */
   injectedHook?: boolean;
   /** Lens hosts tray icons itself in the Top Bar (experimental). */
@@ -154,6 +156,9 @@ export interface TopBarConfig {
   height: number;
   floating: boolean;
   showMediaControls?: boolean;
+  /** The see-through ring at the pointer where clicks pass through. Missing = on. Never drawn while
+   *  Windows' transparency effects are off. */
+  pointerHalo?: boolean;
 }
 
 export interface MediaNowPlaying {

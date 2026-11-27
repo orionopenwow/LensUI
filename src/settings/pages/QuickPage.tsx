@@ -9,7 +9,7 @@ import {
   Minimize2,
   Moon,
   Pin,
-  Power,
+  Layers,
   Rocket,
   Sparkles,
   Sun,
@@ -29,6 +29,7 @@ import { chooseTheme } from "../../themes/choiceUndo";
 import { FillSlider } from "../ui/FillSlider";
 import { HeroTile, Section } from "../ui/primitives";
 import type { PageProps } from "./common";
+import { oops, quiet } from "../../ui/oops";
 
 /** Every tile the Quick page can show. Order and visibility are the person's (saved per PC). */
 export const QUICK_TILES = ["wifi", "bluetooth", "dark", "night", "focus", "power", "autohide", "startup"] as const;
@@ -89,12 +90,14 @@ export const QuickPage: React.FC<PageProps> = ({ config, updateConfig }) => {
   const [note, setNote] = useState<string | null>(null);
 
   const refresh = useCallback(() => {
-    invoke<QuickSettingsState>("get_quick_state_cmd").then(setQs).catch(() => {});
-    invoke<WifiState>("get_wifi_cmd").then(setWifi).catch(() => {});
-    invoke<BluetoothState>("get_bluetooth_cmd").then(setBt).catch(() => {});
-    invoke<boolean>("get_dnd_cmd").then(setDnd).catch(() => {});
-    invoke<BatteryStatus>("get_battery_cmd").then(setBattery).catch(() => {});
-    invoke<WindowStylingState>("get_window_styling_cmd").then(setStyling).catch(() => {});
+    // Background reads, every 8 s: a failed one keeps the last value ("—" before the first) and
+    // the next pass tries again, so they are quiet on purpose.
+    invoke<QuickSettingsState>("get_quick_state_cmd").then(setQs).catch(quiet);
+    invoke<WifiState>("get_wifi_cmd").then(setWifi).catch(quiet);
+    invoke<BluetoothState>("get_bluetooth_cmd").then(setBt).catch(quiet);
+    invoke<boolean>("get_dnd_cmd").then(setDnd).catch(quiet);
+    invoke<BatteryStatus>("get_battery_cmd").then(setBattery).catch(quiet);
+    invoke<WindowStylingState>("get_window_styling_cmd").then(setStyling).catch(quiet);
   }, []);
   useEffect(() => {
     // First paint first: read the live state just after the page shows, then every 8 s while visible.
@@ -217,7 +220,10 @@ export const QuickPage: React.FC<PageProps> = ({ config, updateConfig }) => {
 
   // "Quick window": acts on the app windows behind Settings (never on Settings itself).
   const appWindows = async () =>
-    (await invoke<RunningWindow[]>("get_running_windows").catch(() => [] as RunningWindow[])).filter(
+    (await invoke<RunningWindow[]>("get_running_windows").catch((e) => {
+      oops("list your open windows")(e);
+      return [] as RunningWindow[];
+    })).filter(
       (w) => !/^lens[-_]ui/i.test(w.processName)
     );
   const tile = (layoutId: string) =>
@@ -226,14 +232,20 @@ export const QuickPage: React.FC<PageProps> = ({ config, updateConfig }) => {
       .catch((e) => flash(String(e)));
   const minimizeAll = async () => {
     const wins = (await appWindows()).filter((w) => !w.isMinimized);
-    await Promise.all(wins.map((w) => invoke("window_action_cmd", { hwnd: w.hwnd, action: "minimize" }).catch(() => {})));
-    flash(wins.length ? `Minimised ${wins.length} window${wins.length === 1 ? "" : "s"}.` : "No open windows.");
+    const results = await Promise.all(wins.map((w) => invoke("window_action_cmd", { hwnd: w.hwnd, action: "minimize" }).then(() => true, () => false)));
+    const done = results.filter(Boolean).length;
+    const missed = wins.length - done;
+    flash(
+      !wins.length
+        ? "No open windows."
+        : `Minimised ${done} window${done === 1 ? "" : "s"}.${missed ? ` ${missed} didn't respond.` : ""}`
+    );
   };
   const pinLast = async () => {
     const w = (await appWindows()).find((x) => !x.isMinimized);
     if (!w) return flash("No open window to pin.");
-    await invoke("window_action_cmd", { hwnd: w.hwnd, action: "toggle_topmost" }).catch(() => {});
-    flash(`Toggled always on top for ${w.title || w.processName}.`);
+    const ok = await invoke("window_action_cmd", { hwnd: w.hwnd, action: "toggle_topmost" }).then(() => true, () => false);
+    flash(ok ? `Toggled always on top for ${w.title || w.processName}.` : `Couldn't change always on top for ${w.title || w.processName}.`);
   };
   const dimOn = (styling?.settings.dimInactive ?? 0) > 0;
   const borderOn = (styling?.settings.activeBorder.mode ?? "off") !== "off";
@@ -294,14 +306,14 @@ export const QuickPage: React.FC<PageProps> = ({ config, updateConfig }) => {
             unit="%"
             muted={qs?.muted}
             disabled={!qs}
-            onCommit={(v) => invoke("set_volume_cmd", { level: v }).then(refresh).catch(() => {})}
+            onCommit={(v) => invoke("set_volume_cmd", { level: v }).then(refresh).catch(() => flash("Couldn't change the volume."))}
           />
           <FillSlider
             label="Brightness"
             value={qs?.brightness ?? 0}
             unit="%"
             disabled={!qs}
-            onCommit={(v) => invoke("set_brightness_cmd", { level: v }).then(refresh).catch(() => {})}
+            onCommit={(v) => invoke("set_brightness_cmd", { level: v }).then(refresh).catch(() => flash("Couldn't change the brightness."))}
           />
         </div>
       </Section>
@@ -340,13 +352,13 @@ export const QuickPage: React.FC<PageProps> = ({ config, updateConfig }) => {
 
       <Section id="window" title="Quick window" summary="Arrange the windows behind Settings">
         <div className="sh-quick-grid">
-          <HeroTile icon={<Columns2 size={15} />} label="Side by side" sub="Two windows" onClick={() => tile("split")} />
-          <HeroTile icon={<Columns3 size={15} />} label="Thirds" sub="Three columns" onClick={() => tile("thirds")} />
-          <HeroTile icon={<Grid2x2 size={15} />} label="Grid" sub="Four corners" onClick={() => tile("grid")} />
-          <HeroTile icon={<LayoutGrid size={15} />} label="Organise" sub="Group by app" onClick={() => tile("smart-group")} />
-          <HeroTile icon={<Minimize2 size={15} />} label="Minimise all" sub="Show the desktop" onClick={() => void minimizeAll()} />
-          <HeroTile icon={<Pin size={15} />} label="Keep on top" sub="The last app you used" onClick={() => void pinLast()} />
-          <HeroTile icon={<Power size={15} />} label="Overview" sub="Every window" onClick={() => invoke("open_surface", { label: "overview" }).catch(() => {})} />
+          <HeroTile icon={<Columns2 size={15} aria-hidden />} label="Side by side" sub="Two windows" onClick={() => tile("split")} />
+          <HeroTile icon={<Columns3 size={15} aria-hidden />} label="Thirds" sub="Three columns" onClick={() => tile("thirds")} />
+          <HeroTile icon={<Grid2x2 size={15} aria-hidden />} label="Grid" sub="Four corners" onClick={() => tile("grid")} />
+          <HeroTile icon={<LayoutGrid size={15} aria-hidden />} label="Organise" sub="Group by app" onClick={() => tile("smart-group")} />
+          <HeroTile icon={<Minimize2 size={15} aria-hidden />} label="Minimise all" sub="Show the desktop" onClick={() => void minimizeAll()} />
+          <HeroTile icon={<Pin size={15} aria-hidden />} label="Keep on top" sub="The last app you used" onClick={() => void pinLast()} />
+          <HeroTile icon={<Layers size={15} aria-hidden />} label="Overview" sub="Every window" onClick={() => invoke("open_surface", { label: "overview" }).catch(oops("open Overview"))} />
           <HeroTile
             icon={<Sparkles size={15} />}
             label="Dim others"

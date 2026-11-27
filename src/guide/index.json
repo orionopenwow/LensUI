@@ -444,19 +444,19 @@
   {
    "id": "card.theme.themeschedulecard",
    "kind": "card",
-   "title": "Day & Night Themes",
-   "text": "Switch packs automatically. A pack you pick by hand stays until the next switch. Day & Night Themes · Day · Night · Switch at. Theme schedule. Day pack / night pack, switched at fixed times or at local sunrise and sunset",
+   "title": "Day & night themes",
+   "text": "Switch packs automatically. A pack you pick by hand stays until the next switch. Day & night themes · Day · Night · Switch at. Theme schedule. Day pack / night pack, switched at fixed times or at local sunrise and sunset",
    "path": [
     "Settings",
     "Appearance",
     "Schedule",
-    "Day & Night Themes"
+    "Day & night themes"
    ],
    "target": {
     "surface": "settings",
     "tab": "theme",
     "card": "ThemeScheduleCard",
-    "label": "Day & Night Themes",
+    "label": "Day & night themes",
     "section": "schedule"
    },
    "source": "src/components/ThemeScheduleCard.tsx"
@@ -470,7 +470,7 @@
     "Settings",
     "Appearance",
     "Schedule",
-    "Day & Night Themes",
+    "Day & night themes",
     "Day"
    ],
    "target": {
@@ -491,7 +491,7 @@
     "Settings",
     "Appearance",
     "Schedule",
-    "Day & Night Themes",
+    "Day & night themes",
     "Night"
    ],
    "target": {
@@ -512,7 +512,7 @@
     "Settings",
     "Appearance",
     "Schedule",
-    "Day & Night Themes",
+    "Day & night themes",
     "Switch at"
    ],
    "target": {
@@ -548,7 +548,7 @@
    "id": "card.theme.wallpapercard",
    "kind": "card",
    "title": "Lens Wallpaper",
-   "text": "Image, looping video or HTML wallpaper drawn behind your desktop icons. Your Windows wallpaper is never changed and comes back as soon as this is off. Lens Wallpaper · Wallpapers · Fit · Pause when a window fills the screen · Pause on battery · Wallpaper Accent · Follow wallpaper accent · Accent from my Windows wallpaper. Wallpaper. Lens wallpaper behind the icons, plus accent-from-wallpaper",
+   "text": "Image, looping video or HTML wallpaper drawn behind your desktop icons. Your Windows wallpaper is never changed and comes back as soon as this is off. Lens Wallpaper · Wallpapers · Fit · Pause when a window fills the screen · Pause on battery · Wallpaper accent · Follow wallpaper accent · Accent from my Windows wallpaper. Wallpaper. Lens wallpaper behind the icons, plus accent-from-wallpaper",
    "path": [
     "Settings",
     "Appearance",
@@ -651,20 +651,20 @@
   {
    "id": "setting.theme.wallpapercard.wallpaper-accent",
    "kind": "setting",
-   "title": "Wallpaper Accent",
+   "title": "Wallpaper accent",
    "text": "",
    "path": [
     "Settings",
     "Appearance",
     "Wallpaper",
     "Lens Wallpaper",
-    "Wallpaper Accent"
+    "Wallpaper accent"
    ],
    "target": {
     "surface": "settings",
     "tab": "theme",
     "card": "WallpaperCard",
-    "label": "Wallpaper Accent",
+    "label": "Wallpaper accent",
     "section": "wallpaper"
    },
    "source": "src/components/WallpaperCard.tsx"
@@ -714,19 +714,19 @@
   {
    "id": "card.theme.accessibilitycard",
    "kind": "card",
-   "title": "Accessibility & Language",
-   "text": "Accessibility & Language. Accessibility. motion, contrast and language. Applied by applyThemeToDocument (data-motion, data-contrast on <html>) and by the i18n module",
+   "title": "Accessibility & language",
+   "text": "Accessibility & language. Accessibility. motion, contrast and language. Applied by applyThemeToDocument (data-motion, data-contrast on <html>) and by the i18n module",
    "path": [
     "Settings",
     "Appearance",
     "Accessibility",
-    "Accessibility & Language"
+    "Accessibility & language"
    ],
    "target": {
     "surface": "settings",
     "tab": "theme",
     "card": "AccessibilityCard",
-    "label": "Accessibility & Language",
+    "label": "Accessibility & language",
     "section": "a11y"
    },
    "source": "src/components/AccessibilityCard.tsx"
@@ -1073,19 +1073,19 @@
   {
    "id": "card.theme.savedthemescard",
    "kind": "card",
-   "title": "Saved Themes",
-   "text": "Save your current look as a .lenstheme file. Add a surface color to make it a pack of your own. To use someone else's theme, drop their file into the themes folder and press Refresh. Saved Themes. Saved themes. Save the current look as a `.lenstheme` file, and apply, share or remove saved ones",
+   "title": "Saved themes",
+   "text": "Save your current look as a .lenstheme file. Add a surface color to make it a pack of your own. To use someone else's theme, drop their file into the themes folder and press Refresh. Saved themes. Saved themes. Save the current look as a `.lenstheme` file, and apply, share or remove saved ones",
    "path": [
     "Settings",
     "Appearance",
     "Saved & shared themes",
-    "Saved Themes"
+    "Saved themes"
    ],
    "target": {
     "surface": "settings",
     "tab": "theme",
     "card": "SavedThemesCard",
-    "label": "Saved Themes",
+    "label": "Saved themes",
     "section": "saved"
    },
    "source": "src/components/SavedThemesCard.tsx"
@@ -1562,19 +1562,19 @@
   {
    "id": "card.sessions.tilingcard",
    "kind": "card",
-   "title": "Automatic Tiling",
-   "text": "New windows snap into the layout by themselves. Maximised, minimised, fullscreen and game windows are left alone, and a window you move yourself starts floating. Automatic Tiling · Default Layout · New Windows Open · Always Float · Tiling Shortcuts. Tiling. automatic tiling (opt-in)",
+   "title": "Automatic tiling",
+   "text": "New windows snap into the layout by themselves. Maximised, minimised, fullscreen and game windows are left alone, and a window you move yourself starts floating. Automatic tiling · Default Layout · New windows open · Always float · Tiling shortcuts. Tiling. automatic tiling (opt-in)",
    "path": [
     "Settings",
     "Desktop",
-    "Desktop Sessions Switching",
-    "Automatic Tiling"
+    "Desktop sessions",
+    "Automatic tiling"
    ],
    "target": {
     "surface": "settings",
     "tab": "sessions",
     "card": "TilingCard",
-    "label": "Automatic Tiling"
+    "label": "Automatic tiling"
    },
    "source": "src/components/TilingCard.tsx"
   },
@@ -1586,8 +1586,8 @@
    "path": [
     "Settings",
     "Desktop",
-    "Desktop Sessions Switching",
-    "Automatic Tiling",
+    "Desktop sessions",
+    "Automatic tiling",
     "Default Layout"
    ],
    "target": {
@@ -1601,60 +1601,60 @@
   {
    "id": "setting.sessions.tilingcard.new-windows-open",
    "kind": "setting",
-   "title": "New Windows Open",
+   "title": "New windows open",
    "text": "Where a window you just opened goes in the layout",
    "path": [
     "Settings",
     "Desktop",
-    "Desktop Sessions Switching",
-    "Automatic Tiling",
-    "New Windows Open"
+    "Desktop sessions",
+    "Automatic tiling",
+    "New windows open"
    ],
    "target": {
     "surface": "settings",
     "tab": "sessions",
     "card": "TilingCard",
-    "label": "New Windows Open"
+    "label": "New windows open"
    },
    "source": "src/components/TilingCard.tsx"
   },
   {
    "id": "setting.sessions.tilingcard.always-float",
    "kind": "setting",
-   "title": "Always Float",
+   "title": "Always float",
    "text": "These apps are never tiled.",
    "path": [
     "Settings",
     "Desktop",
-    "Desktop Sessions Switching",
-    "Automatic Tiling",
-    "Always Float"
+    "Desktop sessions",
+    "Automatic tiling",
+    "Always float"
    ],
    "target": {
     "surface": "settings",
     "tab": "sessions",
     "card": "TilingCard",
-    "label": "Always Float"
+    "label": "Always float"
    },
    "source": "src/components/TilingCard.tsx"
   },
   {
    "id": "setting.sessions.tilingcard.tiling-shortcuts",
    "kind": "setting",
-   "title": "Tiling Shortcuts",
-   "text": "Work after turning on Keyboard Tiling Shortcuts and restarting Lens.",
+   "title": "Tiling shortcuts",
+   "text": "Work after turning on Keyboard Tiling shortcuts and restarting Lens.",
    "path": [
     "Settings",
     "Desktop",
-    "Desktop Sessions Switching",
-    "Automatic Tiling",
-    "Tiling Shortcuts"
+    "Desktop sessions",
+    "Automatic tiling",
+    "Tiling shortcuts"
    ],
    "target": {
     "surface": "settings",
     "tab": "sessions",
     "card": "TilingCard",
-    "label": "Tiling Shortcuts"
+    "label": "Tiling shortcuts"
    },
    "source": "src/components/TilingCard.tsx"
   },
@@ -1662,11 +1662,11 @@
    "id": "card.sessions.workspacescard",
    "kind": "card",
    "title": "Workspaces",
-   "text": "Named spaces with their own tiling layout and apps. Switch from the Top Bar or Alt+Shift+1–3. Workspaces · Built On · Follow Apps To Their Workspace. Workspaces. named workspaces with their own layout and app rules (opt-in)",
+   "text": "Named spaces with their own tiling layout and apps. Switch from the Top Bar or Alt+Shift+1–3. Workspaces · Built on · Follow apps to their workspace. Workspaces. named workspaces with their own layout and app rules (opt-in)",
    "path": [
     "Settings",
     "Desktop",
-    "Desktop Sessions Switching",
+    "Desktop sessions",
     "Workspaces"
    ],
    "target": {
@@ -1680,78 +1680,78 @@
   {
    "id": "setting.sessions.workspacescard.built-on",
    "kind": "setting",
-   "title": "Built On",
+   "title": "Built on",
    "text": "",
    "path": [
     "Settings",
     "Desktop",
-    "Desktop Sessions Switching",
+    "Desktop sessions",
     "Workspaces",
-    "Built On"
+    "Built on"
    ],
    "target": {
     "surface": "settings",
     "tab": "sessions",
     "card": "WorkspacesCard",
-    "label": "Built On"
+    "label": "Built on"
    },
    "source": "src/components/WorkspacesCard.tsx"
   },
   {
    "id": "setting.sessions.workspacescard.follow-apps-to-their-workspace",
    "kind": "setting",
-   "title": "Follow Apps To Their Workspace",
+   "title": "Follow apps to their workspace",
    "text": "When an app with an &ldquo;Opens here&rdquo; rule starts, switch to its workspace instead of leaving it there minimised.",
    "path": [
     "Settings",
     "Desktop",
-    "Desktop Sessions Switching",
+    "Desktop sessions",
     "Workspaces",
-    "Follow Apps To Their Workspace"
+    "Follow apps to their workspace"
    ],
    "target": {
     "surface": "settings",
     "tab": "sessions",
     "card": "WorkspacesCard",
-    "label": "Follow Apps To Their Workspace"
+    "label": "Follow apps to their workspace"
    },
    "source": "src/components/WorkspacesCard.tsx"
   },
   {
    "id": "card.sessions.sessionrestorecard",
    "kind": "card",
-   "title": "Session Restore",
-   "text": "A session remembers which apps were open and how they were arranged. Restore reopens the ones that are missing, then tiles them. Session Restore. Session restore. Save the apps that are open now as a session, and bring a session back with one click",
+   "title": "Session restore",
+   "text": "A session remembers which apps were open and how they were arranged. Restore reopens the ones that are missing, then tiles them. Session restore. Session restore. Save the apps that are open now as a session, and bring a session back with one click",
    "path": [
     "Settings",
     "Desktop",
-    "Desktop Sessions Switching",
-    "Session Restore"
+    "Desktop sessions",
+    "Session restore"
    ],
    "target": {
     "surface": "settings",
     "tab": "sessions",
     "card": "SessionRestoreCard",
-    "label": "Session Restore"
+    "label": "Session restore"
    },
    "source": "src/components/SessionRestoreCard.tsx"
   },
   {
    "id": "card.sessions.desktopgroupscard",
    "kind": "card",
-   "title": "Desktop Groups",
-   "text": "Named sections in the Desktop drawer. They only change how items are shown: nothing on your desktop is moved, renamed or deleted. Desktop Groups · Sort new items automatically · Show \"Everything else\". Desktop groups. Control Center card for desktop groups. Groups are a view: files never move",
+   "title": "Desktop groups",
+   "text": "Named sections in the Desktop drawer. They only change how items are shown: nothing on your desktop is moved, renamed or deleted. Desktop groups · Sort new items automatically · Show \"Everything else\". Desktop groups. Control Center card for desktop groups. Groups are a view: files never move",
    "path": [
     "Settings",
     "Desktop",
-    "Desktop Sessions Switching",
-    "Desktop Groups"
+    "Desktop sessions",
+    "Desktop groups"
    ],
    "target": {
     "surface": "settings",
     "tab": "sessions",
     "card": "DesktopGroupsCard",
-    "label": "Desktop Groups"
+    "label": "Desktop groups"
    },
    "source": "src/components/DesktopGroupsCard.tsx"
   },
@@ -1763,8 +1763,8 @@
    "path": [
     "Settings",
     "Desktop",
-    "Desktop Sessions Switching",
-    "Desktop Groups",
+    "Desktop sessions",
+    "Desktop groups",
     "Sort new items automatically"
    ],
    "target": {
@@ -1783,8 +1783,8 @@
    "path": [
     "Settings",
     "Desktop",
-    "Desktop Sessions Switching",
-    "Desktop Groups",
+    "Desktop sessions",
+    "Desktop groups",
     "Show \"Everything else\""
    ],
    "target": {
@@ -1803,7 +1803,7 @@
    "path": [
     "Settings",
     "Desktop",
-    "Desktop Sessions Switching",
+    "Desktop sessions",
     "Plugins"
    ],
    "target": {
@@ -1822,7 +1822,7 @@
    "path": [
     "Settings",
     "Desktop",
-    "Desktop Sessions Switching",
+    "Desktop sessions",
     "Plugins",
     "wants to"
    ],
@@ -1856,59 +1856,59 @@
   {
    "id": "card.system.shellkeyscard",
    "kind": "card",
-   "title": "Start Key & Alt+Tab",
-   "text": "Let Lens answer the Windows keys. Win+E, Win+L, Win+Shift+S and every other Win combination keep working; only a single tap of the Win key opens the Launcher. Start Key & Alt+Tab · Win Key Opens Lens Launcher · Alt+Tab Opens Lens Overview. Shell keys. let Lens answer the Win key (Launcher) and Alt+Tab (Overview). Both are off by default. Windows' own Start and Alt+Tab take over automatically whenever Lens doesn't respond within 300 ms, and the hook stands aside while a fullscreen game is in front",
+   "title": "Start key & Alt+Tab",
+   "text": "Let Lens answer the Windows keys. Win+E, Win+L, Win+Shift+S and every other Win combination keep working; only a single tap of the Win key opens the Launcher. Start key & Alt+Tab · Win key opens Lens Launcher · Alt+Tab opens Lens Overview. Shell keys. let Lens answer the Win key (Launcher) and Alt+Tab (Overview). Both are off by default. Windows' own Start and Alt+Tab take over automatically whenever Lens doesn't respond within 300 ms, and the hook stands aside while a fullscreen game is in front",
    "path": [
     "Settings",
     "Windows & Keys",
     "Keys, corners & monitors",
-    "Start Key & Alt+Tab"
+    "Start key & Alt+Tab"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "ShellKeysCard",
-    "label": "Start Key & Alt+Tab"
+    "label": "Start key & Alt+Tab"
    },
    "source": "src/components/ShellKeysCard.tsx"
   },
   {
    "id": "setting.system.shellkeyscard.win-key-opens-lens-launcher",
    "kind": "setting",
-   "title": "Win Key Opens Lens Launcher",
+   "title": "Win key opens Lens Launcher",
    "text": "Tap the Windows key to open the Launcher instead of Start.",
    "path": [
     "Settings",
     "Windows & Keys",
     "Keys, corners & monitors",
-    "Start Key & Alt+Tab",
-    "Win Key Opens Lens Launcher"
+    "Start key & Alt+Tab",
+    "Win key opens Lens Launcher"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "ShellKeysCard",
-    "label": "Win Key Opens Lens Launcher"
+    "label": "Win key opens Lens Launcher"
    },
    "source": "src/components/ShellKeysCard.tsx"
   },
   {
    "id": "setting.system.shellkeyscard.alt-tab-opens-lens-overview",
    "kind": "setting",
-   "title": "Alt+Tab Opens Lens Overview",
+   "title": "Alt+Tab opens Lens Overview",
    "text": "Hold Alt, tap Tab to move, release Alt to switch. Esc cancels.",
    "path": [
     "Settings",
     "Windows & Keys",
     "Keys, corners & monitors",
-    "Start Key & Alt+Tab",
-    "Alt+Tab Opens Lens Overview"
+    "Start key & Alt+Tab",
+    "Alt+Tab opens Lens Overview"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "ShellKeysCard",
-    "label": "Alt+Tab Opens Lens Overview"
+    "label": "Alt+Tab opens Lens Overview"
    },
    "source": "src/components/ShellKeysCard.tsx"
   },
@@ -1954,39 +1954,39 @@
   {
    "id": "card.system.hotcornerscard",
    "kind": "card",
-   "title": "Hot Corners",
-   "text": "Push the pointer into a screen corner and rest it there to open something. Corners between two monitors are skipped, so moving across screens never sets one off. Hot Corners · Every Monitor. Hot corners. hot corners (opt-in). Pick a corner on the little screen, then its action",
+   "title": "Hot corners",
+   "text": "Push the pointer into a screen corner and rest it there to open something. Corners between two monitors are skipped, so moving across screens never sets one off. Hot corners · Every monitor. Hot corners. hot corners (opt-in). Pick a corner on the little screen, then its action",
    "path": [
     "Settings",
     "Windows & Keys",
     "Keys, corners & monitors",
-    "Hot Corners"
+    "Hot corners"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "HotCornersCard",
-    "label": "Hot Corners"
+    "label": "Hot corners"
    },
    "source": "src/components/HotCornersCard.tsx"
   },
   {
    "id": "setting.system.hotcornerscard.every-monitor",
    "kind": "setting",
-   "title": "Every Monitor",
+   "title": "Every monitor",
    "text": "Off: only the main monitor's corners",
    "path": [
     "Settings",
     "Windows & Keys",
     "Keys, corners & monitors",
-    "Hot Corners",
-    "Every Monitor"
+    "Hot corners",
+    "Every monitor"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "HotCornersCard",
-    "label": "Every Monitor"
+    "label": "Every monitor"
    },
    "source": "src/components/HotCornersCard.tsx"
   },
@@ -1994,7 +1994,7 @@
    "id": "card.system.altdragcard",
    "kind": "card",
    "title": "Drag Windows",
-   "text": "Hold and drag anywhere inside a window to move it. Drag with the right button to resize from the nearest edge or corner. Fullscreen apps, games and administrator windows are never touched. Drag Windows · Hold · Never Move · Right-Drag Resizes · Bring to Front · Drag Maximised Windows Out. Alt drag. Alt + drag to move and Alt + right-drag to resize windows (opt-in)",
+   "text": "Hold and drag anywhere inside a window to move it. Drag with the right button to resize from the nearest edge or corner. Fullscreen apps, games and administrator windows are never touched. Drag Windows · Hold · Never move · Right-drag resizes · Bring to front · Drag maximised windows out. Alt drag. Alt + drag to move and Alt + right-drag to resize windows (opt-in)",
    "path": [
     "Settings",
     "Windows & Keys",
@@ -2032,118 +2032,118 @@
   {
    "id": "setting.system.altdragcard.never-move",
    "kind": "setting",
-   "title": "Never Move",
+   "title": "Never move",
    "text": "Apps that use + drag themselves, like drawing or 3D apps.",
    "path": [
     "Settings",
     "Windows & Keys",
     "Keys, corners & monitors",
     "Drag Windows",
-    "Never Move"
+    "Never move"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "AltDragCard",
-    "label": "Never Move"
+    "label": "Never move"
    },
    "source": "src/components/AltDragCard.tsx"
   },
   {
    "id": "setting.system.altdragcard.right-drag-resizes",
    "kind": "setting",
-   "title": "Right-Drag Resizes",
+   "title": "Right-drag resizes",
    "text": "",
    "path": [
     "Settings",
     "Windows & Keys",
     "Keys, corners & monitors",
     "Drag Windows",
-    "Right-Drag Resizes"
+    "Right-drag resizes"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "AltDragCard",
-    "label": "Right-Drag Resizes"
+    "label": "Right-drag resizes"
    },
    "source": "src/components/AltDragCard.tsx"
   },
   {
    "id": "setting.system.altdragcard.bring-to-front",
    "kind": "setting",
-   "title": "Bring to Front",
+   "title": "Bring to front",
    "text": "The window you grab comes to the front",
    "path": [
     "Settings",
     "Windows & Keys",
     "Keys, corners & monitors",
     "Drag Windows",
-    "Bring to Front"
+    "Bring to front"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "AltDragCard",
-    "label": "Bring to Front"
+    "label": "Bring to front"
    },
    "source": "src/components/AltDragCard.tsx"
   },
   {
    "id": "setting.system.altdragcard.drag-maximised-windows-out",
    "kind": "setting",
-   "title": "Drag Maximised Windows Out",
+   "title": "Drag maximised windows out",
    "text": "A maximised window shrinks back and follows the pointer",
    "path": [
     "Settings",
     "Windows & Keys",
     "Keys, corners & monitors",
     "Drag Windows",
-    "Drag Maximised Windows Out"
+    "Drag maximised windows out"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "AltDragCard",
-    "label": "Drag Maximised Windows Out"
+    "label": "Drag maximised windows out"
    },
    "source": "src/components/AltDragCard.tsx"
   },
   {
    "id": "card.system.appsummoncard",
    "kind": "card",
-   "title": "App Hotkeys",
-   "text": "One shortcut per app: it brings the app forward, hides it again if it's already in front, and starts it if it isn't running. Great for a drop-down terminal. App Hotkeys. App summon. one hotkey per app that shows it, hides it, or starts it (opt-in)",
+   "title": "App hotkeys",
+   "text": "One shortcut per app: it brings the app forward, hides it again if it's already in front, and starts it if it isn't running. Great for a drop-down terminal. App hotkeys. App summon. one hotkey per app that shows it, hides it, or starts it (opt-in)",
    "path": [
     "Settings",
     "Windows & Keys",
     "Keys, corners & monitors",
-    "App Hotkeys"
+    "App hotkeys"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "AppSummonCard",
-    "label": "App Hotkeys"
+    "label": "App hotkeys"
    },
    "source": "src/components/AppSummonCard.tsx"
   },
   {
    "id": "card.system.windowrulescard",
    "kind": "card",
-   "title": "Per-App Window Rules",
-   "text": "Give one app its own opacity, frame and corners — or have Lens leave its windows alone entirely. Per-App Window Rules · Add a rule · Focus & Borders · Dim inactive windows · Leave fullscreen apps alone · Never decorate · Pin a window on top. Window rules. Focus & Borders, then the per-app rules. Mounted as one card group in Settings › Windows",
+   "title": "Per-app window rules",
+   "text": "Give one app its own opacity, frame and corners — or have Lens leave its windows alone entirely. Per-app window rules · Add a rule · Focus & borders · Dim inactive windows · Leave fullscreen apps alone · Never decorate · Pin a window on top. Window rules. Focus & Borders, then the per-app rules. Mounted as one card group in Settings › Windows",
    "path": [
     "Settings",
     "Windows & Keys",
     "Window styling",
-    "Per-App Window Rules"
+    "Per-app window rules"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "WindowRulesCard",
-    "label": "Per-App Window Rules"
+    "label": "Per-app window rules"
    },
    "source": "src/components/WindowRulesCard.tsx"
   },
@@ -2156,7 +2156,7 @@
     "Settings",
     "Windows & Keys",
     "Window styling",
-    "Per-App Window Rules",
+    "Per-app window rules",
     "Add a rule"
    ],
    "target": {
@@ -2170,20 +2170,20 @@
   {
    "id": "setting.system.windowrulescard.focus-and-borders",
    "kind": "setting",
-   "title": "Focus & Borders",
+   "title": "Focus & borders",
    "text": "Dim what you're not using and outline the window you are. Lens draws this on top of your windows — nothing inside your apps changes, and fullscreen games and videos are left alone.",
    "path": [
     "Settings",
     "Windows & Keys",
     "Window styling",
-    "Per-App Window Rules",
-    "Focus & Borders"
+    "Per-app window rules",
+    "Focus & borders"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "WindowRulesCard",
-    "label": "Focus & Borders"
+    "label": "Focus & borders"
    },
    "source": "src/components/WindowRulesCard.tsx"
   },
@@ -2196,7 +2196,7 @@
     "Settings",
     "Windows & Keys",
     "Window styling",
-    "Per-App Window Rules",
+    "Per-app window rules",
     "Dim inactive windows"
    ],
    "target": {
@@ -2216,7 +2216,7 @@
     "Settings",
     "Windows & Keys",
     "Window styling",
-    "Per-App Window Rules",
+    "Per-app window rules",
     "Leave fullscreen apps alone"
    ],
    "target": {
@@ -2236,7 +2236,7 @@
     "Settings",
     "Windows & Keys",
     "Window styling",
-    "Per-App Window Rules",
+    "Per-app window rules",
     "Never decorate"
    ],
    "target": {
@@ -2256,7 +2256,7 @@
     "Settings",
     "Windows & Keys",
     "Window styling",
-    "Per-App Window Rules",
+    "Per-app window rules",
     "Pin a window on top"
    ],
    "target": {
@@ -2329,19 +2329,19 @@
   {
    "id": "card.system.shellmodecard",
    "kind": "card",
-   "title": "Shell Mode (advanced)",
-   "text": "Start Lens instead of the Windows taskbar and desktop when you sign in. This account only. Shell Mode (advanced). Shell mode. Control Center card for opt-in Shell Mode (Lens instead of Explorer as the Windows shell). Backend: src-tauri/src/win_shell.rs. Full explanation: docs/SHELL_MODE.md",
+   "title": "Shell mode (advanced)",
+   "text": "Start Lens instead of the Windows taskbar and desktop when you sign in. This account only. Shell mode (advanced). Shell mode. Control Center card for opt-in Shell Mode (Lens instead of Explorer as the Windows shell). Backend: src-tauri/src/win_shell.rs. Full explanation: docs/SHELL_MODE.md",
    "path": [
     "Settings",
     "Windows & Keys",
     "Window styling",
-    "Shell Mode (advanced)"
+    "Shell mode (advanced)"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "ShellModeCard",
-    "label": "Shell Mode (advanced)"
+    "label": "Shell mode (advanced)"
    },
    "source": "src/components/ShellModeCard.tsx"
   },
@@ -3689,19 +3689,18 @@
   {
    "id": "card.ai.magiccard",
    "kind": "card",
-   "title": "Magic Right-Click",
-   "text": "One Lens window at the pointer, anywhere: what's under it, the right actions, window controls and an Ask box. Games, fullscreen apps and administrator windows are left alone. Magic Right-Click · Open With · Starts In · Leave These Apps Alone · Preview · Window Actions · AI in This Window · Frequent First. Magic. Control Center card for the magic right-click window. Off by default",
+   "title": "Magic right-click",
+   "text": "One Lens window at the pointer, anywhere: what's under it, the right actions, window controls and an Ask box. Games, fullscreen apps and administrator windows are left alone. Magic right-click · Open with · Starts in · Leave these apps alone · Preview · Window actions · AI in this window · Frequent first. Magic. Control Center card for the magic right-click window. Off by default",
    "path": [
     "Settings",
     "AI & Command",
-    "Magic right-click",
-    "Magic Right-Click"
+    "Magic right-click"
    ],
    "target": {
     "surface": "settings",
     "tab": "ai",
     "card": "MagicCard",
-    "label": "Magic Right-Click",
+    "label": "Magic right-click",
     "section": "magic"
    },
    "source": "src/components/MagicCard.tsx"
@@ -3709,20 +3708,19 @@
   {
    "id": "setting.ai.magiccard.open-with",
    "kind": "setting",
-   "title": "Open With",
+   "title": "Open with",
    "text": "",
    "path": [
     "Settings",
     "AI & Command",
     "Magic right-click",
-    "Magic Right-Click",
-    "Open With"
+    "Open with"
    ],
    "target": {
     "surface": "settings",
     "tab": "ai",
     "card": "MagicCard",
-    "label": "Open With",
+    "label": "Open with",
     "section": "magic"
    },
    "source": "src/components/MagicCard.tsx"
@@ -3730,20 +3728,19 @@
   {
    "id": "setting.ai.magiccard.starts-in",
    "kind": "setting",
-   "title": "Starts In",
+   "title": "Starts in",
    "text": "",
    "path": [
     "Settings",
     "AI & Command",
     "Magic right-click",
-    "Magic Right-Click",
-    "Starts In"
+    "Starts in"
    ],
    "target": {
     "surface": "settings",
     "tab": "ai",
     "card": "MagicCard",
-    "label": "Starts In",
+    "label": "Starts in",
     "section": "magic"
    },
    "source": "src/components/MagicCard.tsx"
@@ -3751,20 +3748,19 @@
   {
    "id": "setting.ai.magiccard.leave-these-apps-alone",
    "kind": "setting",
-   "title": "Leave These Apps Alone",
+   "title": "Leave these apps alone",
    "text": "The gesture goes to the app as usual, e.g. games or design tools.",
    "path": [
     "Settings",
     "AI & Command",
     "Magic right-click",
-    "Magic Right-Click",
-    "Leave These Apps Alone"
+    "Leave these apps alone"
    ],
    "target": {
     "surface": "settings",
     "tab": "ai",
     "card": "MagicCard",
-    "label": "Leave These Apps Alone",
+    "label": "Leave these apps alone",
     "section": "magic"
    },
    "source": "src/components/MagicCard.tsx"
@@ -3778,7 +3774,6 @@
     "Settings",
     "AI & Command",
     "Magic right-click",
-    "Magic Right-Click",
     "Preview"
    ],
    "target": {
@@ -3793,20 +3788,19 @@
   {
    "id": "setting.ai.magiccard.window-actions",
    "kind": "setting",
-   "title": "Window Actions",
+   "title": "Window actions",
    "text": "Minimise, snap, move, pin and close for the window under the pointer",
    "path": [
     "Settings",
     "AI & Command",
     "Magic right-click",
-    "Magic Right-Click",
-    "Window Actions"
+    "Window actions"
    ],
    "target": {
     "surface": "settings",
     "tab": "ai",
     "card": "MagicCard",
-    "label": "Window Actions",
+    "label": "Window actions",
     "section": "magic"
    },
    "source": "src/components/MagicCard.tsx"
@@ -3814,20 +3808,19 @@
   {
    "id": "setting.ai.magiccard.ai-in-this-window",
    "kind": "setting",
-   "title": "AI in This Window",
+   "title": "AI in this window",
    "text": "Ask box and AI actions. Uses your AI settings and privacy mode; off hides them here.",
    "path": [
     "Settings",
     "AI & Command",
     "Magic right-click",
-    "Magic Right-Click",
-    "AI in This Window"
+    "AI in this window"
    ],
    "target": {
     "surface": "settings",
     "tab": "ai",
     "card": "MagicCard",
-    "label": "AI in This Window",
+    "label": "AI in this window",
     "section": "magic"
    },
    "source": "src/components/MagicCard.tsx"
@@ -3835,20 +3828,19 @@
   {
    "id": "setting.ai.magiccard.frequent-first",
    "kind": "setting",
-   "title": "Frequent First",
+   "title": "Frequent first",
    "text": "Actions you use most move up. Counts stay on this PC.",
    "path": [
     "Settings",
     "AI & Command",
     "Magic right-click",
-    "Magic Right-Click",
-    "Frequent First"
+    "Frequent first"
    ],
    "target": {
     "surface": "settings",
     "tab": "ai",
     "card": "MagicCard",
-    "label": "Frequent First",
+    "label": "Frequent first",
     "section": "magic"
    },
    "source": "src/components/MagicCard.tsx"
@@ -4694,19 +4686,19 @@
   {
    "id": "card.ai.agentspane",
    "kind": "card",
-   "title": "Connected Agents & MCP Servers",
-   "text": "Manage local LLMs, Claude Desktop MCP servers, or custom stdio/HTTP tools. Connected Agents & MCP Servers · AGENTS.md — Global Agent Safety & Consistency Rules. Agents",
+   "title": "Connected agents & MCP servers",
+   "text": "Manage local LLMs, Claude Desktop MCP servers, or custom stdio/HTTP tools. Connected agents & MCP servers · AGENTS.md — global agent safety & consistency rules. Agents",
    "path": [
     "Settings",
     "AI & Command",
     "Agents",
-    "Connected Agents & MCP Servers"
+    "Connected agents & MCP servers"
    ],
    "target": {
     "surface": "settings",
     "tab": "ai",
     "card": "AgentsPane",
-    "label": "Connected Agents & MCP Servers",
+    "label": "Connected agents & MCP servers",
     "section": "agents"
    },
    "source": "src/components/AgentsPane.tsx"
@@ -4714,20 +4706,20 @@
   {
    "id": "setting.ai.agentspane.agents-md-global-agent-safety-and-consistency-rules",
    "kind": "setting",
-   "title": "AGENTS.md — Global Agent Safety & Consistency Rules",
+   "title": "AGENTS.md — global agent safety & consistency rules",
    "text": "Saved to %APPDATA%\\LensUI\\AGENTS.md and injected automatically into connected agents.",
    "path": [
     "Settings",
     "AI & Command",
     "Agents",
-    "Connected Agents & MCP Servers",
-    "AGENTS.md — Global Agent Safety & Consistency Rules"
+    "Connected agents & MCP servers",
+    "AGENTS.md — global agent safety & consistency rules"
    ],
    "target": {
     "surface": "settings",
     "tab": "ai",
     "card": "AgentsPane",
-    "label": "AGENTS.md — Global Agent Safety & Consistency Rules",
+    "label": "AGENTS.md — global agent safety & consistency rules",
     "section": "agents"
    },
    "source": "src/components/AgentsPane.tsx"
@@ -4755,19 +4747,19 @@
   {
    "id": "card.about.crashreportscard",
    "kind": "card",
-   "title": "Crash Reports",
-   "text": "Kept on this PC only (newest 10). User names and personal paths are removed. Nothing is uploaded. Crash Reports. Crash reports. crash reports Lens wrote on this PC (%APPDATA%\\LensUI\\crashes, newest 10). Nothing is uploaded; \"Copy report\" puts one on the clipboard so it can be pasted into an issue. Backend: win_crash.rs",
+   "title": "Crash reports",
+   "text": "Kept on this PC only (newest 10). User names and personal paths are removed. Nothing is uploaded. Crash reports. Crash reports. crash reports Lens wrote on this PC (%APPDATA%\\LensUI\\crashes, newest 10). Nothing is uploaded; \"Copy report\" puts one on the clipboard so it can be pasted into an issue. Backend: win_crash.rs",
    "path": [
     "Settings",
     "About & Testing",
     "Updates & crash reports",
-    "Crash Reports"
+    "Crash reports"
    ],
    "target": {
     "surface": "settings",
     "tab": "about",
     "card": "CrashReportsCard",
-    "label": "Crash Reports",
+    "label": "Crash reports",
     "section": "updates"
    },
    "source": "src/components/CrashReportsCard.tsx"
@@ -4894,19 +4886,18 @@
   {
    "id": "card.about.backuprestorecard",
    "kind": "card",
-   "title": "Back Up & Restore",
-   "text": "Saves your settings, themes, window rules and agent rules to one .lensbackup file in Documents. Saved keys and tokens are always left out. Back Up & Restore · Include workflow recordings and training data · Remove All Lens Changes. Backup restore. back up / restore all Lens settings (.lensbackup), and \"Remove all Lens changes\" (puts Windows back as it was). Backend: win_backup.rs, win_uninstall.rs",
+   "title": "Back up & restore",
+   "text": "Saves your settings, themes, window rules and agent rules to one .lensbackup file in Documents. Saved keys and tokens are always left out. Back up & restore · Include workflow recordings and training data · Remove all Lens changes. Backup restore. back up / restore all Lens settings (.lensbackup), and \"Remove all Lens changes\" (puts Windows back as it was). Backend: win_backup.rs, win_uninstall.rs",
    "path": [
     "Settings",
     "About & Testing",
-    "Back up & restore",
-    "Back Up & Restore"
+    "Back up & restore"
    ],
    "target": {
     "surface": "settings",
     "tab": "about",
     "card": "BackupRestoreCard",
-    "label": "Back Up & Restore",
+    "label": "Back up & restore",
     "section": "backup"
    },
    "source": "src/components/BackupRestoreCard.tsx"
@@ -4920,7 +4911,6 @@
     "Settings",
     "About & Testing",
     "Back up & restore",
-    "Back Up & Restore",
     "Include workflow recordings and training data"
    ],
    "target": {
@@ -4935,20 +4925,19 @@
   {
    "id": "setting.about.backuprestorecard.remove-all-lens-changes",
    "kind": "setting",
-   "title": "Remove All Lens Changes",
+   "title": "Remove all Lens changes",
    "text": "Restores folder icons, the Windows taskbar and desktop icons, window borders, and turns off shell mode and start-with-Windows. Use before uninstalling.",
    "path": [
     "Settings",
     "About & Testing",
     "Back up & restore",
-    "Back Up & Restore",
-    "Remove All Lens Changes"
+    "Remove all Lens changes"
    ],
    "target": {
     "surface": "settings",
     "tab": "about",
     "card": "BackupRestoreCard",
-    "label": "Remove All Lens Changes",
+    "label": "Remove all Lens changes",
     "section": "backup"
    },
    "source": "src/components/BackupRestoreCard.tsx"
@@ -5519,218 +5508,236 @@
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
-   "id": "setting.sessions.inline.choose-folder-theme",
+   "id": "setting.dock.inline.pointer-halo",
    "kind": "setting",
-   "title": "Choose Folder Theme",
+   "title": "Pointer halo",
    "text": "",
    "path": [
     "Settings",
-    "Desktop",
-    "Folder Themes",
-    "Choose Folder Theme"
+    "Dock & Bar",
+    "Top Bar",
+    "Pointer halo"
    ],
    "target": {
     "surface": "settings",
-    "tab": "sessions",
-    "label": "Choose Folder Theme"
+    "tab": "dock",
+    "label": "Pointer halo"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
-   "id": "setting.sessions.inline.replace-all-windows-explorer-default-folders",
+   "id": "setting.sessions.inline.choose-a-folder-theme",
    "kind": "setting",
-   "title": "Replace ALL Windows Explorer Default Folders",
-   "text": "Safe HKCU Shell Icons override (zero system file edits, 1-click revert)",
+   "title": "Choose a folder theme",
+   "text": "",
    "path": [
     "Settings",
     "Desktop",
-    "Folder Themes",
-    "Replace ALL Windows Explorer Default Folders"
+    "Folder themes",
+    "Choose a folder theme"
    ],
    "target": {
     "surface": "settings",
     "tab": "sessions",
-    "label": "Replace ALL Windows Explorer Default Folders"
+    "label": "Choose a folder theme"
+   },
+   "source": "src/surfaces/ControlCenterSurface.tsx"
+  },
+  {
+   "id": "setting.sessions.inline.replace-every-default-folder-icon-in-file-explorer",
+   "kind": "setting",
+   "title": "Replace every default folder icon in File Explorer",
+   "text": "Safe HKCU Shell Icons override (zero system file edits, 1-click revert)",
+   "path": [
+    "Settings",
+    "Desktop",
+    "Folder themes",
+    "Replace every default folder icon in File Explorer"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "sessions",
+    "label": "Replace every default folder icon in File Explorer"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
    "id": "setting.sessions.inline.style-all-core-user-folders",
    "kind": "setting",
-   "title": "Style All Core User Folders",
+   "title": "Style all core user folders",
    "text": "Desktop, Documents, Downloads, Pictures, Music & Videos",
    "path": [
     "Settings",
     "Desktop",
-    "Folder Themes",
-    "Style All Core User Folders"
+    "Folder themes",
+    "Style all core user folders"
    ],
    "target": {
     "surface": "settings",
     "tab": "sessions",
-    "label": "Style All Core User Folders"
+    "label": "Style all core user folders"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
-   "id": "setting.sessions.inline.style-any-specific-folder",
+   "id": "setting.sessions.inline.style-a-specific-folder",
    "kind": "setting",
-   "title": "Style Any Specific Folder",
+   "title": "Style a specific folder",
    "text": "",
    "path": [
     "Settings",
     "Desktop",
-    "Folder Themes",
-    "Style Any Specific Folder"
+    "Folder themes",
+    "Style a specific folder"
    ],
    "target": {
     "surface": "settings",
     "tab": "sessions",
-    "label": "Style Any Specific Folder"
+    "label": "Style a specific folder"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
-   "id": "setting.system.inline.run-lens-on-windows-startup",
+   "id": "setting.system.inline.run-lens-when-windows-starts",
    "kind": "setting",
-   "title": "Run Lens on Windows Startup",
+   "title": "Run Lens when Windows starts",
    "text": "",
    "path": [
     "Settings",
     "Windows & Keys",
     "Windows integration & shortcuts",
-    "Run Lens on Windows Startup"
+    "Run Lens when Windows starts"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
-    "label": "Run Lens on Windows Startup"
+    "label": "Run Lens when Windows starts"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
    "id": "setting.system.inline.legacy-in-app-window-styling-experimental",
    "kind": "setting",
-   "title": "Legacy In-App Window Styling (experimental)",
+   "title": "Legacy in-app window styling (experimental)",
    "text": "Off by default: Lens already styles windows from outside each app. This loads a small helper into other apps to restyle a window that keeps its old titlebar. Lens keeps it out while a fullscreen app or an anti-cheat protected game is running, and removes it the moment you switch this off, quit, or use Remove all.",
    "path": [
     "Settings",
     "Windows & Keys",
     "Windows integration & shortcuts",
-    "Legacy In-App Window Styling (experimental)"
+    "Legacy in-app window styling (experimental)"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
-    "label": "Legacy In-App Window Styling (experimental)"
+    "label": "Legacy in-app window styling (experimental)"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
    "id": "setting.system.inline.create-rarely-used-windows-on-demand",
    "kind": "setting",
-   "title": "Create Rarely Used Windows on Demand",
+   "title": "Create rarely used windows on demand",
    "text": "Saves memory: Control Center, Launcher, Overview and other panels load the first time you open them. Applies after restarting Lens.",
    "path": [
     "Settings",
     "Windows & Keys",
     "Windows integration & shortcuts",
-    "Create Rarely Used Windows on Demand"
+    "Create rarely used windows on demand"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
-    "label": "Create Rarely Used Windows on Demand"
+    "label": "Create rarely used windows on demand"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
-   "id": "setting.system.inline.system-tray-in-top-bar-experimental",
+   "id": "setting.system.inline.system-tray-in-the-top-bar-experimental",
    "kind": "setting",
-   "title": "System Tray in Top Bar (experimental)",
+   "title": "System tray in the Top Bar (experimental)",
    "text": "Lens collects tray icons itself and shows them in the Top Bar. Turn off if icons look wrong.",
    "path": [
     "Settings",
     "Windows & Keys",
     "Windows integration & shortcuts",
-    "System Tray in Top Bar (experimental)"
+    "System tray in the Top Bar (experimental)"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
-    "label": "System Tray in Top Bar (experimental)"
+    "label": "System tray in the Top Bar (experimental)"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
    "id": "setting.system.inline.clipboard-history",
    "kind": "setting",
-   "title": "Clipboard History",
+   "title": "Clipboard history",
    "text": "Remembers the last 50 pieces of copied text in memory only (never saved to disk). Shown in the Widget Drawer.",
    "path": [
     "Settings",
     "Windows & Keys",
     "Windows integration & shortcuts",
-    "Clipboard History"
+    "Clipboard history"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
-    "label": "Clipboard History"
+    "label": "Clipboard history"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
    "id": "setting.system.inline.keyboard-tiling-shortcuts",
    "kind": "setting",
-   "title": "Keyboard Tiling Shortcuts",
+   "title": "Keyboard tiling shortcuts",
    "text": "Ctrl+Alt+Arrows snap, Alt+Shift+Arrows move focus. These keys stop reaching other apps. Applies after restarting Lens.",
    "path": [
     "Settings",
     "Windows & Keys",
     "Windows integration & shortcuts",
-    "Keyboard Tiling Shortcuts"
+    "Keyboard tiling shortcuts"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
-    "label": "Keyboard Tiling Shortcuts"
+    "label": "Keyboard tiling shortcuts"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
    "id": "setting.system.inline.alt-1-9-opens-dock-apps",
    "kind": "setting",
-   "title": "Alt+1–9 Opens Dock Apps",
+   "title": "Alt+1–9 opens Dock apps",
    "text": "Alt+1 is the first Dock app, and so on. These keys stop reaching other apps. Applies after restarting Lens.",
    "path": [
     "Settings",
     "Windows & Keys",
     "Windows integration & shortcuts",
-    "Alt+1–9 Opens Dock Apps"
+    "Alt+1–9 opens Dock apps"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
-    "label": "Alt+1–9 Opens Dock Apps"
+    "label": "Alt+1–9 opens Dock apps"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
    "id": "setting.system.inline.global-shortcuts",
    "kind": "setting",
-   "title": "Global Shortcuts",
+   "title": "Global shortcuts",
    "text": "",
    "path": [
     "Settings",
     "Windows & Keys",
     "Windows integration & shortcuts",
-    "Global Shortcuts"
+    "Global shortcuts"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
-    "label": "Global Shortcuts"
+    "label": "Global shortcuts"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
@@ -6560,6 +6567,24 @@
     "Dock & Top Bar",
     "Dock style",
     "Islands"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "label": "Dock style"
+   },
+   "source": "src/dock/styles.ts"
+  },
+  {
+   "id": "dock-style.unified",
+   "kind": "dock-style",
+   "title": "Unified dock style",
+   "text": "One floating pill: Launcher, apps, then tray, notifications and the clock with the date. A dock style.",
+   "path": [
+    "Settings",
+    "Dock & Top Bar",
+    "Dock style",
+    "Unified"
    ],
    "target": {
     "surface": "settings",
@@ -14567,8 +14592,25 @@
   {
    "id": "doc.themes-audit.3",
    "kind": "doc",
+   "title": "Theme audit: Contrast, every pack",
+   "text": "What each pack really paints: its surface (with the accent tint mixed in) and its raised cards, under the text tones of its scheme (tokens.css). Body text (primary and secondary) must reach 4.5:1 on both; muted text (hints, icons) and the accent must reach 3:1. Dark packs with lighter bases get brighter secondary and muted tones (marked ↑). Packs that follow the Windows accent are checked for text only. src/ tests /themeContrast.test.ts fails on any pack below these lines. 87 packs, 0 below a line. Pack Scheme Surface · card Text Secondary Muted Accent --- --- --- --- --- --- --- Alabaster Daylight light #EEEEF0 · #FFFFFF 15.3:1 6.7:1 5.1:1 4.5:1 Amber Monitor dark #0A0500 · #15100B 18.1:1 7.4:1 3.9:1 10.3:1 Aurora (Claude) dark #14123A · #1F1D43 15.3:1 6.2:1 3.3:1 5.1:1 Base16 Cupcake light #FBF1F2 · #FFFFFF 16.0:1 7.0:1 5.4:1 3.0:1 Base16 Eighties dark ↑ #2D2D2D · #363636 11.6:1 7.0:1 ",
+   "path": [
+    "Docs",
+    "Theme audit",
+    "Contrast, every pack"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THEMES_AUDIT.md",
+    "heading": "Contrast, every pack"
+   },
+   "source": "docs/THEMES_AUDIT.md"
+  },
+  {
+   "id": "doc.themes-audit.4",
+   "kind": "doc",
    "title": "Theme audit: Near-duplicates",
-   "text": "Pairs of listed packs closer than 0.30, closest first. None of these is deleted: the featured one of a pair leads, the other sits under More themes. Pairs under 0.08 are the same theme on screen and are merged instead (next section), so none appears here. Distance Pack Almost the same as What still differs --- --- --- --- 0.09 GitHub Light Daltonized Light accent, shape 0.13 Catppuccin Frappé Catppuccin Macchiato base 0.13 Catppuccin Mocha Rosé Pine Moon base, accent, shape 0.14 GitHub Dark Daltonized Dark accent, shape, base 0.15 Alabaster Daylight Catppuccin Latte chrome, shape, accent 0.16 Night Reef Braille Stars backdrop, accent 0.16 Paper Garden Claude Light accent, chrome, shape, base 0.17 Plotter Tide Dither Dunes backdrop, base 0.17 Halftone Dawn Dither Dunes backdrop, accent, base 0.18 Rosé Pine Dawn Base16 Cupcake accent, shape, base 0.18 GitHub Light One Half Light accent, ba",
+   "text": "Pairs of listed packs closer than 0.30, closest first. None of these is deleted: the featured one of a pair leads, the other sits under More themes. Pairs under 0.08 are the same theme on screen and are merged instead (next section), so none appears here. Distance Pack Almost the same as What still differs --- --- --- --- 0.09 GitHub Light Daltonized Light accent, shape 0.13 Catppuccin Frappé Catppuccin Macchiato base 0.13 Catppuccin Mocha Rosé Pine Moon base, accent, shape 0.14 GitHub Dark Daltonized Dark accent, shape, base 0.15 Alabaster Daylight Catppuccin Latte chrome, shape, accent 0.16 Night Reef Braille Stars backdrop, accent 0.16 Paper Garden Claude Light accent, chrome, shape, base 0.17 Plotter Tide Dither Dunes backdrop, base 0.17 Rosé Pine Dawn Base16 Cupcake accent, shape, base 0.17 Halftone Dawn Dither Dunes backdrop, accent, base 0.18 GitHub Light One Half Light accent, ba",
    "path": [
     "Docs",
     "Theme audit",
@@ -14582,7 +14624,7 @@
    "source": "docs/THEMES_AUDIT.md"
   },
   {
-   "id": "doc.themes-audit.4",
+   "id": "doc.themes-audit.5",
    "kind": "doc",
    "title": "Theme audit: Merged",
    "text": "Packs closer than 0.08 to another one. They only looked different because each came with its own Dock style; a theme changes colours only now, so they are the same theme on screen. The merged pack is no longer listed, its name finds the pack that stays, and settings or theme files that name it keep working with their exact colours. Merged pack Now listed as Distance What still differs --- --- --- --- CRT Green Phosphor 0.06 shape, accent Claude Light Brand Claude Light 0.06 accent",
@@ -14599,7 +14641,7 @@
    "source": "docs/THEMES_AUDIT.md"
   },
   {
-   "id": "doc.themes-audit.5",
+   "id": "doc.themes-audit.6",
    "kind": "doc",
    "title": "Theme audit: More themes, by family",
    "text": "The other 75 packs, filed under the featured look each is closest to. Community packs keep their credit and link in the gallery.",
@@ -14616,7 +14658,7 @@
    "source": "docs/THEMES_AUDIT.md"
   },
   {
-   "id": "doc.themes-audit.6",
+   "id": "doc.themes-audit.7",
    "kind": "doc",
    "title": "Theme audit: Like Obsidian (5)",
    "text": "Pack Distance from the featured look Its closest pack overall --- --- --- City Night 0.48 Golden Hour (0.33) Claude Dark 0.49 Claude Dark Brand (0.26) GitHub Dark 0.51 Daltonized Dark (0.14) Daltonized Dark 0.52 GitHub Dark (0.14) Claude Midnight 0.88 Claude Dark Brand (0.59)",
@@ -14633,10 +14675,10 @@
    "source": "docs/THEMES_AUDIT.md"
   },
   {
-   "id": "doc.themes-audit.7",
+   "id": "doc.themes-audit.8",
    "kind": "doc",
    "title": "Theme audit: Like Alabaster Daylight (12)",
-   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Catppuccin Latte 0.15 Alabaster Daylight (0.15) Daltonized Light 0.20 GitHub Light (0.09) GitHub Light 0.21 Daltonized Light (0.09) One Half Light 0.26 GitHub Light (0.18) Base16 Cupcake 0.37 Rosé Pine Dawn (0.18) Rosé Pine Dawn 0.40 Base16 Cupcake (0.18) Solarized Light 0.41 One Half Light (0.26) Lens Expressive Light 0.43 Alabaster Daylight (0.43) Circit 0.43 Daltonized Light (0.36) Gruvbox Light 0.49 One Half Light (0.33) Honu Lagoon 0.50 Koi Mosaic (0.31) Koi Mosaic 0.51 Honu Lagoon (0.31)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Catppuccin Latte 0.15 Alabaster Daylight (0.15) Daltonized Light 0.20 GitHub Light (0.09) GitHub Light 0.21 Daltonized Light (0.09) One Half Light 0.26 GitHub Light (0.18) Base16 Cupcake 0.36 Rosé Pine Dawn (0.17) Rosé Pine Dawn 0.40 Base16 Cupcake (0.17) Solarized Light 0.41 One Half Light (0.26) Lens Expressive Light 0.43 Alabaster Daylight (0.43) Circit 0.43 Daltonized Light (0.36) Gruvbox Light 0.49 Base16 Cupcake (0.32) Honu Lagoon 0.50 Base16 Cupcake (0.31) Koi Mosaic 0.51 Honu Lagoon (0.31)",
    "path": [
     "Docs",
     "Theme audit",
@@ -14650,7 +14692,7 @@
    "source": "docs/THEMES_AUDIT.md"
   },
   {
-   "id": "doc.themes-audit.8",
+   "id": "doc.themes-audit.9",
    "kind": "doc",
    "title": "Theme audit: Like Sky (7)",
    "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Night Reef 0.27 Braille Stars (0.16) Tides of Light 0.31 Weather Window (0.24) Braille Stars 0.32 Night Reef (0.16) Weather Window 0.32 Tides of Light (0.24) Moonlight 0.35 Tides of Light (0.32) Golden Hour 0.45 Desert Day (0.31) Seasons 0.49 Tides of Light (0.31)",
@@ -14667,7 +14709,7 @@
    "source": "docs/THEMES_AUDIT.md"
   },
   {
-   "id": "doc.themes-audit.9",
+   "id": "doc.themes-audit.10",
    "kind": "doc",
    "title": "Theme audit: Like Catppuccin Mocha (15)",
    "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Rosé Pine Moon 0.13 Catppuccin Mocha (0.13) Catppuccin Macchiato 0.21 Catppuccin Frappé (0.13) Rosé Pine 0.28 Rosé Pine Moon (0.26) Catppuccin Frappé 0.31 Catppuccin Macchiato (0.13) Tokyo Night 0.39 One Dark (0.28) Aurora (Claude) 0.39 Braille Stars (0.30) Plotter Tide, Night 0.42 Ember (0.31) Deep Water 0.45 Catppuccin Macchiato (0.37) Dracula Glass 0.47 Halftone Dusk (0.42) Halftone Dusk 0.48 Dither Dunes Night (0.28) Sequoia Frost 0.50 GitHub Dark Dimmed (0.45) Snow Pines 0.50 Golden Hour (0.35) Graphite 0.53 Weather Window (0.38) Desert Day 0.55 Golden Hour (0.31) Windows Mesh 0.57 Daltonized Dark (0.46)",
@@ -14684,7 +14726,7 @@
    "source": "docs/THEMES_AUDIT.md"
   },
   {
-   "id": "doc.themes-audit.10",
+   "id": "doc.themes-audit.11",
    "kind": "doc",
    "title": "Theme audit: Like Hyprland Neon (3)",
    "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Northern Lights 0.50 Tides of Light (0.33) Midnight 0.58 Daltonized Dark (0.37) High Contrast 0.68 CGA-4 (0.44)",
@@ -14701,7 +14743,7 @@
    "source": "docs/THEMES_AUDIT.md"
   },
   {
-   "id": "doc.themes-audit.11",
+   "id": "doc.themes-audit.12",
    "kind": "doc",
    "title": "Theme audit: Like Cyberpunk Amber (8)",
    "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Paper-White Mono 0.31 Cyberpunk Amber (0.31) Amber Monitor 0.32 Cyberpunk Amber (0.32) Green Phosphor 0.44 Cyberpunk Amber (0.44) Departure Board 0.53 Desert Day (0.32) High Contrast Pro 0.56 High Contrast (0.52) Block Clouds 0.65 Snow Pines (0.36) White-Label Cyberpunk 0.74 Synthwave (0.28) CGA-4 0.81 High Contrast (0.44)",
@@ -14718,10 +14760,10 @@
    "source": "docs/THEMES_AUDIT.md"
   },
   {
-   "id": "doc.themes-audit.12",
+   "id": "doc.themes-audit.13",
    "kind": "doc",
    "title": "Theme audit: Like Paper Minimal (8)",
-   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Plotter Tide 0.20 Dither Dunes (0.17) Terracotta 0.35 Paper Garden (0.24) Dither Dunes 0.37 Plotter Tide (0.17) Warm Neutral 0.39 Plotter Tide (0.28) Halftone Dawn 0.39 Dither Dunes (0.17) Paper Garden 0.40 Claude Light (0.16) Claude Light 0.47 Paper Garden (0.16) Everforest Light 0.54 Warm Neutral (0.33)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Plotter Tide 0.20 Dither Dunes (0.17) Terracotta 0.35 Paper Garden (0.24) Dither Dunes 0.37 Plotter Tide (0.17) Warm Neutral 0.39 Plotter Tide (0.28) Halftone Dawn 0.39 Dither Dunes (0.17) Paper Garden 0.40 Claude Light (0.16) Claude Light 0.47 Paper Garden (0.16) Everforest Light 0.52 Warm Neutral (0.30)",
    "path": [
     "Docs",
     "Theme audit",
@@ -14735,7 +14777,7 @@
    "source": "docs/THEMES_AUDIT.md"
   },
   {
-   "id": "doc.themes-audit.13",
+   "id": "doc.themes-audit.14",
    "kind": "doc",
    "title": "Theme audit: Like Everforest (7)",
    "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Nord Frost 0.33 Base16 Ocean (0.31) Monokai Pro 0.36 Blueprint (0.29) Base16 Ocean 0.40 Base16 Eighties (0.24) One Dark 0.41 Base16 Eighties (0.23) Monokai 0.47 Monokai Pro (0.45) Blueprint 0.47 Monokai Pro (0.29) Nature 0.55 Seasons (0.35)",
@@ -14752,7 +14794,7 @@
    "source": "docs/THEMES_AUDIT.md"
   },
   {
-   "id": "doc.themes-audit.14",
+   "id": "doc.themes-audit.15",
    "kind": "doc",
    "title": "Theme audit: Like Solarized Matte (2)",
    "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Base16 Eighties 0.45 One Dark (0.23) GitHub Dark Dimmed 0.50 GitHub Dark (0.25)",
@@ -14769,7 +14811,7 @@
    "source": "docs/THEMES_AUDIT.md"
   },
   {
-   "id": "doc.themes-audit.15",
+   "id": "doc.themes-audit.16",
    "kind": "doc",
    "title": "Theme audit: Like Gruvbox Warm (8)",
    "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Claude Dusk 0.38 Kanagawa Wave (0.30) Kanagawa Wave 0.47 Claude Dusk (0.30) Paper Garden, Kraft 0.48 Plotter Tide, Night (0.36) Dither Dunes Night 0.49 Halftone Dusk (0.28) Ember 0.51 Plotter Tide, Night (0.31) Vector Range 0.51 Departure Board (0.38) Claude Dark Brand 0.60 Claude Dark (0.26) Synthwave 0.70 White-Label Cyberpunk (0.28)",

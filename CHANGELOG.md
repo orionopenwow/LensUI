@@ -19,6 +19,17 @@ up and migrates `%APPDATA%\LensUI` where it can.
   "Media controls in the Top Bar" moved from the pop-out to the same page.
 
 ### Fixed
+- **The hot-corner picker couldn't be clicked while Hot corners was off.** It's dimmed now, not
+  dead, so you can set corners up first; only "Try it" needs the feature on.
+- **Some Settings switches vanished or stopped responding after one click** (Animated backdrop,
+  startup apps, Animation effects). They now stay put, keep keyboard focus, and say why when
+  Windows refuses.
+- **Failures in Settings no longer pass silently.** A refused save, a page action or a Windows
+  setting that didn't change now says so in the toast or next to the control.
+- **Contrast in every theme pack.** All 87 packs now keep body text at 4.5:1 and hints, icons and
+  the accent at 3:1 on surfaces and cards. Lighter dark packs (Catppuccin, One Dark, Monokai and
+  others) get brighter secondary text, and two light packs' accents are a shade darker. The full
+  table is in docs/THEMES_AUDIT.md.
 - **The Dock could fail to show on another monitor.** Moving a window onto a monitor with other
   scaling makes Windows resize it on the way, so the Dock (and the extra Top Bars) could end up the
   wrong size, with the Dock pushed off the screen. Every placement is now checked and done again
@@ -41,6 +52,9 @@ up and migrates `%APPDATA%\LensUI` where it can.
   now drawn over other apps too.
 
 ### Changed
+- **Sentence case** for the Top Bar's button names ("Previous desktop", "Wi-Fi and network") and
+  the remaining Title Case labels in Settings; Settings controls also got consistent hover,
+  pressed and disabled states.
 - **Top Bar buttons are named in sentence case** for screen readers ("Previous track", "Volume and
   audio mixer"). Lens Command's results and Magic's "what to act on" changes are announced.
 - **Snip's shortcut is Ctrl+Alt+X** (was Ctrl+Shift+S, which is Save As in most apps). If you never
@@ -55,6 +69,24 @@ up and migrates `%APPDATA%\LensUI` where it can.
   Windows' own accent back.
 
 ### Added
+- **Unified Dock style.** One floating pill: the Launcher first, your apps, then the tray, a
+  notification bell with a count and a two-line clock (the time, and "Thu 26 Nov" below it). Pick
+  it in Settings › Dock & Bar or in the setup wizard. Settings and Search open above it at the same
+  width as on Floating.
+- **Window carousel.** Pointing at an app with two or more windows shows them as a carousel: the
+  current window large in the middle with its title and a close button, its neighbours peeking in,
+  and dots below. Scroll, use ‹ ›, the arrow keys or the dots to move; click to switch to it.
+- **Window-count marks on every Dock style.** A short dash under an app with one window, three
+  small dots under one with several.
+- **The Dock reflows smoothly** when apps are pinned, unpinned, reordered, opened or closed
+  (instant with reduced motion).
+- **Pin glyphs in the Launcher.** Apps pinned to the Dock show a small pin; right-click to pin or
+  unpin.
+- **Pointer halo switch** (Settings › Dock & Bar › Top Bar). The see-through ring that shows where
+  clicks pass through the Top Bar can be turned off, and it is never drawn while Windows'
+  transparency effects are off.
+- **How long pop-outs wait before closing** (Settings › Dock & Bar › Advanced › Close after): Short,
+  Normal (the old 1.5 s / 1.8 s) or Long, for Quick Settings and Settings on the Dock.
 - **Safety card** (Settings › About & Testing › Safety net): what Lens changes on this PC, from
   the same list Remove all walks; what it never touches; the keys that always reach Windows; Safe
   Mode; holding Shift at sign-in to skip Lens; and buttons to Report a problem and Remove all.

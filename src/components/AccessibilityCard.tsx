@@ -47,7 +47,7 @@ export const AccessibilityCard: React.FC<Props> = ({ config, onUpdateConfig }) =
 
   return (
     <div className="cc-card">
-      <div className="cc-label">Accessibility &amp; Language</div>
+      <div className="cc-label">Accessibility &amp; language</div>
       {chipRow(
         "Motion",
         "\"Follow Windows\" uses Settings > Accessibility > Visual effects > Animation effects.",

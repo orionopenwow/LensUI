@@ -74,7 +74,7 @@ export const SessionRestoreCard: React.FC<Props> = ({ config, onUpdateConfig, ac
 
   return (
     <div className="cc-card">
-      <div className="cc-label">Session Restore</div>
+      <div className="cc-label">Session restore</div>
       <div className="cc-desc">
         A session remembers which apps were open and how they were arranged. Restore reopens the ones
         that are missing, then tiles them.
