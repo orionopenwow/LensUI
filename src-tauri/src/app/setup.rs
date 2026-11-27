@@ -382,6 +382,8 @@ pub(crate) fn run_setup(
     crate::commands::cleaner::start_background(handle.clone());
     // ThumbDesk: the badge on its Dock icon (idle unless it's installed and pinned).
     crate::commands::thumbdesk::start_badge(handle.clone());
+    // Desktop widgets (off by default): the host window just above the desktop.
+    crate::commands::desktop_widgets::start(handle.clone());
 
     // Auto-tiling + workspaces (both default off; inert until enabled)
     {

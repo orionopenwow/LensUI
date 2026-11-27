@@ -31,6 +31,18 @@ up and migrates `%APPDATA%\LensUI` where it can.
   views and the favourites row; Air Traffic Control rules are found and counted. Zen workspaces,
   essentials, folders and splits come over too. Still undoable in one step. (Ideas learned from
   Ardia; no code used.)
+- **Desktop widgets (preview, off by default).** Widgets pinned on the desktop in a snapping grid,
+  above the wallpaper and below every app window: an analog clock and a world clock, today's list
+  from the Lens calendar (tick items off in place), your latest Lens Notes, Now playing with
+  play/pause and skip, this PC's battery, and the Dashboard widgets you already approved (weather, a
+  feed…). Right-click a widget for Small, Medium or Large, Edit and Remove; Edit Widgets… dims the
+  desktop and opens a gallery with search, kinds and size previews to click or drag onto the
+  desktop. Neighbours glide out of the way (transform only; still with reduced motion). The widgets
+  never take the focus, stay out of Alt+Tab and the taskbar, let clicks through between them, hide
+  for fullscreen apps and anti-cheat games, and stop their one shared clock while hidden or covered.
+  Turn it on in Settings › About & Testing › Magic (preview) or the Dashboard's Widgets lane; Command
+  "edit widgets" opens the gallery. Uses only data on this PC; layouts are kept per monitor in
+  `%APPDATA%\LensUI\desktop-widgets.json`.
 - **The Dock's music pop-out, redone (hover Spotify in the Dock).** Bigger artwork with the title,
   artist and a small live level meter; elapsed time, a seek bar you can click, drag or move with
   the arrow keys, and the length; Up next, previous, play/pause, next and a Search button that

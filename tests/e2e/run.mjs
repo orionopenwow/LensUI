@@ -927,6 +927,103 @@ const SCENARIOS = [
     },
   },
   {
+    id: "desktop-widgets",
+    title: "Desktop widgets: off by default; the host sits below Notepad, lets clicks through outside widgets, edit mode adds, resizes and removes; off closes it",
+    async run(s) {
+      const dock = surfaces(s).dock;
+      const status = () => invoke(dock, "desktop_widgets_status");
+      const until = async (what, test, ms = 8000) => {
+        const t0 = Date.now();
+        let last;
+        while (Date.now() - t0 < ms) {
+          last = await status().catch((e) => ({ error: String(e) }));
+          if (test(last)) return last;
+          await sleep(150);
+        }
+        throw new Error(`${what}: host status ${JSON.stringify(last)}`);
+      };
+      const ps = (c) => execFileSync("powershell", ["-NoProfile", "-Command", c], { encoding: "utf8" }).trim();
+      const U32 = "Add-Type -Namespace W -Name D -MemberDefinition '[DllImport(\"user32.dll\")] public static extern System.IntPtr GetWindow(System.IntPtr h, uint c); [DllImport(\"user32.dll\")] public static extern bool SetCursorPos(int x, int y);';";
+
+      // Off by default: nothing offered, edit refuses, no window.
+      if (await invoke(dock, "desktop_widgets_available")) throw new Error("desktop widgets are available with the flag off");
+      if (await invoke(dock, "desktop_widgets_edit", { on: true }).then(() => true, () => false)) throw new Error("edit mode opened with the flag off");
+      if (surfaces(s).deskwidgets) throw new Error("a desktop widgets window exists with the flag off");
+
+      await updateConfig(dock, (c) => {
+        c.magicWaves = { ...(c.magicWaves || {}), desktopWidgets: true };
+      });
+      const st = await until("after turning it on", (x) => x.running && x.shown && x.hwnd, 20000);
+      const host = await waitForSurface(s, "deskwidgets");
+      const take = watchErrors(host);
+      await host.waitForSelector(".dwg[data-ready] .dwg-item", { timeout: 10000 });
+      await shot(host, "desktop-widgets");
+      const items0 = await host.locator(".dwg-item").count();
+
+      // Below an app window: Notepad comes before the host in Windows' z-order.
+      let below = "skipped";
+      try {
+        const out = ps(`${U32} $p = Start-Process notepad -PassThru; Start-Sleep -Milliseconds 1500; $p.Refresh(); $h = $p.MainWindowHandle; $n = 0; $found = 0; while ($h -ne [IntPtr]::Zero -and $n -lt 4000) { $h = [W.D]::GetWindow($h, 2); if ($h -eq [IntPtr]${st.hwnd}) { $found = 1; break }; $n++ }; "$($p.MainWindowHandle) $found"`);
+        const [nh, found] = out.split(/\s+/);
+        if (nh === "0") console.log("note  desktop-widgets: Notepad had no window handle on this runner; z-order step skipped");
+        else if (found !== "1") throw new Error(`the host is not below Notepad (notepad ${nh}, host ${st.hwnd})`);
+        else below = "ok";
+      } finally {
+        try { execFileSync("taskkill", ["/IM", "notepad.exe", "/F"], { stdio: "ignore" }); } catch {}
+      }
+      console.log(`note  desktop-widgets: below Notepad: ${below}`);
+
+      // Click-through outside widgets, not over one.
+      const [l, t, r, b] = st.rect;
+      ps(`${U32} [W.D]::SetCursorPos(${r - 40}, ${b - 40}) | Out-Null`);
+      await until("pointer over the bare desktop", (x) => x.clickThrough === true, 3000);
+      const centre = await host.evaluate(() => {
+        const e = document.querySelector(".dwg-item").getBoundingClientRect();
+        const d = window.devicePixelRatio || 1;
+        return [Math.round((e.left + e.width / 2) * d), Math.round((e.top + e.height / 2) * d)];
+      });
+      ps(`${U32} [W.D]::SetCursorPos(${l + centre[0]}, ${t + centre[1]}) | Out-Null`);
+      await until("pointer over a widget", (x) => x.clickThrough === false, 3000);
+      ps(`${U32} [W.D]::SetCursorPos(${r - 40}, ${b - 40}) | Out-Null`);
+
+      // Edit mode: the gallery opens; add Batteries (medium) from it.
+      await invoke(dock, "desktop_widgets_edit", { on: true });
+      await host.waitForSelector(".dwg-panel", { timeout: 5000 });
+      await until("edit mode on", (x) => x.editing === true, 3000);
+      await domClick(host.locator('.dwg-kind[data-kind="batteries"]').first());
+      await domClick(host.locator('[data-preview="batteries:medium"]').first());
+      await host.waitForFunction((n) => document.querySelectorAll(".dwg-item:not(.is-preview)").length === n + 1, items0, { timeout: 5000 });
+      await shot(host, "desktop-widgets-edit");
+
+      // Resize it to Large from its menu.
+      const added = host.locator('.dwg-item[data-kind="batteries"]').first();
+      await added.evaluate((el) => el.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: el.getBoundingClientRect().left + 20, clientY: el.getBoundingClientRect().top + 20 })));
+      await host.waitForSelector(".dwg-menu", { timeout: 3000 });
+      await domClick(host.locator(".dwg-menu-row", { hasText: "Large" }).first());
+      await host.waitForFunction(() => document.querySelector('.dwg-item[data-kind="batteries"]')?.getAttribute("data-size") === "large", null, { timeout: 3000 });
+      const stored = await invoke(dock, "desktop_widgets_state");
+      if (!stored.items.some((i) => i.kind === "batteries" && i.size === "large")) throw new Error(`the Large size wasn't stored: ${JSON.stringify(stored.items)}`);
+
+      // Remove it, then Done.
+      await domClick(host.locator('.dwg-item[data-kind="batteries"] .dwg-remove').first());
+      await host.waitForFunction(() => !document.querySelector('.dwg-item[data-kind="batteries"]'), null, { timeout: 4000 });
+      await domClick(host.locator(".dwg-done", { hasText: "Done" }).first());
+      await until("after Done", (x) => x.editing === false, 3000);
+      if ((await invoke(dock, "desktop_widgets_state")).items.some((i) => i.kind === "batteries")) throw new Error("the removed widget is still stored");
+
+      // Off: the host stops and its window closes.
+      await updateConfig(dock, (c) => {
+        c.magicWaves = { ...(c.magicWaves || {}), desktopWidgets: false };
+      });
+      await until("after turning it off", (x) => !x.running, 8000);
+      for (let i = 0; i < 20 && surfaces(s).deskwidgets; i++) await sleep(250);
+      if (surfaces(s).deskwidgets) throw new Error("the desktop widgets window is still open after turning the flag off");
+      if (await invoke(dock, "desktop_widgets_edit", { on: true }).then(() => true, () => false)) throw new Error("edit mode opened after the flag was turned off");
+      const errs = take();
+      if (errs.length) throw new Error(errs.join("\n"));
+    },
+  },
+  {
     id: "dock-search-dismiss",
     title: "Dock search closes on a click outside and when another app takes focus",
     async run(s) {
@@ -1089,7 +1186,7 @@ async function runScenario(sc, s) {
   } catch (e) {
     results.push({ id: sc.id, title: sc.title, status: "fail", ms: Date.now() - t0, error: String(e.stack || e).slice(0, 2000) });
     console.log(`FAIL  ${sc.id}: ${String(e.message || e).slice(0, 1500)}`);
-    const tail = s.logs.join("").split("\n").filter((l) => /\[watcher\]|dock-dismiss|search|dashboard|keyhook|magic start|magicstart/i.test(l)).slice(-12);
+    const tail = s.logs.join("").split("\n").filter((l) => /\[watcher\]|dock-dismiss|search|dashboard|keyhook|magic start|magicstart|desktop widgets/i.test(l)).slice(-12);
     if (tail.length) console.log("      Lens said:\n        " + tail.join("\n        "));
     for (const p of pages(s)) await shot(p, `fail-${sc.id}-${new URL(p.url()).searchParams.get("surface") || "page"}`);
   }

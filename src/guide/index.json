@@ -10389,6 +10389,23 @@
   {
    "id": "doc.dashboard.6",
    "kind": "doc",
+   "title": "Magic Dashboard: Desktop widgets",
+   "text": "The Widgets lane's header has a Desktop widgets switch ( magicWaves.desktopWidgets ) and, while it's on, Edit widgets… , which closes the Dashboard and opens the widget gallery on the desktop. A Weather or other gallery widget you added here can also sit on the desktop: it is the same widget with the same approved sites, fetched by Lens under the rules above while it is on screen ( widgets fetch is allowed while magicWaves.widgets is on and either the Dashboard or desktop widgets is on). See features/desktop-widgets.md.",
+   "path": [
+    "Docs",
+    "Magic Dashboard",
+    "Desktop widgets"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DASHBOARD.md",
+    "heading": "Desktop widgets"
+   },
+   "source": "docs/DASHBOARD.md"
+  },
+  {
+   "id": "doc.dashboard.7",
+   "kind": "doc",
    "title": "Magic Dashboard: X (M2)",
    "text": "Embed-only, by owner decision. With your OK and a handle, the lane shows X's own public timeline embed ( syndication.twitter.com ) in an isolated, sandboxed frame; Open X opens the X web app in Lens Browser with your own sign-in. No API key, no scraping; Lens stores only the handle, on this PC, and hides the embed while widget fetching is off.",
    "path": [
@@ -10404,7 +10421,7 @@
    "source": "docs/DASHBOARD.md"
   },
   {
-   "id": "doc.dashboard.7",
+   "id": "doc.dashboard.8",
    "kind": "doc",
    "title": "Magic Dashboard: Speed",
    "text": "Warm open (Lens says \"open\" → lanes rebuilt and painted) is budgeted at < 150 ms : tools/perf/run.mjs scenario dashboard-warm-open fails above that, and the magic-widgets E2E logs the real-window number. - No Dock icon and no new hotkey (owner decision).",
@@ -10421,10 +10438,10 @@
    "source": "docs/DASHBOARD.md"
   },
   {
-   "id": "doc.dashboard.8",
+   "id": "doc.dashboard.9",
    "kind": "doc",
    "title": "Magic Dashboard: Privacy",
-   "text": "- Everything stays on this PC. Nothing is captured in the background; the context strip is built from Lens's own data at the moment the Dashboard opens. - Each source connects only after you choose it, and can be disconnected. - X/Twitter: official embeds and the web app with your own sign-in only. No API key, no scraping. - Widgets never get network access. Lens fetches their data only from hosts you approved for that widget, and only while the Dashboard is open. - Learned ordering ( magicWaves.learn ) is off by default; moved cards say why (\"Why this is here\"); turning it off forgets what it learned.",
+   "text": "- Everything stays on this PC. Nothing is captured in the background; the context strip is built from Lens's own data at the moment the Dashboard opens. - Each source connects only after you choose it, and can be disconnected. - X/Twitter: official embeds and the web app with your own sign-in only. No API key, no scraping. - Widgets never get network access. Lens fetches their data only from hosts you approved for that widget, and only while the Dashboard (or that widget on your desktop) is showing. - Learned ordering ( magicWaves.learn ) is off by default; moved cards say why (\"Why this is here\"); turning it off forgets what it learned.",
    "path": [
     "Docs",
     "Magic Dashboard",
@@ -10438,7 +10455,7 @@
    "source": "docs/DASHBOARD.md"
   },
   {
-   "id": "doc.dashboard.9",
+   "id": "doc.dashboard.10",
    "kind": "doc",
    "title": "Magic Dashboard: Code",
    "text": "Piece Where --- --- Flags src/magicwaves/flags.ts , Rust config::MagicWavesConfig Model (lanes, layouts, learning, context strip) src/dashboard/store.ts Window, sources, saved layout and counts src/dashboard/DashboardWindow.tsx , sources.ts , memory.ts ; Rust commands/dashboard.rs Command phrases src/dashboard/command.ts Shell src/dashboard/DashboardSurface.tsx , Lane.tsx , ContextStrip.tsx , dashboard.css Top Bar button src/dashboard/TopBarDashboardButton.tsx Widgets src/widgets/format.ts (card subset, feed reader), AdaptiveCard.tsx , gallery.ts , WidgetsLane.tsx , api.ts , widgets.css ; Rust magic waves/widgets.rs (store, rules, fetch), commands/widgets.rs X lane src/widgets/XLane.tsx ; CSP frame-src in tauri.conf.json Ask about this src/dashboard/ask.ts Layout store Rust magic waves/dashboard.rs Tests src/ tests /magicWaves.test.ts , src/ tests /dashboardM1.test.ts , src/ tests /widge",
@@ -10455,7 +10472,7 @@
    "source": "docs/DASHBOARD.md"
   },
   {
-   "id": "doc.dashboard.10",
+   "id": "doc.dashboard.11",
    "kind": "doc",
    "title": "Magic Dashboard: Next",
    "text": "- A DNS resolver that refuses private addresses before connecting (today a private answer is discarded after the fact). - Remote images in cards through Lens (fetched under the same rules). - Today from calendar connectors; per-widget size options.",
