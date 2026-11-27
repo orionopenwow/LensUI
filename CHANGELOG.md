@@ -38,6 +38,33 @@ up and migrates `%APPDATA%\LensUI` where it can.
   (no certificate is possible there), which is why it's a preview; Settings explains the limits.
 - **Music setup and Tweaks.** A short three-step setup at the top of Settings › Music (skip it any
   time) and a Tweaks section that groups the advanced options.
+- **Controls you can feel.** Buttons, tiles, chips, switches and rows in Settings, setup, Quick
+  settings and Search now press like a well-made key: they sink the moment you press (mouse, touch
+  or Space/Enter), stay visibly pressed for at least 90 ms even on the fastest click, and spring
+  back with a small, damped settle. Three weights: rows and tabs only darken a step, buttons sink a
+  little, primary and destructive actions sink deeper. A button that starts work stays pressed
+  until it's done and shows a small spinner after 300 ms, without changing size. Switch knobs
+  squash slightly as you press and travel with the spring; segmented choices slide their
+  highlight to the new option; sliders grow a pixel while you hold them. With reduced motion,
+  presses show only the colour step.
+- **Things come from somewhere.** Quick settings and Search grow out of the Top Bar button that
+  opened them and shrink back into it when they close; Settings pages and setup steps slide in the
+  direction you're going. The windows themselves never move or resize during the motion.
+- **Magic selection bar and Magic Search (off by default).** Turn it on in Settings › AI &
+  Command › Selection bar. Select text anywhere and a small matte bar appears just below it:
+  Cut, Copy and Paste (only when they'd work, sent to the app you're in, which keeps the focus),
+  Magic Search, and up to nine of your own actions from the right-click catalogue, each with an
+  optional hotkey (none by default, checked against Windows, Lens and app keys). It recognises
+  links, e-mail addresses, sums, units, colours, paths and code and shows a one-line preview,
+  worked out on this PC. **Magic Search** opens a pop-out by the selection with a short cited
+  answer (your local model first; a cloud AI only as your AI settings allow, and it says which
+  answered), web results from your Lens Browser search engine and Wikipedia, and matches from your
+  Shelf, clipboard history, notes and recent files (found on this PC, never sent). Follow-ups,
+  copy with or without sources, save to the Shelf or as a note, and replace the selection (asks
+  first). Also from Command ("magic search …") and the Magic window. It works everywhere except
+  terminals, consoles, remote-desktop and VM windows, password managers, password fields,
+  elevated apps and games, and you can change the list. It replaces the selection bubble; if the
+  bubble was on, the bar is on. Not yet confirmed on a real PC.
 - **Lens Apps has a Library.** A second view next to Discover lists everything from the catalogue
   that's on this PC, with the installed version, what an update would bring ("4.5.1 → 4.5.3"), who
   made each app and its licence. **Update all** asks once, on the same approval card as everything

@@ -521,10 +521,36 @@ async function waitDesk(page, sel = "#lab-desk") {
     await page.waitForFunction(() => window.lensSite.dock?.doc("top")?.querySelector(".topbar-wrapper"), null, { timeout: 20000 }).catch(() => {});
     const wd = await (async () => { for (let t = 0; t < 40; t++) { const f = await dockIn(page, "#dock-desk"); if (f && (await f.$(".dock-pill").catch(() => null))) return f; await page.waitForTimeout(250); } return null; })();
     expect(!!wd && (await D(() => !!window.lensSite.dock.doc("top")?.querySelector(".topbar-wrapper"))), "the Dock widget holds the real top bar and the real dock");
-    expect((await page.locator("#dw-styles [role=radio]").count()) === 9 && (await page.locator("#dw-edges [role=radio]").count()) === 4, "the widget offers all nine dock styles and four edges");
+    // Every style in the app's DOCK_STYLES (src/dock/styles.ts) has a card with a drawing, plus the site's
+    // pack variants; the headline counts them; every card's drawing stays inside its box.
+    const want = (await import("./lib/dockstyles.mjs").then((m) => m.loadDockStyles()).catch(() => [])).map((d) => d.id);
+    const got = await page.$$eval("#dw-styles [role=radio]", (bs) => bs.map((b) => ({ id: b.dataset.id, name: b.querySelector(".dw-name")?.textContent, drawn: [...b.querySelectorAll(".dw-pic svg rect, .dw-pic svg circle")].filter((r) => r.getBoundingClientRect().width > 0).length })));
+    expect(want.length >= 10 && want.every((id) => got.some((g) => g.id === id && g.drawn >= 4 && g.name)), "every Dock style in DOCK_STYLES (and each pack variant) has a named card with a drawing", JSON.stringify({ want, got }));
+    expect(want.includes("unified") && got.some((g) => g.id === "unified"), "the Unified style has a card");
+    const WORD = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
+    expect(new RegExp(`One dock, ${WORD[got.length] ?? got.length} ways`).test(await D(() => document.getElementById("f-dock-h").textContent)) && !/\bnine\b/i.test(await D(() => document.getElementById("f-dock").textContent)), "the Dock headline counts the styles it shows, and nothing there still says nine");
+    expect((await page.locator("#dw-edges [role=radio] .dw-pic svg").count()) === 4, "the widget offers four edges, each drawn");
+    const spill = await D(() => [...document.querySelectorAll("#dockw .dw-card, #dockw .dw-acc [role=radio]")].flatMap((b) => { const box = b.getBoundingClientRect(); return [...b.querySelectorAll("svg")].filter((g) => { const r = g.getBoundingClientRect(), pic = g.parentElement.getBoundingClientRect(); return r.width > box.width + 0.5 || r.height > box.height + 0.5 || r.width > pic.width + 0.5 || r.height > pic.height + 0.5; }).map(() => b.dataset.id || b.dataset.edge || b.getAttribute("aria-label")); }));
+    expect(!spill.length, "no picker icon renders larger than its box", spill.join(", "));
+    expect(await D(() => { const g = document.getElementById("dw-styles"); return g.getAttribute("role") === "radiogroup" && [...g.querySelectorAll("[role=radio]")].filter((b) => b.tabIndex === 0).length === 1 && [...g.querySelectorAll("[role=radio]")].every((b) => (b.getAttribute("aria-label") || b.textContent).trim().length > 1); }), "the style cards are one radio group with a roving tab stop and a name on each");
     expect((await page.locator(".dw-chips li").count()) <= 8 && !(await page.$("#f-dock .why, #dock-rail")), "the Dock section is the widget and one line of chips, no rail or tiles");
     const stage = () => wd.evaluate(() => document.querySelector(".dock-stage")?.className ?? "");
     if (wd) {
+      // Each card turns the real dock into its style (the live dock's stage class), and the caption names it.
+      const ids = await page.$$eval("#dw-styles [role=radio]", (bs) => bs.map((b) => [b.dataset.id, b.dataset.style, b.dataset.label]));
+      const missed = [];
+      for (const [id, st, label] of ids) {
+        await page.click(`#dw-styles [data-id="${id}"]`);
+        const ok = await page.waitForFunction((s) => window.lensSite.dock.frame.contentDocument?.querySelector(`.dock-stage.dock-style-${s}`), st, { timeout: 5000 }).then(() => true, () => false);
+        if (!ok || !(await D((l) => document.getElementById("dock-info").textContent.includes(l), label))) missed.push(id);
+      }
+      expect(!missed.length, "every style card changes the live dock's style and the caption says so", missed.join(", "));
+      // Keyboard: arrows move and pick (roving tabindex), and focus lands on the picked card.
+      await page.focus('#dw-styles [role=radio][tabindex="0"]');
+      const before = await D(() => document.querySelector('#dw-styles [aria-checked="true"]').dataset.id);
+      await page.keyboard.press("ArrowLeft");
+      const after = await D(() => ({ id: document.querySelector('#dw-styles [aria-checked="true"]').dataset.id, focused: document.activeElement?.getAttribute("aria-checked") === "true" }));
+      expect(after.id !== before && after.focused, "arrow keys move the style pick and its focus", JSON.stringify([before, after]));
       await page.click('#dw-styles [role=radio]:has-text("Taskbar")');
       expect(await page.waitForFunction(() => window.lensSite.dock.frame.contentDocument?.querySelector(".dock-stage.dock-style-taskbar"), null, { timeout: 5000 }).then(() => true, () => false), "picking Taskbar turns the real dock into the taskbar", await stage());
       await page.click('#dw-styles [role=radio]:has-text("Floating")');
@@ -549,6 +575,7 @@ async function waitDesk(page, sel = "#lab-desk") {
     const magicH = await D(() => document.querySelector("#f-magic h2")?.textContent + " | " + document.querySelector("#f-magic .kicker")?.textContent);
     expect(/Magic Mouse/.test(magicH) && !/Right-click anything/.test(magicH), "“Right-click anything” is now Magic Mouse", magicH);
     expect(await D(() => /off by default/i.test(document.querySelector("#f-magic .head").textContent) && /asks before it turns on/i.test(document.querySelector("#f-magic .head").textContent)), "Magic Mouse says it's off by default and asks before it turns on");
+    expect(await D(() => !document.querySelector("#f-magic .kicker .tag") && !/\bComing\b/.test(document.querySelector("#f-magic .kicker").textContent)), "Magic Mouse is shipped (#109): its section isn't tagged Coming");
     // Magic Mouse: hold opens the real Magic window at the pointer; drag grabs; let go opens the real Snip.
     await page.evaluate(() => document.getElementById("f-magic").scrollIntoView({ block: "center" }));
     await page.waitForFunction(() => document.querySelector("#mx")._xloop, null, { timeout: 10000 }).catch(() => {});
@@ -739,7 +766,8 @@ async function waitDesk(page, sel = "#lab-desk") {
         const out = [];
         const ICON = "[class*='-ic'], [class^='ic'], .k-ic, .why-ic, .app-ic, .sc-ic, .byo-ic, .learn-ic, .sb-btn, .btn, .kicker, .get-pill";
         for (const el of document.querySelectorAll("main svg, main img, header svg, header img, footer svg, footer img")) {
-          if (el.closest(".xstage, .desk-host, .lab, .dr-frame, .hero-logo, figure, .mini-pic, .clip, .ov-media, .gw, iframe")) continue;
+          // .dw-pic: the Dock picker's drawings are pictures bounded by their card (checked in the widget's own test).
+          if (el.closest(".xstage, .desk-host, .lab, .dr-frame, .hero-logo, figure, .mini-pic, .clip, .ov-media, .gw, iframe, .dw-pic")) continue;
           if (el.ownerSVGElement) continue;
           const r = el.getBoundingClientRect();
           if (r.width < 1) continue;

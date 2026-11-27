@@ -110,11 +110,11 @@ const Appearance: React.FC<SimpleProps> = ({ config, winTheme, onApplyConfig, up
           ))}
         </div>
         <div className="ss-theme-foot">
-          <button type="button" className="ss-link" onClick={() => onMore("choose")}>
+          <button data-weight="light" type="button" className="ss-link" onClick={() => onMore("choose")}>
             More themes ›
           </button>
           {undo && (
-            <button
+            <button data-weight="light"
               type="button"
               className="ss-link"
               data-undo-theme
@@ -145,7 +145,7 @@ const Appearance: React.FC<SimpleProps> = ({ config, winTheme, onApplyConfig, up
           {swatches.map((hex) => {
             const on = config.theme.accentMode === "custom" && config.theme.customAccent.toUpperCase() === hex;
             return (
-              <button
+              <button data-weight="light"
                 key={hex}
                 type="button"
                 role="radio"
@@ -164,7 +164,7 @@ const Appearance: React.FC<SimpleProps> = ({ config, winTheme, onApplyConfig, up
         <SwitcherCard simple />
       </Card>
       <Card title="Living wallpaper" desc="Animated backdrops, the real sky, or your own gradient.">
-        <button type="button" className="ss-living" onClick={() => onMore("creator")}>
+        <button data-weight="medium" type="button" className="ss-living" onClick={() => onMore("creator")}>
           <span className="ss-living-art" aria-hidden />
           <span className="ss-living-label">Choose a living wallpaper ›</span>
         </button>
@@ -184,7 +184,7 @@ const Dock: React.FC<SimpleProps> = ({ config, accent, updateConfig }) => {
       <Card title="Dock style" desc="Each one is the real Dock, shown small." wide>
         <div className="ss-docks" role="radiogroup" aria-label="Dock style">
           {styles.map((d) => (
-            <button
+            <button data-weight="medium"
               key={d.id}
               type="button"
               role="radio"
@@ -235,7 +235,7 @@ const Dock: React.FC<SimpleProps> = ({ config, accent, updateConfig }) => {
       <Card title="Screen edge" desc="Where the Dock sits.">
         <div className="ss-edges" role="radiogroup" aria-label="Screen edge">
           {(["bottom", "left", "right", "top"] as const).map((e) => (
-            <button
+            <button data-weight="medium"
               key={e}
               type="button"
               role="radio"
@@ -264,7 +264,7 @@ const Keys: React.FC<SimpleProps> = ({ config, updateConfig }) => {
       <Card title="Window buttons" desc="Minimise, maximise and close, in the order you like." wide>
         <div className="ss-orders" role="radiogroup" aria-label="Window button order">
           {ORDERS.map((o) => (
-            <button
+            <button data-weight="medium"
               key={o.id}
               type="button"
               role="radio"
@@ -280,7 +280,7 @@ const Keys: React.FC<SimpleProps> = ({ config, updateConfig }) => {
               <span>{o.label}</span>
             </button>
           ))}
-          <button
+          <button data-weight="medium"
             type="button"
             role="radio"
             aria-checked={!wc.enabled}
@@ -346,7 +346,7 @@ const Ai: React.FC<SimpleProps> = ({ config, updateConfig, onMore }) => {
         <Toggle label="Turn on the Lens assistant" checked={ai.enabled} onChange={(v) => setAi({ enabled: v })} />
         <div className="ss-engines" role="radiogroup" aria-label="Assistant engine">
           {engines.map((e) => (
-            <button
+            <button data-weight="medium"
               key={e.id}
               type="button"
               role="radio"
@@ -362,7 +362,7 @@ const Ai: React.FC<SimpleProps> = ({ config, updateConfig, onMore }) => {
           ))}
         </div>
         {ai.provider === "claude" && (
-          <button type="button" className="ss-link" onClick={() => onMore("engine")}>
+          <button data-weight="light" type="button" className="ss-link" onClick={() => onMore("engine")}>
             Connect Claude ›
           </button>
         )}
@@ -385,15 +385,15 @@ const Ai: React.FC<SimpleProps> = ({ config, updateConfig, onMore }) => {
             <span />
           </span>
         </div>
-        <button type="button" className="ss-link" onClick={() => onMore("magic")}>
+        <button data-weight="light" type="button" className="ss-link" onClick={() => onMore("magic")}>
           Set it up ›
         </button>
       </Card>
       <Card title="Voice" desc="Hold to talk, or say “Lens…”.">
-        <button type="button" className="ss-link" onClick={() => invoke("toggle_surface", { label: "palette" }).catch(() => onMore("voice"))}>
+        <button data-weight="light" type="button" className="ss-link" onClick={() => invoke("toggle_surface", { label: "palette" }).catch(() => onMore("voice"))}>
           Try the assistant ›
         </button>
-        <button type="button" className="ss-link" onClick={() => onMore("voice")}>
+        <button data-weight="light" type="button" className="ss-link" onClick={() => onMore("voice")}>
           Voice settings ›
         </button>
       </Card>

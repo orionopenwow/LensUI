@@ -13,6 +13,8 @@ import { previewOpen } from "../../../src/magic/previews";
 import { DEFAULT_MAGIC } from "../../../src/magic/contract";
 import type { AiRunState } from "../../../src/ai/contract";
 import type { LensConfig } from "../../../src/types/lens";
+import { SelectionBar } from "../../../src/magic/selection/SelectionBar";
+import { MagicSearch, type MagicSearchInitial } from "../../../src/magic/search/MagicSearch";
 
 const p = new URLSearchParams(location.search);
 const scene = p.get("scene") || "selection";
@@ -87,9 +89,64 @@ function Desktop({ children, cursor, box }: { children: React.ReactNode; cursor:
   );
 }
 
+// ---- Magic selection bar and Magic Search (docs/plans/SELECTION_BAR.md) ----------------------
+const barShow = (o: Record<string, unknown> = {}) =>
+  ({ seq: 1, chars: 86, app: "C:\\Program Files\\Microsoft Office\\WINWORD.EXE", category: "office", cut: true, copy: true, paste: true, pastePreview: true, editable: true, smart: null, ...o }) as never;
+const barScenes: Record<string, React.ComponentProps<typeof SelectionBar>["initial"]> = {
+  selbar: { show: barShow() },
+  selbarSmart: { show: barShow({ smart: { kind: "quantity", preview: "≈ 7.77 mi", value: "12.5 km in mi", action: "smart:convert" } }), settings: { hotkeys: { translate: "Ctrl+Alt+T" } } },
+  selbarAlways: { show: barShow({ cut: false, paste: false, editable: false }), settings: { labels: "always", hotkeys: { translate: "Ctrl+Alt+T" } } },
+  selbarMore: { show: barShow(), more: true },
+};
+const webStub = {
+  results: [
+    { title: "Calm technology", url: "https://calmtech.com/", snippet: "Technology should require the smallest possible amount of attention, and inform without overburdening.", site: "calmtech.com", favicon: "", sources: ["duckduckgo", "wikipedia"] },
+    { title: "Calm technology — Wikipedia", url: "https://en.wikipedia.org/wiki/Calm_technology", snippet: "A type of information technology where the interaction between the technology and its user is designed to occur in the periphery.", site: "en.wikipedia.org", favicon: "", sources: ["wikipedia"] },
+    { title: "Designing Calm Technology (Weiser & Brown, 1995)", url: "https://people.csail.mit.edu/rudolph/Teaching/weiser.pdf", snippet: "The most potentially interesting, challenging and profound change implied by ubiquitous computing.", site: "people.csail.mit.edu", favicon: "", sources: ["duckduckgo"] },
+    { title: "Principles of Calm Technology", url: "https://www.caseorganic.com/calm", snippet: "Eight principles for technology that respects attention.", site: "caseorganic.com", favicon: "", sources: ["duckduckgo"] },
+  ],
+  sources: [
+    { id: "duckduckgo", label: "DuckDuckGo", host: "html.duckduckgo.com", ok: true, count: 3, error: null },
+    { id: "wikipedia", label: "Wikipedia", host: "en.wikipedia.org", ok: true, count: 2, error: null },
+  ],
+  engineUrl: "https://duckduckgo.com/?q=calm+technology",
+  engineName: "DuckDuckGo",
+  stub: false,
+};
+const msOpen = (o: Record<string, unknown> = {}) => ({ seq: 1, query: "calm technology", action: null, app: "C:\\x\\WINWORD.EXE", editable: true, origin: null, above: false, atMs: 0, ...o }) as never;
+const msScenes: Record<string, MagicSearchInitial> = {
+  msearch: {
+    open: msOpen(),
+    web: webStub as never,
+    provider: "Ollama · llama3.2:3b",
+    answer: "Calm technology is design that stays in the periphery of your attention and moves to the centre only when it's needed [1]. The idea comes from Mark Weiser and John Seely Brown at Xerox PARC [3], and is often summed up as technology that informs without demanding attention [2].",
+    local: [
+      { kind: "shelf", id: "s1", title: "Calm technology — principles", detail: "Saved from calmtech.com" },
+      { kind: "file", id: "f1", title: "calm-tech-notes.md", detail: "C:\\Users\\you\\Documents\\calm-tech-notes.md" },
+    ],
+  },
+  msearchAction: { open: msOpen({ query: "Wir sehen uns morgen um zehn im Büro.", action: "translate", editable: true }), provider: "Ollama · llama3.2:3b", answer: "See you tomorrow at ten in the office." },
+  msearchSide: { open: msOpen(), web: webStub as never, side: true, provider: "Claude · claude-sonnet", answer: "A short answer [1].", thread: [{ q: "Who coined it?", a: "" }] },
+};
+
 const root = ReactDOM.createRoot(document.getElementById("root")!);
 const lensScenes = ["lensMenu", "lensRowFocus", "lensPanned"];
-if (lensScenes.includes(scene)) {
+if (barScenes[scene]) {
+  root.render(
+    <Desktop cursor={[272, 112]} box={[252, 136]}>
+      <SelectionBar initial={barScenes[scene]} />
+    </Desktop>,
+  );
+} else if (msScenes[scene]) {
+  const side = scene === "msearchSide";
+  root.render(
+    <Desktop cursor={side ? [300, 112] : [700, 590]} box={side ? [560, 0] : [252, 134]}>
+      <div className="parity-ms" style={{ width: side ? 440 : 420, height: side ? 640 : 520 }}>
+        <MagicSearch initial={msScenes[scene]} />
+      </div>
+    </Desktop>,
+  );
+} else if (lensScenes.includes(scene)) {
   const icon = (I: typeof Check) => <I size={14} strokeWidth={2.4} aria-hidden />;
   root.render(
     <Desktop cursor={[400, 92]} box={[408, 100]}>

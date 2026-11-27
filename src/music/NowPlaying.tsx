@@ -13,7 +13,6 @@ import { ProposalApproval } from "../approval/LocalApproval";
 import { ImmersiveView, type ImmersiveFrom, type Rect } from "./Immersive";
 import type { LyricsView } from "./immersiveModel";
 import { heroBackgrounds, pickTint } from "./tint";
-import { usePressWeight } from "./press";
 import { useLyricTranslation } from "./useTranslation";
 import { music, useNowPlaying, type LyricsResult, type MusicConfig, type Played, type PlaylistItem, type Queue } from "./api";
 import {
@@ -83,7 +82,6 @@ export const NowPlayingView: React.FC<Props> = ({ mode: modeProp, onMode, onClos
   const [problem, setProblem] = useState<string | null>(null);
   useEffect(() => setProblem(null), [now?.trackKey]);
   const rootRef = useRef<HTMLDivElement>(null);
-  usePressWeight(rootRef);
   // This song's own lyric nudge (saved per song), on top of the global Timing offset.
   const [songOffset, setSongOffset] = useState(0);
   const [view, setView] = useState<LyricsView>("original");

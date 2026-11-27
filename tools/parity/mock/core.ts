@@ -125,7 +125,26 @@ const handlers: Record<string, (a: any) => any> = {
   ai_run_intent: () => "ai-mock-1",
   clip_status: () => ({ enabled: false, pausedUntilMs: 0, ignoreNext: false, count: 0, pinned: 0, settings: { enabled: false, maxItems: 500, maxDays: 30, maxTotalBytes: 67108864, maxItemBytes: 2097152, excludedApps: ["1password.exe", "bitwarden.exe", "keepassxc.exe"], captureImages: true, captureFiles: true, preferPlainPaste: false } }),
   clip_list: () => [],
-  selection_policy_get: () => ({ bubble: false, readOnRequest: true, mode: "allow", apps: ["winword.exe", "excel.exe", "notepad.exe", "code.exe"], maxChars: 20000 }),
+  selection_policy_get: () => ({ bubble: false, readOnRequest: true, mode: "deny", apps: ["windowsterminal.exe", "cmd.exe", "powershell.exe", "mstsc.exe", "vmconnect.exe"], maxChars: 20000, version: 2 }),
+  // The Magic selection bar and Magic Search (docs/plans/SELECTION_BAR.md).
+  selection_bar_state: () => ({ seq: 1, chars: 86, app: "C:\\Program Files\\Microsoft Office\\WINWORD.EXE", category: "office", cut: true, copy: true, paste: true, pastePreview: true, editable: true, smart: { kind: "quantity", preview: "≈ 7.77 mi", value: "12.5 km in mi", action: "smart:convert" } }),
+  selection_bar_fit: () => ({ shown: true, above: false }),
+  selection_bar_paste_preview: () => "Ship it behind a setting",
+  magic_search_last: () => ({ seq: 1, query: "calm technology", action: null, app: "C:\\x\\WINWORD.EXE", editable: true, origin: null, above: false, atMs: 0 }),
+  magic_search_web: () => ({
+    results: [
+      { title: "Calm technology", url: "https://calmtech.com/", snippet: "Technology should require the smallest possible amount of attention.", site: "calmtech.com", favicon: "", sources: ["duckduckgo", "wikipedia"] },
+      { title: "Calm technology — Wikipedia", url: "https://en.wikipedia.org/wiki/Calm_technology", snippet: "Interaction designed to occur in the user's periphery.", site: "en.wikipedia.org", favicon: "", sources: ["wikipedia"] },
+      { title: "Designing Calm Technology", url: "https://people.csail.mit.edu/rudolph/Teaching/weiser.pdf", snippet: "Weiser and Brown, Xerox PARC, 1995.", site: "people.csail.mit.edu", favicon: "", sources: ["duckduckgo"] },
+    ],
+    sources: [
+      { id: "duckduckgo", label: "DuckDuckGo", host: "html.duckduckgo.com", ok: true, count: 2, error: null },
+      { id: "wikipedia", label: "Wikipedia", host: "en.wikipedia.org", ok: true, count: 2, error: null },
+    ],
+    engineUrl: "https://duckduckgo.com/?q=calm+technology",
+    engineName: "DuckDuckGo",
+    stub: true,
+  }),
   command_templates: () => ({ templates: [], error: null, path: "C:\\Users\\u\\AppData\\Roaming\\LensUI\\commands.json" }),
   shelves_list: () => [{ id: "default", name: "Shelf", created_ms: Date.now(), item_count: 0, approx_tokens: 0 }],
   shelf_list: () => [],

@@ -105,7 +105,8 @@ describe("motion tokens", () => {
   test("all tokens are defined", () => {
     for (const d of ALL_DUR) expect(css).toMatch(new RegExp(`--lens-dur-${d}:\\s*\\d+ms`));
     for (const e of ["out", "in-out", "exit", "drawer", "spring"]) expect(css).toContain(`--lens-ease-${e}:`);
-    expect(css).toMatch(/--lens-press-scale:\s*0\.98/);
+    expect(css).toMatch(/--lens-press-scale:\s*0\.97;/);
+    for (const t of ["press-in: 70ms", "press-release: 220ms", "press-release-heavy: 260ms", "press-hold-min: 90ms", "pending-delay: 300ms"]) expect(css).toContain(`--lens-${t};`);
   });
 
   test("durations follow the research scale (short is premium)", () => {
@@ -125,6 +126,13 @@ describe("motion tokens", () => {
       for (const d of ALL_DUR) expect(body).toMatch(new RegExp(`--lens-dur-${d}:\\s*1ms`));
       expect(body).toMatch(/--lens-press-scale:\s*1;/);
       expect(body).toMatch(/--lens-enter-scale:\s*1;/);
+      // Presses collapse to depth-free fill steps: no travel, no scale, 1ms timings.
+      for (const t of ["press-in", "press-release", "press-release-heavy"]) expect(body).toMatch(new RegExp(`--lens-${t}:\\s*1ms`));
+      expect(body).toMatch(/--lens-press-scale-heavy:\s*1;/);
+      expect(body).toMatch(/--lens-press-y-medium:\s*0px;/);
+      expect(body).toMatch(/--lens-press-y-heavy:\s*0px;/);
+      expect(body).not.toMatch(/--lens-press-fill/);
+      expect(body).not.toMatch(/--lens-press-hold-min/);
     }
     expect(css).toContain(':root:not([data-motion="full"])');
   });

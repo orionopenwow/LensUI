@@ -43,6 +43,7 @@ import { isWallpaperStub, parseWallpaperSlash, runWallpaperSlash, wallpaperTempl
 import { isLensAppStub, lensAppTemplates, runLensAppSlash } from "../report/command";
 import { dashboardTemplates, isDashboardPhrase, isDashboardStub, openDashboard } from "../dashboard/command";
 import { immersiveTemplates, isImmersivePhrase, isImmersiveStub, openImmersive } from "../music/command";
+import { isSearchThat, magicSearchQuery, openMagicSearch } from "../magic/search/command";
 import { editDesktopWidgets, isEditWidgetsPhrase } from "../deskwidgets/api";
 
 const MODE_ICON: Record<Mode, React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
@@ -442,6 +443,15 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
     for (const m of mentions) await resolveMention(m.source, m.arg);
     const parsed = parseSlash(rest, templates);
     const template = parsed?.command ?? null;
+
+    // "magic search <query>" (Lens Magic Search, docs/plans/SELECTION_BAR.md §3.4).
+    const msQuery = !template ? magicSearchQuery(rest) : null;
+    if (msQuery || (!template && isSearchThat(rest))) {
+      setText("");
+      await hide();
+      void openMagicSearch(msQuery).then((err) => err && flash(err, false));
+      return;
+    }
 
     // "dashboard", "open the dashboard" or /dashboard, while the Magic Dashboard is on.
     // Rust has the last word on the flag, so a Command opened before it was turned on still works.

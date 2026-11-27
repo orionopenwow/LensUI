@@ -33,7 +33,13 @@ pub fn init(app: &AppHandle) {
     if service::capturing() {
         crate::clip::win::ensure_started();
     }
-    apply_policy(app);
+    migrate_policy_file(app);
+    if let Some(state) = app.try_state::<crate::AppState>() {
+        let cfg = state.config.lock().map(|c| c.clone()).unwrap_or_default();
+        crate::commands::selection_bar::apply(app, &cfg);
+    } else {
+        apply_policy(app);
+    }
 }
 
 fn status() -> ClipStatus {
@@ -251,38 +257,77 @@ pub(crate) fn clip_to_shelf(app: AppHandle, ids: Vec<u64>, shelf: Option<String>
 use crate::clip::appctx::{categorize, default_tiles};
 use crate::clip::selection_rules::{Refusal, SelectionPolicy};
 
-pub const EVT_SELECTION_BUBBLE: &str = "lens://selection/bubble";
+/// Whether the selection bar is on (`selectionBar.enabled` in the main settings, the one owner
+/// of that switch). The selection policy's `bubble` gate is set from it.
+static BAR_ON: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+pub(crate) fn set_bar_on(on: bool) {
+    BAR_ON.store(on, std::sync::atomic::Ordering::SeqCst);
+}
 
 fn policy_path() -> std::path::PathBuf {
     crate::clip::store::data_dir("clip").join("selection.json")
 }
 
-pub fn load_policy() -> SelectionPolicy {
-    std::fs::read(policy_path()).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_default()
+fn read_policy_file() -> Option<SelectionPolicy> {
+    std::fs::read(policy_path()).ok().and_then(|b| serde_json::from_slice(&b).ok())
 }
 
-/// Starts or stops the selection bubble to match the saved policy.
+fn write_policy_file(p: &SelectionPolicy) -> Result<(), String> {
+    let path = policy_path();
+    if let Some(dir) = path.parent() {
+        std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+    }
+    std::fs::write(&path, serde_json::to_vec_pretty(p).map_err(|e| e.to_string())?).map_err(|e| e.to_string())
+}
+
+/// The policy every read uses: the saved file (migrated if it is older) with the bar switch
+/// taken from the main settings.
+pub fn load_policy() -> SelectionPolicy {
+    let mut p = read_policy_file().map(|p| crate::clip::selection_rules::migrate(p).0).unwrap_or_default();
+    p.bubble = BAR_ON.load(std::sync::atomic::Ordering::SeqCst);
+    p
+}
+
+/// Once, at start-up: an old selection.json becomes version 2 (see `selection_rules::migrate`).
+/// Someone who had the bubble on keeps the feature: `selectionBar.enabled` is turned on through
+/// the one settings writer. Nobody else sees anything change; the bar stays off.
+pub fn migrate_policy_file(app: &AppHandle) {
+    let Some(old) = read_policy_file() else { return };
+    if old.version >= crate::clip::selection_rules::POLICY_VERSION {
+        return;
+    }
+    let (p, was_on) = crate::clip::selection_rules::migrate(old);
+    if let Err(e) = write_policy_file(&p) {
+        eprintln!("[Lens UI] selection policy: couldn't migrate selection.json: {e}");
+        return;
+    }
+    if was_on {
+        let state = app.state::<crate::AppState>();
+        let next = {
+            let mut cfg = state.config.lock().unwrap_or_else(|e| e.into_inner());
+            if cfg.selection_bar.enabled {
+                return;
+            }
+            cfg.selection_bar.enabled = true;
+            cfg.clone()
+        };
+        if let Err(e) = crate::config::save_config(&next) {
+            eprintln!("[Lens UI] selection policy: couldn't keep the selection bar on: {e}");
+        }
+    }
+}
+
+/// Starts or stops the selection bar to match the settings and the saved policy.
 pub fn apply_policy(app: &AppHandle) {
     let policy = load_policy();
     #[cfg(windows)]
     {
         if policy.bubble {
-            // The bubble window is created on first use (`"create": false` in tauri.conf.json).
-            if app.get_webview_window("bubble").is_none() {
-                let a = app.clone();
-                std::thread::spawn(move || {
-                    let _ = crate::app::setup::build_window_from_config(&a, "bubble");
-                });
-            }
-            let handle = app.clone();
-            crate::clip::uia::set_on_bubble(move |ev| {
-                if let Some(w) = handle.get_webview_window("bubble") {
-                    // Just past the end of the selection, never under the pointer.
-                    let _ = w.set_position(tauri::PhysicalPosition::new(ev.x + 14, ev.y + 10));
-                    let _ = w.show();
-                }
-                let _ = handle.emit(EVT_SELECTION_BUBBLE, &ev);
-            });
+            let found = app.clone();
+            crate::clip::uia::set_on_found(move |f| crate::commands::selection_bar::on_found(&found, f));
+            let hidden = app.clone();
+            crate::clip::uia::set_on_hide(move |h| crate::commands::selection_bar::hide(&hidden, h.id()));
             crate::clip::uia::start_bubble(|| (load_policy(), service::with(|_, s| s.excluded_apps.clone())));
         } else {
             crate::clip::uia::stop_bubble();
@@ -303,13 +348,14 @@ pub(crate) fn selection_policy_get() -> SelectionPolicy {
 pub(crate) fn selection_policy_set(app: AppHandle, policy: SelectionPolicy) -> Result<SelectionPolicy, String> {
     let mut p = policy;
     p.max_chars = p.max_chars.clamp(100, 400_000);
-    let path = policy_path();
-    if let Some(dir) = path.parent() {
-        std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
-    }
-    std::fs::write(&path, serde_json::to_vec_pretty(&p).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
+    // The bar's switch lives in the main settings (`selectionBar.enabled`), not here.
+    p.bubble = false;
+    p.version = crate::clip::selection_rules::POLICY_VERSION;
+    p.apps.retain(|a| !a.trim().is_empty() && a.len() <= 120);
+    p.apps.truncate(200);
+    write_policy_file(&p)?;
     apply_policy(&app);
-    Ok(p)
+    Ok(load_policy())
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -360,7 +406,7 @@ pub(crate) fn selection_to_shelf(app: AppHandle, shelf: Option<String>) -> Resul
     let read = selection_read();
     let Some(text) = read.text else {
         return Err(match read.refusal {
-            Some(Refusal::Off) => "Turn on selection reading in Settings › Lens Command.".into(),
+            Some(Refusal::Off) => "Turn on the selection bar in Settings › AI & Command › Selection bar.".into(),
             Some(Refusal::Password) => "Password fields are never read.".into(),
             Some(Refusal::NotInList) | Some(Refusal::InDenyList) => "Lens doesn't read selections in this app (see the app list).".into(),
             _ => "Couldn't read a selection here. Copy it and use the Shelf instead.".into(),

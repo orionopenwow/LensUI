@@ -4,7 +4,7 @@ Select text anywhere. When you let go of the mouse, a small Lens bar appears at 
 
 | | |
 |---|---|
-| Status | Plan, 26 Nov 2026; decisions taken the same day (§7). P1 in progress. Off by default when it ships |
+| Status | P1 (the bar) and P1.5 (Magic Search) built on `feature/selection-bar` (26 Nov 2026), off by default; not yet confirmed on a real PC. Smart detection ships as a local classifier with previews (part of P2); per-app editor, drag-to-reorder and P3 are still to do. See §8 |
 | Builds on | The selection bubble (`src-tauri/src/clip/uia.rs`, `clip/selection_rules.rs`, `src/command/mini/BubbleSurface.tsx`, docs/COMMAND.md §d), the one action catalogue (`src/context/actions.ts`, `actions.catalog.json`, `bridge/actions.rs`), the input service (`input.rs`), Magic and LensPan (`src/magic/`) |
 | Prior art (learn only, credited) | PopClip (macOS), SnipDo (Windows), Edge's mini menu, Easydict, Raycast's selected-text commands |
 
@@ -170,3 +170,24 @@ Settings go through the one settings writer and are covered by the control catal
 1. **The search button is Lens Magic Search** (§3.4): an aggregated, cited quick search that is better and sleeker than "Ask Gemini". It opens in Lens Browser's agentic panel, or as a pop-out in any other program.
 2. **Default scope when turned on:** everywhere, minus exclusions.
 3. **No slot keys.** Actions are clicked, or run with their own global hotkeys.
+
+## 8. What was built (P1 + P1.5, `feature/selection-bar`)
+
+| Part | Where | Notes |
+|---|---|---|
+| Bar rules (pure) | `src-tauri/src/clip/bar.rs` | Placement (8 px below the selection end from UIA line rectangles, flip above, clamp to the work area, DPI), Cut/Copy/Paste availability, gestures (drag, double, triple; modifiers → no bar; Magic Mouse hold-then-drag wins), hide rules (other keys pass through, Esc consumed, click elsewhere, scroll, pointer > 120 px, focus change, auto-hide). Unit-tested |
+| Smart classifier (pure) | `src-tauri/src/clip/smart.rs` | URL, e-mail, colour (#hex/rgb/hsl), Windows path, maths, number + unit, currency (named, not converted), code (+ language), one word. Uses `ai::calc`. Feeds the smart action and the inline preview |
+| Policy | `clip/selection_rules.rs` | Version 2: everywhere minus `STARTING_EXCLUSIONS` (terminals, consoles, remote desktop, VMs) + clipboard exclusion list + games/anti-cheat (`Refusal::Game`). `migrate()`: an untouched old file takes the new default; anything chosen is kept; someone who had the bubble on keeps the feature |
+| Switch | `config.selectionBar` (`SelectionBarConfig`) | The one settings writer and the control catalogue (`selectionBar.*`; turning it on, hotkeys and web results ask first). Safe Mode can hold it off |
+| Reading + hook | `clip/uia.rs` | One read: text, editable (ValuePattern/TextEditPattern), line rectangles. Mouse claim always while on; keyboard claim only while the bar shows (Esc) |
+| Clipboard | `clip/win.rs` | Probe without reading (text? private?), Paste preview only on hover and never for private formats, Ctrl+X/C/V with Lens's marker to the app that had the selection (refocused if a click moved focus; never into elevated apps), Copy falls back to the UIA text when the app ignores Ctrl+C (checked through the clipboard sequence number only) |
+| Window | `commands/selection_bar.rs`, `src/magic/selection/SelectionBar.tsx` | The `bubble` window, sized by its page and shown with `WS_EX_NOACTIVATE` + `SWP_NOACTIVATE`; buttons with press weights; status line for labels / Paste preview / smart preview; More lists the full selection action list |
+| Magic Search | `src-tauri/src/magic_search.rs`, `commands/magic_search.rs`, `src/magic/search/*` | Pop-out `magicsearch` (420 × 520, side panel, pin, ×/Esc), grows from the bar and returns to it. Quick answer through `ai_ask` (local model first, privacy rules, consent card, provider named), web results from the aggregator below, local matches (Shelf, clipboard history, notes, recent files), smart cards, follow-ups, copy with/without sources, Shelf/note, Replace selection (approval card), refine, "Only my files". In Lens Browser it goes to the browser's side panel |
+| Aggregator | `src-tauri/src/magic_search.rs` | Lens Browser has no search backend, so: DuckDuckGo's HTML results (when it is the browser's engine) + Wikipedia's REST search, through `magic_waves::widgets::fetch_checked` (https, fixed hosts, no local network, size/time caps), merged rank by rank and de-duplicated by normalised URL. Other engines get an "Open in <engine>" link. `LENS_MAGIC_SEARCH_STUB=1` (debug builds) answers from canned results |
+| Entry points | Command ("magic search …", "search that"), the Magic window and Lens › panels (`magic_search` catalogue action), optional global hotkey (none by default, conflict-checked), direct hotkeys per action |
+| Settings | `src/magic/selection/SelectionBarCard.tsx` | AI & Command › Selection bar: simple, where it works, advanced (no slot keys) |
+| Tests | `clip/bar.rs`, `clip/smart.rs`, `selection_rules.rs`, `magic_search.rs`, `commands/selection_bar.rs`, `commands/magic_search.rs`; `src/__tests__/selectionBar.test.ts`, `magicSearch.test.ts`; parity `tools/parity/magic` (selbar*, msearch*); visual goldens `selection-bar-*`, `magic-search-*`; E2E `selection-bar` |
+
+**Deferred:** drag-to-reorder (↑/↓ for now), a per-app action-set editor (stored and honoured; Settings shows and clears them), date/time and offline-dictionary smart kinds, currency conversion, "open a result in a split view", "compare sources", the bar's leave animation (the window hides at once), voice "search that", P3 (browsers).
+
+**Check on a real PC:** that clicking the bar never activates it (WebView2 inside a `WS_EX_NOACTIVATE` window); placement on mixed-DPI monitors; UIA line rectangles in Word, VS Code and Chromium apps; Copy's fallback in apps that ignore a synthetic Ctrl+C; the 120–200 ms show time.

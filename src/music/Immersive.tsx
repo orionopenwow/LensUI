@@ -12,7 +12,6 @@ import { music, type LyricsResult, type MusicConfig } from "./api";
 import { formatTime, type NowPlaying as NP, type RGB } from "./model";
 import { ambientField, controlsHidden, immersiveModel, originPose, type AmbientLayer, type LyricsView } from "./immersiveModel";
 import { LEVEL_ASK_MS, glowFrame, glowPlan, smoothLevel } from "./soundGlow";
-import { usePressWeight } from "./press";
 import "./immersive.css";
 
 export type ImmersiveFrom = "nowplaying" | "dock" | "command";
@@ -84,7 +83,6 @@ export const ImmersiveView: React.FC<Props> = (p) => {
   const [overControls, setOverControls] = useState(false);
   const [clock, setClock] = useState(() => Date.now());
   const [leaving, setLeaving] = useState(false);
-  usePressWeight(root);
 
   // Rendering pauses while the window is hidden or minimised.
   useEffect(() => {

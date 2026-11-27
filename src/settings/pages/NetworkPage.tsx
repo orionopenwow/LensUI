@@ -64,7 +64,7 @@ export const NetworkPage: React.FC<PageProps> = ({ section }) => {
         summary={w?.connectedSsid ? `Connected to ${w.connectedSsid}` : w ? `${w.networks.length} nearby` : "—"}
         forceOpen={section === "wifi"}
         actions={
-          <button
+          <button data-weight="light"
             type="button"
             className="cc-chip compact"
             aria-label="Scan for networks"
@@ -89,11 +89,11 @@ export const NetworkPage: React.FC<PageProps> = ({ section }) => {
             desc={n.connected ? "Connected" : n.hasProfile ? "Saved" : n.secured ? "Needs a password" : "Open network"}
           >
             {n.connected ? (
-              <button type="button" className="cc-btn" onClick={() => invoke("wifi_disconnect_cmd").then(() => wifi.reload()).catch((e) => setErr(String(e)))}>
+              <button data-weight="medium" type="button" className="cc-btn" onClick={() => invoke("wifi_disconnect_cmd").then(() => wifi.reload()).catch((e) => setErr(String(e)))}>
                 Disconnect
               </button>
             ) : n.hasProfile || !n.secured ? (
-              <button type="button" className="cc-btn" disabled={busy === n.ssid} onClick={() => connect(n.ssid)}>
+              <button data-weight="medium" type="button" className="cc-btn" disabled={busy === n.ssid} onClick={() => connect(n.ssid)}>
                 {busy === n.ssid ? "Connecting…" : "Connect"}
               </button>
             ) : (

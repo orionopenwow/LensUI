@@ -9,7 +9,6 @@ import { openExternal } from "../ai/open";
 import { EVENT_REMOTE, music, type DiscordStatus, type EqStatus, type MusicConfig, type RemoteInfo } from "./api";
 import { encodeQr, qrSvg } from "./qr";
 import { remoteLine } from "./remoteText";
-import { usePressWeight } from "./press";
 import { defaultLanguage } from "./translate";
 import { setupSteps, type SetupStep } from "./setup";
 
@@ -39,7 +38,6 @@ export const MusicSetup: React.FC<{ cfg: MusicConfig; save: Save; spotifyConnect
   const dir = useRef(1);
   const body = useRef<HTMLDivElement>(null);
   const root = useRef<HTMLDivElement>(null);
-  usePressWeight(root);
   // Content swaps slide 6 px in the direction of travel and crossfade (DESIGN.md §5.3).
   useLayoutEffect(() => {
     glide(body.current, { x: 6 * dir.current, opacity: 0 }, { x: 0, opacity: 1 }, { duration: "base", ease: "out" });
