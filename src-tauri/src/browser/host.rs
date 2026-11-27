@@ -77,6 +77,7 @@ pub fn rt() -> MutexGuard<'static, Runtime> {
     RT.get_or_init(|| {
         let state = store::load_state_from(&store::state_path());
         super::permissions::publish(&state.site_permissions);
+        super::blocklist::publish(state.settings.block_trackers, &state.settings.blocking_allow);
         Mutex::new(Runtime {
             state,
             history: store::load_history_from(&store::history_path()),
@@ -215,13 +216,19 @@ fn spawn_view(app: &AppHandle, window: &Window, tab: &Tab, profile: &str, vp: Vi
     if marks_on {
         builder = builder.initialization_script(&marks_bootstrap());
     }
+    let tab_nav = tab_id.clone();
     let builder = builder
         .on_navigation(move |u| {
             let scheme = u.scheme();
             if !(scheme == "https" || scheme == "http" || scheme == "about") {
                 return false;
             }
-            !(block_on && filter::is_blocked(u.as_str(), &extra))
+            let ok = !(block_on && filter::is_blocked(u.as_str(), &extra));
+            if ok {
+                // The page's own requests are judged against this page from now on.
+                super::blocklist::page_started(&tab_nav, u.as_str());
+            }
+            ok
         })
         .on_page_load(move |view, payload| {
             if matches!(payload.event(), PageLoadEvent::Finished) {
@@ -269,6 +276,10 @@ fn spawn_view(app: &AppHandle, window: &Window, tab: &Tab, profile: &str, vp: Vi
     // Camera, microphone, location…: Lens asks under the address bar instead of WebView2's prompt.
     #[cfg(windows)]
     super::permissions::win::attach(app, &view, tab_id.clone());
+    // Ads and trackers inside the page (scripts, images, frames…), from the filter lists.
+    #[cfg(windows)]
+    super::blocklist::win::attach(&view, tab_id.clone());
+    super::blocklist::start();
     // Lens Messages: unread badges from the page title of messenger web apps (count only).
     super::titles::attach(app, &view, tab_id.clone());
     if (tab.zoom - 1.0).abs() > 0.001 {
@@ -313,6 +324,14 @@ fn after_load(app: &AppHandle, tab_id: &str, url: &str, view: Webview) {
     if let Some(z) = apply_zoom {
         let _ = view.set_zoom(z);
     }
+    if rt().state.settings.favicons {
+        let declared = status.get("favicon").and_then(Value::as_str).map(str::to_string);
+        if let Some((host, data)) = super::icons::refresh(&url, declared.as_deref()) {
+            let mut m = serde_json::Map::new();
+            m.insert(host, Value::String(data));
+            let _ = app.emit(super::icons::EVT_ICONS, Value::Object(m));
+        }
+    }
     if restore_scroll > 0.0 {
         let _ = eval_op(&view, json!({ "op": "scrollTo", "y": restore_scroll }), Duration::from_secs(2));
     }
@@ -326,27 +345,46 @@ pub fn menu_op() -> Value {
     json!({ "op": "menu", "on": s.lens_context_menu, "ai": s.ai.enabled, "transcripts": s.ai.enabled && s.ai.transcripts })
 }
 
-/// Shows the active tab in the content area and parks the others off-screen.
+/// Where each visible tab goes: the active tab fills the content area, or the active split's
+/// two tabs share it. Pure, so the maths is tested without a window.
+pub fn placements(state: &BrowserState, vp: Viewport) -> Vec<(String, Viewport)> {
+    let Some(active) = state.active_tab.clone() else { return vec![] };
+    match state.split_of(&active) {
+        Some(sp) => {
+            let ((lx, ly, lw, lh), (rx, ry, rw, rh)) = super::model::split_rects(vp.x, vp.y, vp.w, vp.h, sp.ratio);
+            vec![(sp.left.clone(), Viewport { x: lx, y: ly, w: lw, h: lh }), (sp.right.clone(), Viewport { x: rx, y: ry, w: rw, h: rh })]
+        }
+        None => vec![(active, Viewport { x: vp.x, y: vp.y, w: vp.w.max(1.0), h: vp.h.max(1.0) })],
+    }
+}
+
+/// Shows the active tab (or the active split) in the content area and hides the others.
 pub fn layout(app: &AppHandle) -> Result<(), String> {
-    let (window, active, vp, overlay, views, need_spawn) = {
+    let (window, vp, overlay, place, need_spawn) = {
         let r = rt();
         let Some(w) = r.window.clone() else { return Ok(()) };
-        let active = r.state.active_tab.clone();
-        let need = active.as_ref().filter(|a| !r.views.contains_key(*a)).and_then(|a| r.state.tab(a).cloned()).map(|t| {
-            let profile = r.state.spaces.iter().find(|s| s.id == t.space_id).map(|s| s.profile.clone()).unwrap_or_else(|| "default".into());
-            (t, profile)
-        });
-        (w, active, r.viewport, r.overlay, r.views.clone(), need)
+        let place = placements(&r.state, r.viewport);
+        let need: Vec<(Tab, String)> = place
+            .iter()
+            .filter(|(id, _)| !r.views.contains_key(id))
+            .filter_map(|(id, _)| r.state.tab(id).cloned())
+            .map(|t| {
+                let profile = r.state.spaces.iter().find(|s| s.id == t.space_id).map(|s| s.profile.clone()).unwrap_or_else(|| "default".into());
+                (t, profile)
+            })
+            .collect();
+        (w, r.viewport, r.overlay, place, need)
     };
-    if let Some((tab, profile)) = need_spawn {
-        let view = spawn_view(app, &window, &tab, &profile, vp, overlay)?;
+    for (tab, profile) in need_spawn {
+        let at = place.iter().find(|(id, _)| *id == tab.id).map(|(_, v)| *v).unwrap_or(vp);
+        let view = spawn_view(app, &window, &tab, &profile, at, overlay)?;
         let mut r = rt();
         r.views.insert(tab.id.clone(), view);
         if let Some(t) = r.state.tab_mut(&tab.id) {
             t.life = TabLife::Live;
         }
     }
-    let views = if views.len() == rt().views.len() { views } else { rt().views.clone() };
+    let views = rt().views.clone();
     let (glance, locked) = {
         let r = rt();
         let locked = r.state.spaces.iter().any(|s| s.id == r.state.active_space && s.locked && !r.unlocked.contains(&s.id));
@@ -361,13 +399,17 @@ pub fn layout(app: &AppHandle) -> Result<(), String> {
             let _ = g.show();
         }
     }
+    // Move and size before showing, so a page never flashes at its old place.
     for (id, view) in views {
-        if Some(&id) == active.as_ref() && !overlay && glance.is_none() && !locked {
-            let _ = view.set_position(LogicalPosition::new(vp.x, vp.y));
-            let _ = view.set_size(LogicalSize::new(vp.w.max(1.0), vp.h.max(1.0)));
-            let _ = view.show();
-        } else {
-            let _ = view.hide();
+        match place.iter().find(|(p, _)| *p == id) {
+            Some((_, at)) if !overlay && glance.is_none() && !locked => {
+                let _ = view.set_position(LogicalPosition::new(at.x, at.y));
+                let _ = view.set_size(LogicalSize::new(at.w.max(1.0), at.h.max(1.0)));
+                let _ = view.show();
+            }
+            _ => {
+                let _ = view.hide();
+            }
         }
     }
     Ok(())
@@ -399,6 +441,7 @@ pub fn sleep_tabs(app: &AppHandle, ids: &[String]) {
             r.state.mark_sleeping(&id, scroll);
         }
         super::titles::gone(&id);
+        super::blocklist::tab_gone(&id);
     }
     save(&rt());
     emit_state(app);
@@ -492,6 +535,7 @@ pub fn close_view(tab_id: &str) {
         let _ = v.close();
     }
     super::titles::gone(tab_id);
+    super::blocklist::tab_gone(tab_id);
 }
 
 /// Reads the title of every open tab once, off the calling thread (Messages settings changed).
@@ -611,6 +655,27 @@ mod tests {
         let single = json!({ "nonce": 3, "ok": false, "error": "agent_missing" }).to_string();
         assert_eq!(parse_reply(&single, 3).unwrap_err(), "This page isn't ready yet.");
         assert!(parse_reply("not json", 1).is_err());
+    }
+
+    #[test]
+    fn placements_fill_the_area_or_share_it_in_a_split() {
+        let mut st = BrowserState::default();
+        let vp = Viewport { x: 264.0, y: 52.0, w: 1000.0, h: 700.0 };
+        assert!(placements(&st, vp).is_empty());
+        let a = st.open_tab("https://a.test", None, None, 1).unwrap();
+        let b = st.open_tab("https://b.test", None, None, 2).unwrap();
+        st.activate(&a, 3).unwrap();
+        assert_eq!(placements(&st, vp), vec![(a.clone(), vp)]);
+        st.split_with(&a, &b).unwrap();
+        let p = placements(&st, vp);
+        assert_eq!(p.len(), 2);
+        assert_eq!(p[0].0, a);
+        assert_eq!(p[1].0, b);
+        assert!(p[0].1.x + p[0].1.w < p[1].1.x, "a gap for the divider");
+        assert!((p[1].1.x + p[1].1.w - 1264.0).abs() < 1.0);
+        // Activating the right side keeps the same arrangement.
+        st.activate(&b, 4).unwrap();
+        assert_eq!(placements(&st, vp)[0].0, a);
     }
 
     #[test]

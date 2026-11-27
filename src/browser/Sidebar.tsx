@@ -1,6 +1,6 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
-  ChevronDown, ChevronsLeft, ChevronsRight, ChevronRight, Copy, Folder as FolderIcon, FolderPlus, Loader2, Lock, LockOpen, MoonStar, PanelLeft, Pause, Pin, PinOff,
+  ChevronDown, ChevronsLeft, Columns2, ChevronsRight, ChevronRight, Copy, Folder as FolderIcon, FolderPlus, Loader2, Lock, LockOpen, MoonStar, PanelLeft, Pause, Pin, PinOff,
   Plus, Search, Settings, Volume2, VolumeX, X,
 } from "lucide-react";
 import { LensCloud } from "../presence/LensCloud";
@@ -9,6 +9,7 @@ import { DEFAULT_SIDEBAR, media as mediaCmd, SLEEP_SAVING_MB, type BrowserView, 
 import { avatar, hostOf, relTime, sidebarModel, tabLabel } from "./model";
 import { duplicateTabs, tabSections, type TabActionKind, type TabProposal } from "./tabAi";
 import { oops } from "./oops";
+import { useIcon } from "./icons";
 
 export interface ChatRef {
   id: string;
@@ -55,10 +56,15 @@ interface Props {
   findSignal?: number;
   /** Icon stack: the Lens menu is open over the page. */
   onPopover?(open: boolean): void;
+  /** A tab started (id) or stopped (null) being dragged: the page shows split drop zones. */
+  onDragTab?(id: string | null): void;
 }
 
 export function Avatar({ url, title, size = 16 }: { url: string; title?: string; size?: number }) {
   const a = avatar(url, title);
+  // The real icon when the core has fetched one; the letter avatar otherwise.
+  const icon = useIcon(url);
+  if (icon) return <img className="lb-av is-icon" src={icon} width={size} height={size} alt="" aria-hidden draggable={false} />;
   return (
     <span className="lb-av" style={{ width: size, height: size, fontSize: Math.round(size * 0.62), background: `hsl(${a.hue} 46% 42%)` }} aria-hidden>
       {a.letter}
@@ -102,7 +108,9 @@ function TabRow({ t, active, p, nested }: { t: Tab; active: boolean; p: RowProps
         }
       }}
       onAuxClick={(e) => e.button === 1 && p.onClose(t.id)}
-      onDragStart={(e) => e.dataTransfer.setData("text/lens-tab", t.id)}
+      data-weight="light"
+      onDragStart={(e) => { e.dataTransfer.setData("text/lens-tab", t.id); p.onDragTab?.(t.id); }}
+      onDragEnd={() => p.onDragTab?.(null)}
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => {
         const id = e.dataTransfer.getData("text/lens-tab");
@@ -114,6 +122,7 @@ function TabRow({ t, active, p, nested }: { t: Tab; active: boolean; p: RowProps
         <>
           <span className="lb-tab-title">{label}</span>
           {t.badge === "approve" ? <span className="lb-pill">approve</span> : null}
+          {(p.view.state.splits ?? []).some((x) => x.left === t.id || x.right === t.id) ? <Columns2 size={12} className="lb-dim" aria-label="In split view" /> : null}
           {t.busy ? <span className="lb-dot is-amber" aria-label="Unsaved changes" /> : null}
           {/* Quiet details: only while the row is hovered or focused. */}
           {sleeping ? <MoonStar size={12} className="lb-dim lb-tab-quiet" aria-label="Sleeping" /> : null}

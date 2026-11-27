@@ -1,0 +1,49 @@
+{
+  "_note": "Hand-written for Lens's tests. Not real user data; shaped like Arc's StorableSidebar.json.",
+  "sidebar": {
+    "containers": [
+      { "global": {} },
+      {
+        "topAppsContainerIDs": ["FAV1"],
+        "spaces": [
+          "S1",
+          {
+            "id": "S1",
+            "title": "Work",
+            "containerIDs": ["unpinned", "U1", "pinned", "P1"],
+            "customInfo": {
+              "iconType": { "emoji_v2": "💼" },
+              "windowTheme": { "background": { "single": { "_0": { "style": { "color": { "_0": { "blendedSingleColor": { "_0": { "color": { "red": 0.2, "green": 0.4, "blue": 0.8, "alpha": 1 } } } } } } } } } }
+            }
+          },
+          "S2",
+          { "id": "S2", "title": "Home", "containerIDs": ["pinned", "P2", "unpinned", "U2"] }
+        ],
+        "items": [
+          "P1", { "id": "P1", "childrenIds": ["F1", "T1"] },
+          "F1", { "id": "F1", "title": "Projects", "childrenIds": ["F2", "T2"] },
+          "F2", { "id": "F2", "title": "Lens", "childrenIds": ["T5"] },
+          "T1", { "id": "T1", "title": "", "data": { "tab": { "savedURL": "https://mail.example/", "savedTitle": "Mail" } } },
+          "T2", { "id": "T2", "title": "Standup", "data": { "tab": { "savedURL": "https://meet.example/", "savedTitle": "Meet" } } },
+          "T5", { "id": "T5", "data": { "tab": { "savedURL": "https://code.example/lens", "savedTitle": "Lens code" } } },
+          "U1", { "id": "U1", "childrenIds": ["SP1", "T6"] },
+          "SP1", { "id": "SP1", "title": "Docs and chat", "data": { "splitView": { "layoutOrientation": "horizontal" } }, "childrenIds": ["T3", "T4"] },
+          "T3", { "id": "T3", "data": { "tab": { "savedURL": "https://docs.example/", "savedTitle": "Docs" } } },
+          "T4", { "id": "T4", "data": { "tab": { "savedURL": "https://chat.example/", "savedTitle": "Chat" } } },
+          "T6", { "id": "T6", "data": { "tab": { "savedURL": "arc://settings", "savedTitle": "Settings" } } },
+          "P2", { "id": "P2", "childrenIds": ["T7"] },
+          "T7", { "id": "T7", "data": { "tab": { "savedURL": "https://recipes.example/", "savedTitle": "Recipes" } } },
+          "U2", { "id": "U2", "childrenIds": [] },
+          "FAV1", { "id": "FAV1", "childrenIds": ["T8"] },
+          "T8", { "id": "T8", "data": { "tab": { "savedURL": "https://calendar.example/", "savedTitle": "Calendar" } } }
+        ]
+      }
+    ]
+  },
+  "airTrafficControlRules": [
+    { "condition": { "domain": "*.github.com" }, "spaceID": "S1" },
+    { "condition": { "urlContains": "recipes" }, "spaceID": "S2" },
+    { "condition": {}, "spaceID": "S1" },
+    { "condition": { "domain": "no-space.example" } }
+  ]
+}

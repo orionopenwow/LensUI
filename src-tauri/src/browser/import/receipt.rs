@@ -261,6 +261,8 @@ pub fn undo(state: &mut BrowserState, history: &mut History, r: &Receipt) -> Vec
     }
     let folders: HashSet<&String> = r.folders.iter().collect();
     state.folders.retain(|f| !folders.contains(&f.id));
+    // Split views between removed tabs go with them.
+    state.repair_splits();
     let pages: HashSet<&String> = r.history.iter().collect();
     history.entries.retain(|e| !pages.contains(&e.url));
     if let Some(before) = &r.search_before {
@@ -286,10 +288,11 @@ mod tests {
                 ImportedVisit { url: "https://new.test/".into(), title: "New".into(), visits: 1, last_ms: 6 },
             ],
             tabs: vec![
-                ImportedTab { url: "https://mail.test/".into(), title: "Mail".into(), pinned: true, folder: None },
-                ImportedTab { url: "https://news.test/".into(), title: "News".into(), pinned: false, folder: None },
+                ImportedTab { url: "https://mail.test/".into(), title: "Mail".into(), pinned: true, folder: None, ..Default::default() },
+                ImportedTab { url: "https://news.test/".into(), title: "News".into(), pinned: false, folder: None, ..Default::default() },
             ],
-            spaces: vec![ImportedSpace { name: "Work".into(), tabs: vec![ImportedTab { url: "https://docs.test/".into(), title: "Docs".into(), pinned: true, folder: Some("Daily".into()) }] }],
+            spaces: vec![ImportedSpace { name: "Work".into(), tabs: vec![ImportedTab { url: "https://docs.test/".into(), title: "Docs".into(), pinned: true, folder: Some("Daily".into()), ..Default::default() }], ..Default::default() }],
+            rules: vec![],
             notes: vec![],
         }
     }

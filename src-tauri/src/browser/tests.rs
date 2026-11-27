@@ -234,3 +234,80 @@ fn sidebar_prefs_are_repaired_and_old_settings_get_defaults() {
     let old: super::model::Appearance = serde_json::from_str(r#"{"scheme":"dark","tabsLayout":"vertical"}"#).unwrap();
     assert_eq!(old.sidebar, super::model::SidebarPrefs::default());
 }
+
+#[test]
+fn split_view_pairs_two_tabs_of_one_space() {
+    let mut s = state();
+    let a = s.open_tab("https://a.test", None, None, 10).unwrap();
+    let b = s.open_tab("https://b.test", None, None, 20).unwrap();
+    let c = s.open_tab("https://c.test", None, None, 30).unwrap();
+    assert!(s.split_with(&a, &a).is_err());
+    s.split_with(&a, &b).unwrap();
+    assert_eq!(s.split_partner(&a).as_deref(), Some(b.as_str()));
+    assert_eq!(s.split_partner(&b).as_deref(), Some(a.as_str()));
+    // A tab is in one split at most: splitting b with c replaces the a|b split.
+    s.split_with(&c, &b).unwrap();
+    assert_eq!(s.splits.len(), 1);
+    assert!(s.split_of(&a).is_none());
+    assert!(s.swap_split(&b));
+    assert_eq!((s.splits[0].left.as_str(), s.splits[0].right.as_str()), (b.as_str(), c.as_str()));
+    assert_eq!(s.set_split_ratio(&b, 0.05), Some(SPLIT_MIN));
+    assert_eq!(s.set_split_ratio(&b, f64::NAN), Some(0.5));
+    let other = s.add_space("Other");
+    let d = s.open_tab("https://d.test", Some(&other), None, 40).unwrap();
+    assert!(s.split_with(&b, &d).is_err(), "different spaces");
+    assert!(s.unsplit(&c));
+    assert!(s.splits.is_empty());
+}
+
+#[test]
+fn closing_one_side_of_a_split_keeps_the_other_and_never_sleeps_it() {
+    let mut s = state();
+    let a = s.open_tab("https://a.test", None, None, 10).unwrap();
+    let b = s.open_tab("https://b.test", None, None, 20).unwrap();
+    let _c = s.open_tab("https://c.test", None, None, 30).unwrap();
+    s.split_with(&a, &b).unwrap();
+    s.activate(&a, 1_000).unwrap();
+    s.settings.sleep_after_min = 1;
+    for t in s.tabs.iter_mut() {
+        t.life = TabLife::Live;
+    }
+    let sleepy = s.sleep_candidates(10_000_000);
+    assert!(!sleepy.contains(&b), "the page beside the active one is on screen");
+    assert_eq!(s.close_tab(&a).as_deref(), Some(b.as_str()), "the other side takes over");
+    assert!(s.splits.is_empty());
+}
+
+#[test]
+fn split_repair_drops_dangling_pairs_and_rects_fill_the_area() {
+    let mut s = state();
+    let a = s.open_tab("https://a.test", None, None, 10).unwrap();
+    let b = s.open_tab("https://b.test", None, None, 20).unwrap();
+    s.splits.push(Split { left: a.clone(), right: "gone".into(), ratio: 0.5 });
+    s.splits.push(Split { left: a.clone(), right: b.clone(), ratio: 9.0 });
+    s.splits.push(Split { left: b.clone(), right: a.clone(), ratio: 0.5 });
+    s.repair_splits();
+    assert_eq!(s.splits.len(), 1);
+    assert_eq!(s.splits[0].ratio, SPLIT_MAX);
+    for (w, ratio) in [(900.0, 0.5), (1001.0, 0.33), (733.5, 0.8), (300.0, 0.2)] {
+        let ((lx, _, lw, _), (rx, _, rw, _)) = split_rects(264.0, 52.0, w, 700.0, ratio);
+        assert_eq!(lx, 264.0);
+        assert!(rx >= lx + lw + SPLIT_GAP - 0.5, "no overlap at {w}");
+        assert!((rx + rw - (264.0 + w)).abs() < 1.0, "right edge reaches the end at {w}");
+        assert_eq!(lw.fract(), 0.0);
+    }
+    let old: BrowserState = serde_json::from_str(&serde_json::to_string(&BrowserState::default()).unwrap().replace(",\"splits\":[]", "")).unwrap();
+    assert!(old.splits.is_empty(), "states saved before split view load");
+}
+
+#[test]
+fn blocking_allow_list_is_cleaned_and_favicons_default_on() {
+    let mut s = state();
+    s.settings.blocking_allow = vec!["WWW.News.Example".into(), "news.example".into(), "".into(), "bad host".into()];
+    s.repair_settings();
+    assert_eq!(s.settings.blocking_allow, vec!["news.example".to_string()]);
+    assert!(s.settings.favicons);
+    assert!(s.settings.block_trackers, "on by default: only Lens Browser's own tabs are affected");
+    let old: BrowserSettings = serde_json::from_str(r#"{"sleepAfterMin":15,"maxLiveTabs":6,"searchUrl":"https://duckduckgo.com/?q={q}","blockTrackers":true,"lensContextMenu":true,"defaultZoom":1.0}"#).unwrap();
+    assert!(old.favicons && old.blocking_allow.is_empty());
+}

@@ -22,6 +22,12 @@ const extra: Record<string, (a: any) => any> = {
   browser_import_receipts: () => (globalThis as any).__lensImportReceipts ?? [],
   browser_import_undo: () => (globalThis as any).__lensBrowserView,
   shelf_add: () => "s9",
+  browser_split: () => (globalThis as any).__lensBrowserView,
+  browser_shield: () => ({ on: true, site: "", allowed: false, blocked: 0 }),
+  browser_shield_allow: (a) => ({ on: true, site: a.site, allowed: a.allow, blocked: 0 }),
+  browser_favicons: () => (globalThis as any).__lensIcons ?? {},
+  browser_blocking_status: () => ({ on: true, rules: 61_204, skipped: 9_870, updating: false, lists: [] }),
+  browser_sent: () => [],
 };
 
 export async function invoke<T = any>(cmd: string, args?: any): Promise<T> {

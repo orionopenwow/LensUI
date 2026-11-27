@@ -1,0 +1,20 @@
+{
+  "_note": "Hand-written for Lens's tests. Not real user data; shaped like a Zen/Firefox session store.",
+  "spaces": [
+    { "uuid": "{w1}", "name": "Research", "icon": "🔬" },
+    { "uuid": "{w2}", "name": "Fun" }
+  ],
+  "windows": [
+    {
+      "groups": [{ "id": "g1", "name": "Papers" }],
+      "tabs": [
+        { "entries": [{ "url": "https://arxiv.example/1", "title": "Paper one" }], "index": 1, "zenWorkspace": "{w1}", "groupId": "g1" },
+        { "entries": [{ "url": "https://notes.example/", "title": "Notes" }], "index": 1, "attributes": { "zen-workspace-id": "{w1}", "zen-essential": "true" } },
+        { "entries": [{ "url": "https://left.example/", "title": "Left" }], "index": 1, "zenWorkspace": "{w2}", "zenSplitGroup": "split-a" },
+        { "entries": [{ "url": "https://right.example/", "title": "Right" }], "index": 1, "zenWorkspace": "{w2}", "zenSplitGroup": "split-a" },
+        { "entries": [{ "url": "https://loose.example/", "title": "Loose" }], "index": 1, "pinned": true },
+        { "entries": [{ "url": "about:preferences", "title": "Prefs" }], "index": 1, "zenWorkspace": "{w1}" }
+      ]
+    }
+  ]
+}

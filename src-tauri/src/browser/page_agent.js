@@ -231,6 +231,7 @@
   const LENS_KEYS = {
     "ctrl+l": 1, "ctrl+t": 1, "ctrl+w": 1, "ctrl+f": 1, "ctrl+j": 1, "ctrl+shift+t": 1, "ctrl+shift+k": 1, "ctrl+shift+a": 1, "ctrl+d": 1,
     "ctrl+tab": 1, "ctrl+shift+tab": 1, "ctrl+h": 1, "ctrl+=": 1, "ctrl++": 1, "ctrl+shift++": 1, "ctrl+-": 1, "ctrl+0": 1,
+    "ctrl+shift+s": 1, "ctrl+shift+x": 1,
     "ctrl+1": 1, "ctrl+2": 1, "ctrl+3": 1, "ctrl+4": 1, "ctrl+5": 1, "ctrl+6": 1, "ctrl+7": 1, "ctrl+8": 1, "ctrl+9": 1,
   };
   addEventListener("keydown", (e) => {
@@ -259,6 +260,14 @@
     pressTimer = setTimeout(() => glance(a), 550);
   }, true);
   addEventListener("pointerup", () => clearTimeout(pressTimer), true);
+  // Split view: a press inside this page tells Lens which side the person is working in.
+  let lastFocus = 0;
+  addEventListener("pointerdown", () => {
+    const now = Date.now();
+    if (now - lastFocus < 500) return;
+    lastFocus = now;
+    events.push({ action: "focus", selection: "", linkUrl: "", imageUrl: "", hasVideo: false, isYouTube: false, url: location.href, title: D.title, videoTime: null, at: now });
+  }, true);
 
   // ---- Media ----
   const media = () => [...D.querySelectorAll("video,audio")];
