@@ -188,7 +188,9 @@ pub fn open(app: &AppHandle) {
                 let _ = w.show();
                 let _ = w.set_focus();
             }
-            Err(e) => crate::tester::log("warn", "mission", &format!("couldn't open Mission Control: {e}")),
+            Err(e) => {
+                crate::tester::log("warn", "mission", &format!("couldn't open Mission Control: {e}"));
+            }
         }
     });
 }
