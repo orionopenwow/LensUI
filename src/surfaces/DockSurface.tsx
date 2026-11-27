@@ -1215,7 +1215,7 @@ export const DockSurface: React.FC = () => {
                     type="button"
                     className="dock-search-esc"
                     data-weight="light"
-                    aria-label="Close search"
+                    aria-label="Esc, close search"
                     onClick={(e) => {
                       e.stopPropagation();
                       closeInDockLauncher();
