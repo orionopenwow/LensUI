@@ -6,6 +6,7 @@ import bundled from "../../catalog/apps/catalog.json";
 import type { AppShow, AppsSettings, Catalog, InstalledInfo, PreparedRelease, ProgressEvent, RecipeStepView } from "./types";
 import { DEFAULT_SETTINGS } from "./types";
 import { validateCatalog } from "./validate";
+import { oops, quiet } from "../ui/oops";
 
 export const PROGRESS_EVENT = "lens://apps/progress";
 export const INTEGRATIONS_EVENT = "lens://apps/integrations";
@@ -38,13 +39,23 @@ export async function installedApps(): Promise<Record<string, InstalledInfo>> {
   }
 }
 
+/** What's installed, and why the answer is empty when winget couldn't be asked. */
+export async function installedState(): Promise<{ apps: Record<string, InstalledInfo>; error: string | null }> {
+  try {
+    return { apps: (await invoke<Record<string, InstalledInfo>>("apps_installed")) ?? {}, error: null };
+  } catch (e) {
+    return { apps: {}, error: String(e) };
+  }
+}
+
 export const lensInstalled = () => invoke<string[]>("apps_lens_installed").catch(() => [] as string[]);
 export const showApp = (appId: string) => invoke<AppShow>("apps_show", { appId });
 export const runApp = (appId: string, op: "install" | "upgrade" | "uninstall") => invoke<string>("apps_run", { appId, op });
-export const cancelJob = (jobId: string) => invoke("apps_cancel", { jobId }).catch(() => undefined);
+// Tidying up after a cancel the person already sees: nothing to tell them if it fails.
+export const cancelJob = (jobId: string) => invoke("apps_cancel", { jobId }).catch(quiet);
 export const prepareRelease = (appId: string) => invoke<PreparedRelease>("apps_release_prepare", { appId });
 export const runRelease = (token: string) => invoke("apps_release_run", { token });
-export const discardRelease = (token: string) => invoke("apps_release_discard", { token }).catch(() => undefined);
+export const discardRelease = (token: string) => invoke("apps_release_discard", { token }).catch(quiet);
 export const openApp = (appId: string) => invoke("apps_open", { appId });
 export const openLink = (appId: string, url: string) => invoke("apps_open_link", { appId, url });
 export const revealApp = (appId: string) => invoke("apps_reveal", { appId });
@@ -62,7 +73,7 @@ export async function loadSettings(): Promise<AppsSettings> {
     return DEFAULT_SETTINGS;
   }
 }
-export const saveSettings = (settings: AppsSettings) => invoke("apps_settings_set", { settings }).catch(() => undefined);
+export const saveSettings = (settings: AppsSettings) => invoke("apps_settings_set", { settings }).catch(oops("save that setting"));
 
 export function onProgress(cb: (e: ProgressEvent) => void): Promise<UnlistenFn> {
   return listen<ProgressEvent>(PROGRESS_EVENT, (e) => cb(e.payload)).catch(() => () => {});

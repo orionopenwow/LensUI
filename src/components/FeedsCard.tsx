@@ -5,6 +5,7 @@ import { SOURCES, sourceMeta } from "../feeds/model";
 import { SourceDot } from "../feeds/FeedColumn";
 import { browserOpen } from "../browser/api";
 import "../feeds/Feeds.css";
+import { oops } from "../ui/oops";
 
 const hhmm = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 const parseHhmm = (s: string) => {
@@ -23,11 +24,12 @@ export function FeedsCard() {
   const [f, setF] = useState({ a: "", b: "", c: "" });
 
   useEffect(() => {
-    feedsApi.settings().then(setS).catch(() => {});
-    feedsApi.sources().then(setSources).catch(() => {});
+    // The card shows nothing until its settings arrive, so a failed load has to say so.
+    feedsApi.settings().then(setS).catch(oops("load the Feeds settings"));
+    feedsApi.sources().then(setSources).catch(oops("load your feed sources"));
     let un: (() => void) | null = null;
     // Mastodon sign-in: the backend hands us the server's own sign-in page to open.
-    void listen<string>("lens://feeds/oauth-url", (e) => void browserOpen(e.payload).catch(() => {})).then((u) => (un = u));
+    void listen<string>("lens://feeds/oauth-url", (e) => void browserOpen(e.payload).catch(oops("open the sign-in page"))).then((u) => (un = u));
     return () => un?.();
   }, []);
 
@@ -50,7 +52,7 @@ export function FeedsCard() {
     }
   };
   const toggle = (on: boolean, label: string, onChange: () => void) => (
-    <button type="button" role="switch" aria-checked={on} aria-label={label} className={`cc-toggle ${on ? "on" : ""}`} onClick={onChange} />
+    <button data-weight="medium" type="button" role="switch" aria-checked={on} aria-label={label} className={`cc-toggle ${on ? "on" : ""}`} onClick={onChange} />
   );
   const field = (k: "a" | "b" | "c", label: string, type = "text") => (
     <input className="cc-input" aria-label={label} placeholder={label} type={type} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} autoComplete="off" />
@@ -79,7 +81,7 @@ export function FeedsCard() {
             </span>
             <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
               {toggle(src.enabled, src.label, () => void run(feedsApi.toggleSource(src.id, !src.enabled), ""))}
-              <button className="cc-btn" onClick={() => void run(feedsApi.removeSource(src.id), "Removed, and its sign-in was deleted.")}>Remove</button>
+              <button data-weight="medium" className="cc-btn" onClick={() => void run(feedsApi.removeSource(src.id), "Removed, and its sign-in was deleted.")}>Remove</button>
             </span>
           </div>
         ))}
@@ -87,7 +89,7 @@ export function FeedsCard() {
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
         {(["rss", "bluesky", "mastodon", "github", "x"] as const).map((k) => (
-          <button key={k} className={`cc-btn ${connect === k ? "active" : ""}`} onClick={() => setConnect(connect === k ? null : k)}>
+          <button data-weight="medium" key={k} className={`cc-btn ${connect === k ? "active" : ""}`} onClick={() => setConnect(connect === k ? null : k)}>
             + {k === "rss" ? "Website / RSS / YouTube" : SOURCES[k].label}
           </button>
         ))}
@@ -97,7 +99,7 @@ export function FeedsCard() {
         <div className="cc-row" style={{ marginTop: 8, gap: 6 }}>
           {field("a", "Feed URL or YouTube channel id (UC…)")}
           {field("b", "Name (optional)")}
-          <button
+          <button data-weight="medium"
             className="cc-btn"
             onClick={() =>
               void run(
@@ -116,7 +118,7 @@ export function FeedsCard() {
           <div className="cc-row" style={{ gap: 6, marginTop: 6 }}>
             {field("a", "Handle (you.bsky.social)")}
             {field("b", "App password", "password")}
-            <button className="cc-btn" onClick={() => void run(feedsApi.connectBluesky(f.a, f.b), "Bluesky connected.")}>Connect</button>
+            <button data-weight="medium" className="cc-btn" onClick={() => void run(feedsApi.connectBluesky(f.a, f.b), "Bluesky connected.")}>Connect</button>
           </div>
         </div>
       ) : null}
@@ -125,7 +127,7 @@ export function FeedsCard() {
           <div className="cc-desc">Lens opens your server's own sign-in page; you approve there. Lens asks only to read your timeline and post when you approve.</div>
           <div className="cc-row" style={{ gap: 6, marginTop: 6 }}>
             {field("a", "Server (mastodon.social)")}
-            <button className="cc-btn" onClick={() => void run(feedsApi.connectMastodon(f.a), "Mastodon connected.")}>Sign in</button>
+            <button data-weight="medium" className="cc-btn" onClick={() => void run(feedsApi.connectMastodon(f.a), "Mastodon connected.")}>Sign in</button>
           </div>
         </div>
       ) : null}
@@ -135,7 +137,7 @@ export function FeedsCard() {
           <div className="cc-row" style={{ gap: 6, marginTop: 6 }}>
             {field("a", "GitHub username")}
             {field("b", "Token", "password")}
-            <button className="cc-btn" onClick={() => void run(feedsApi.connectToken("github", f.a, f.b), "GitHub connected.")}>Connect</button>
+            <button data-weight="medium" className="cc-btn" onClick={() => void run(feedsApi.connectToken("github", f.a, f.b), "GitHub connected.")}>Connect</button>
           </div>
         </div>
       ) : null}
@@ -148,7 +150,7 @@ export function FeedsCard() {
             {field("a", "Your X user id")}
             {field("b", "Your bearer token", "password")}
             {field("c", "Max reads/day (200)")}
-            <button className="cc-btn" onClick={() => void run(feedsApi.connectToken("x", f.a, f.b, Number(f.c) || 200), "X connected — reads count against your own budget.")}>Connect</button>
+            <button data-weight="medium" className="cc-btn" onClick={() => void run(feedsApi.connectToken("x", f.a, f.b, Number(f.c) || 200), "X connected — reads count against your own budget.")}>Connect</button>
           </div>
         </div>
       ) : null}
@@ -209,7 +211,7 @@ export function FeedsCard() {
               }}
             />
           </label>
-          <button
+          <button data-weight="medium"
             className="cc-btn"
             onClick={() =>
               void feedsApi.exportOpml().then((xml) => {

@@ -12,6 +12,7 @@ import { ago, bytes, plural, ymd } from "../shell/format";
 import { sortPrograms, sortStartup, totalKb, unusedFor, type ProgramSort } from "../models/startup";
 import { friendlyError } from "../models/load";
 import { coreApp } from "../registry";
+import { oops, quiet } from "../../ui/oops";
 
 type View = "startup" | "uninstall" | "leftovers";
 
@@ -50,8 +51,8 @@ export const StartupUninstall: React.FC<{ config: LensConfig | null; updateConfi
       setQuery(String(e.payload ?? ""));
     });
     return () => {
-      unView.then((f) => f()).catch(() => {});
-      unFind.then((f) => f()).catch(() => {});
+      unView.then((f) => f()).catch(quiet);
+      unFind.then((f) => f()).catch(quiet);
     };
   }, [demo]);
   const [confirm, setConfirm] = useState<{ p: InstalledProgram; method: "registered" | "winget" } | null>(null);
@@ -266,7 +267,7 @@ export const StartupUninstall: React.FC<{ config: LensConfig | null; updateConfi
                         {plural(l.files, "file")} · {bytes(l.bytes)}
                       </div>
                     </div>
-                    <Button small onClick={() => invoke("launch_app_cmd", { path: l.path }).catch(() => {})}>
+                    <Button small onClick={() => invoke("launch_app_cmd", { path: l.path }).catch(oops("open that folder"))}>
                       Open
                     </Button>
                     <Button small variant="danger" onClick={() => setRecycle(l)}>

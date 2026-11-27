@@ -18,7 +18,7 @@ const Timeline: React.FC<{ rows: TimelineRow[]; onOpenMap: (root: string, folder
       const change = `${up ? "+" : "−"}${fmtSize(Math.abs(row.delta))}`;
       return (
         <div key={row.root} className="cl-tl-row">
-          <button type="button" className="cl-tl-drive" aria-label={`Open the Space map for ${driveName(row.root)}`} onClick={() => onOpenMap(row.root, null)}>
+          <button data-weight="medium" type="button" className="cl-tl-drive" aria-label={`Open the Space map for ${driveName(row.root)}`} onClick={() => onOpenMap(row.root, null)}>
             {driveName(row.root)}
           </button>
           <svg viewBox={`0 0 ${TL_W} ${TL_H}`} className="cl-tl-spark" role="img" aria-label={`Used space on ${driveName(row.root)} over ${row.days} days: ${up ? "up" : "down"} ${fmtSize(Math.abs(row.delta))}`}>
@@ -34,7 +34,7 @@ const Timeline: React.FC<{ rows: TimelineRow[]; onOpenMap: (root: string, folder
           </span>
           <span className="cl-tl-jumps">
             {row.jumps.map((j) => (
-              <button
+              <button data-weight="light"
                 key={j.day}
                 type="button"
                 className="cl-chip cl-tl-jump cl-num"
@@ -116,17 +116,17 @@ export const Home: React.FC<{
         {error && (
           <div className="cl-error cl-enter" role="alert">
             <span>{error}</span>
-            <button type="button" className="cl-btn is-ghost" onClick={onScan}>
+            <button data-weight="medium" type="button" className="cl-btn is-ghost" onClick={onScan}>
               Try again
             </button>
           </div>
         )}
 
         <div className="cl-home-actions cl-enter d3">
-          <button type="button" className="cl-btn is-primary is-xl" onClick={onScan} autoFocus>
+          <button data-weight="heavy" type="button" className="cl-btn is-primary is-xl" onClick={onScan} autoFocus>
             <ScanSearch size={17} strokeWidth={2.4} aria-hidden /> Scan my PC <Key>Enter</Key>
           </button>
-          <button type="button" className="cl-btn is-ghost" onClick={onSpace}>
+          <button data-weight="medium" type="button" className="cl-btn is-ghost" onClick={onSpace}>
             <MapIcon size={15} aria-hidden /> Space map
           </button>
         </div>
@@ -136,7 +136,7 @@ export const Home: React.FC<{
         {overview?.storageSense != null && (
           <p className="cl-meta cl-enter d4">
             Windows Storage Sense is {overview.storageSense ? "on" : "off"} ·{" "}
-            <button type="button" className="cl-link" onClick={() => onOpen("ms-settings:storagesense")}>
+            <button data-weight="light" type="button" className="cl-link" onClick={() => onOpen("ms-settings:storagesense")}>
               Storage Sense settings
             </button>
           </p>

@@ -42,7 +42,7 @@ export const Scanning: React.FC<{
           );
         })}
       </ul>
-      <button type="button" className="cl-btn is-ghost" onClick={onCancel}>
+      <button data-weight="medium" type="button" className="cl-btn is-ghost" onClick={onCancel}>
         Stop <Key>Esc</Key>
       </button>
     </section>
