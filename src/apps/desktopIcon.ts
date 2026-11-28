@@ -37,3 +37,41 @@ export async function setDesktopIcon(on: boolean): Promise<boolean> {
 
 /** Opens Lens Apps in its own window. */
 export const openLensApps = (): Promise<void> => invoke<void>("open_surface", { label: "apps" });
+
+// ── First-run hand-off ─────────────────────────────────────────────────────────────────────────
+// After the very first setup, other first-run welcomes (the Lens browser's) wait their turn:
+// `FIRST_RUN_DONE` is emitted to every window once, either when setup closes with "Open Lens Apps"
+// off, or when the Lens Apps window that first-run setup opened is closed or hidden.
+// Payload: { via: "setup-closed" | "apps-closed" }.
+export const FIRST_RUN_DONE = "lens://setup/first-run-done";
+const PENDING_KEY = "lens.setup.firstRunAppsPending";
+
+/** Called by setup when the first setup closes. */
+export function firstRunSetupClosed(openApps: boolean): void {
+  if (!openApps) {
+    void emitFirstRunDone("setup-closed");
+    return;
+  }
+  try {
+    localStorage.setItem(PENDING_KEY, "1");
+  } catch {
+    /* no storage: the Lens Apps window won't hand off, so do it now */
+    void emitFirstRunDone("setup-closed");
+  }
+}
+
+/** Called by the Lens Apps window when it closes or hides. Emits once, only after first-run setup. */
+export function lensAppsWindowLeft(): void {
+  try {
+    if (localStorage.getItem(PENDING_KEY) !== "1") return;
+    localStorage.removeItem(PENDING_KEY);
+  } catch {
+    return;
+  }
+  void emitFirstRunDone("apps-closed");
+}
+
+async function emitFirstRunDone(via: "setup-closed" | "apps-closed"): Promise<void> {
+  const { emit } = await import("@tauri-apps/api/event");
+  await emit(FIRST_RUN_DONE, { via }).catch(() => {});
+}

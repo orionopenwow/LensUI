@@ -51,7 +51,7 @@ pub fn early_exit_code() -> Option<i32> {
             if another_lens_running() {
                 // Lens is up but its link for shortcuts is off: never start a second Lens.
                 crate::bridge::cli::message_box(
-                    "Lens is running but isn't taking requests from shortcuts. Open Lens Apps from Settings › Lens Apps, or turn on Settings › AI & Command › Browser & links.",
+                    "Lens is running but isn't taking requests from shortcuts. Open Lens Apps from Settings › Lens Apps, or turn on Settings › AI & Command › Connections.",
                 );
                 Some(1)
             } else {

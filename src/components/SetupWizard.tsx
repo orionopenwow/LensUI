@@ -14,7 +14,7 @@ import { DOCK_STYLES, DockScenePreview, dockStyleLabel, dockStyleOf } from "../d
 import { enableAmbientBackdrop } from "../playground/ambient/controls";
 import { glideIn, swapDirection, swapIn } from "../ui/motion";
 import { CORE_APPS, iconUrl, pinEntry } from "../coreapps/registry";
-import { desktopIconOn, openLensApps, setDesktopIcon } from "../apps/desktopIcon";
+import { desktopIconOn, firstRunSetupClosed, openLensApps, setDesktopIcon } from "../apps/desktopIcon";
 import { toast } from "../ui/toastBus";
 import {
   applyChoices,
@@ -180,6 +180,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
     });
   };
   const afterClose = () => {
+    if (firstEver) firstRunSetupClosed(openApps);
     if (openApps) window.setTimeout(() => openLensApps().catch(() => {}), 350);
   };
 

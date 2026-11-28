@@ -41,8 +41,13 @@ On the very first setup (the config has never been through setup), Lens Apps ope
 window when setup closes, whether by Finish or Skip, so the free tools are the first thing people
 see. The switch on the Apps page turns that off. "Run setup again" leaves it off unless you turn it on.
 
+Other first-run welcomes wait their turn: `lens://setup/first-run-done` (`FIRST_RUN_DONE` in
+`src/apps/desktopIcon.ts`, payload `{ via: "setup-closed" | "apps-closed" }`) is emitted once,
+when the first setup closes with "Open Lens Apps" off, or when the Lens Apps window it opened is
+closed or hidden.
+
 The **Lens Apps icon on the desktop** is opt-in. Finish asks Rust to write one shortcut,
-`Lens Apps.lnk` (`src-tauri/src/desktop_shortcut.rs`); Settings › Lens Apps turns it on and off
+`Lens Apps.lnk` (`src-tauri/src/desktop_shortcut.rs`); Settings â€º Lens Apps turns it on and off
 later, and Remove all Lens changes (change registry row `lens-apps-shortcut`) and the uninstaller
 remove it. It runs `lens-ui.exe --open-apps`, which asks a running Lens to open Lens Apps or starts
 Lens and opens it.

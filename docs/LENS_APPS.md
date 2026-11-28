@@ -37,9 +37,9 @@ Everything is off until opened, and nothing installs without a click.
 
 ## Getting there
 
-- Settings › Lens Apps, Command `/apps`, voice "Lens, install …", and `lens://apps` links.
+- Settings â€º Lens Apps, Command `/apps`, voice "Lens, install â€¦", and `lens://apps` links.
 - The first setup has an Apps page and opens Lens Apps when it closes (docs/SETUP.md).
-- An optional **desktop icon**, off until turned on in setup or Settings › Lens Apps. It is one
+- An optional **desktop icon**, off until turned on in setup or Settings â€º Lens Apps. It is one
   shortcut, `Lens Apps.lnk`, on the Windows desktop with the Lens Apps icon (drawn by the page as a
   PNG and saved as `%APPDATA%\LensUI\icons\lens-apps.ico`). It runs `lens-ui.exe --open-apps`:
   a running Lens gets the request through the bridge (`settings_open` with `lens-apps`); if Lens
