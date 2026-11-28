@@ -167,6 +167,19 @@ pub fn icon_data_url(id: &str) -> Option<String> {
     icon_svg(id).map(|svg| format!("data:image/svg+xml,{}", percent_encode(&svg)))
 }
 
+/// The Dock pin for Lens Apps (the free tools catalogue): it opens the Lens Apps window. Setup
+/// offers it so Lens Apps is one click away. Glyph: the "apps" icon of src/icons/lensApps.ts.
+pub const STORE_PIN: &str = "lens-surface:apps";
+const STORE_GLYPH: &str = "M5 4h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zM15 4h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zM5 14h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1zM17 14v6M14 17h6";
+
+pub fn is_store_pin(path: &str) -> bool {
+    path.trim().eq_ignore_ascii_case(STORE_PIN)
+}
+
+pub fn store_icon_data_url() -> String {
+    format!("data:image/svg+xml,{}", percent_encode(&format!("{ICON_OPEN}<path d='{STORE_GLYPH}'/>{ICON_CLOSE}")))
+}
+
 fn percent_encode(s: &str) -> String {
     let mut out = String::with_capacity(s.len() * 3 / 2);
     for b in s.bytes() {
@@ -280,6 +293,8 @@ mod tests {
     #[test]
     fn pins_resolve_only_known_apps() {
         assert_eq!(pin_target("lens-app:timer"), Some("timer"));
+        assert!(is_store_pin("lens-surface:apps") && !is_store_pin("lens-app:apps"));
+        assert!(store_icon_data_url().starts_with("data:image/svg+xml,"));
         assert_eq!(pin_target("lens-app:nope"), None);
         assert_eq!(pin_target("C:\\Windows\\notepad.exe"), None);
     }

@@ -131,6 +131,10 @@ pub fn parse_lens_url(url: &str) -> Result<Value, String> {
     let (head, query) = rest.split_once('?').unwrap_or((rest, ""));
     let host = head.trim_matches('/').to_ascii_lowercase();
     // lens://settings/<page>[#<section>] opens that Settings page (docs/SETTINGS_HUB.md).
+    // lens://apps opens Lens Apps in its own window (the desktop icon sends the same request).
+    if host == "apps" {
+        return Ok(crate::desktop_shortcut::open_apps_request());
+    }
     if let Some(target) = host.strip_prefix("settings") {
         let target: String = target
             .trim_matches('/')
@@ -287,7 +291,7 @@ fn fail(msg: &str, interactive: bool) -> i32 {
 
 /// Explorer verbs and lens:// links have no console, so errors need a visible box.
 #[cfg(windows)]
-fn message_box(msg: &str) {
+pub(crate) fn message_box(msg: &str) {
     #[link(name = "user32")]
     extern "system" {
         fn MessageBoxW(hwnd: isize, text: *const u16, caption: *const u16, flags: u32) -> i32;
@@ -301,7 +305,7 @@ fn message_box(msg: &str) {
 }
 
 #[cfg(not(windows))]
-fn message_box(_msg: &str) {}
+pub(crate) fn message_box(_msg: &str) {}
 
 #[cfg(test)]
 mod tests {

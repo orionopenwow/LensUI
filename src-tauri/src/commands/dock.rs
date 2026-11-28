@@ -105,6 +105,16 @@ pub(crate) async fn launch_app_cmd(app: AppHandle, path: String) -> Result<(), S
     if let Some(id) = crate::coreapps::pin_target(&path) {
         return crate::commands::coreapps::open_core_app(&app, id, None);
     }
+    // The Lens Apps pin ("lens-surface:apps") opens the Lens Apps window.
+    if crate::coreapps::is_store_pin(&path) {
+        let h = app.clone();
+        return app
+            .run_on_main_thread(move || {
+                let st = h.state::<crate::app::AppState>();
+                crate::commands::surfaces::open_surface(h.clone(), st, "apps".into());
+            })
+            .map_err(|e| e.to_string());
+    }
     tauri::async_runtime::spawn_blocking(move || launch_path(&path))
         .await
         .map_err(|e| e.to_string())?

@@ -203,7 +203,7 @@ export const PAGES: PageDef[] = [
     icon: "grid",
     color: "#34D399",
     controls: ["Browse", "Install", "Update all"],
-    keywords: ["apps", "lens apps", "install", "store", "catalogue", "open source", "artcraft", "concat", "winget", "download"],
+    keywords: ["apps", "lens apps", "install", "store", "catalogue", "open source", "artcraft", "concat", "winget", "download", "desktop icon", "shortcut", "free", "plugins"],
     sections: [{ id: "settings", label: "Lens Apps settings", keywords: ["auto update", "activity log", "remove installed"] }],
   },
   // ---------------- Windows

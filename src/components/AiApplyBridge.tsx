@@ -63,6 +63,11 @@ export function AiApplyBridge({ config, updateConfig }: Props) {
       const target = String(e.payload.selection ?? "");
       // lens://settings/cleaner (Explorer's "Free up space with Lens") opens Lens Cleaner.
       if (openCleanerFor(target)) return;
+      // lens://apps and the Lens Apps desktop icon open Lens Apps in its own window.
+      if (target === "lens-apps") {
+        invoke("open_surface", { label: "apps" }).catch(() => {});
+        return;
+      }
       if (!resolveTarget(target)) return;
       invoke("open_surface", { label: "settings" })
         .then(() => emit("lens://settings-tab", target))
@@ -106,13 +111,8 @@ export function AiApplyBridge({ config, updateConfig }: Props) {
           const asked = String(args.page ?? "home");
           if (openCleanerFor(asked)) return;
           if (asked === "setup") {
-            // Lens setup opens over Control Center (docs/SETUP.md); sent again once the window has built.
-            invoke("open_surface", { label: "settings" })
-              .then(() => {
-                emit("lens://setup-open", true).catch(() => {});
-                window.setTimeout(() => emit("lens://setup-open", true).catch(() => {}), 1500);
-              })
-              .catch(() => {});
+            // Lens setup has its own full-screen window (docs/SETUP.md).
+            invoke("open_surface", { label: "setup" }).catch(() => {});
             return;
           }
           // Any Settings hub page id or alias works; older names map through SETTINGS_TABS.

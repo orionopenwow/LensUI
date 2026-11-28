@@ -54,6 +54,7 @@ mod win_desktop_input;
 mod win_keyhook;
 mod input;
 mod changes;
+mod desktop_shortcut;
 mod failsafe;
 mod win_update;
 mod source_update;
@@ -175,6 +176,11 @@ pub fn run() {
     if let Some(code) = bridge::early_exit_code() {
         std::process::exit(code);
     }
+    // The Lens Apps desktop icon (`--open-apps`): ask a running Lens to open Lens Apps and exit,
+    // or carry on starting Lens and open Lens Apps once it is up.
+    if let Some(code) = desktop_shortcut::early_exit_code() {
+        std::process::exit(code);
+    }
     // Lens Cleaner's one elevated helper (`--cleaner-elevated <task>`, docs/CLEANER.md): run and exit.
     if let Some(code) = cleaner::elevated::early_exit_code() {
         std::process::exit(code);
@@ -292,6 +298,19 @@ pub fn run() {
                 bg_topbar_visible,
                 bg_topbar_search_open,
             );
+            // Started from the Lens Apps desktop icon while Lens wasn't running: open Lens Apps
+            // once the windows are up.
+            if desktop_shortcut::take_open_apps_at_start() {
+                let handle = app.handle().clone();
+                std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_millis(2500));
+                    let h = handle.clone();
+                    let _ = handle.run_on_main_thread(move || {
+                        let st = h.state::<AppState>();
+                        commands::surfaces::open_surface(h.clone(), st, "apps".into());
+                    });
+                });
+            }
             #[cfg(feature = "admin")]
             mission::setup(app.handle());
             ready
@@ -730,6 +749,8 @@ pub fn run() {
             commands::backup::export_backup_cmd,
             commands::backup::import_backup_cmd,
             commands::backup::remove_all_lens_changes_cmd,
+            commands::apps::apps_desktop_icon_get,
+            commands::apps::apps_desktop_icon_set,
             commands::backup::changes_manifest_cmd,
             commands::keys::input_status_cmd,
             commands::plugins::list_plugins_cmd,

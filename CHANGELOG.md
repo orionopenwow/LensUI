@@ -8,6 +8,17 @@ up and migrates `%APPDATA%\LensUI` where it can.
 ## [Unreleased]
 
 ### Added
+- **Setup is now full-screen slides.** It opens by itself on the first launch in its own window,
+  with big animated slides: Welcome, Dock, Colours, Lens Apps, Widgets, Your apps, Extras and
+  Done. The Lens Apps slide puts a Lens Apps button on your Dock and says where else to find it;
+  the Widgets slide puts widgets on your desktop; the last slide shows where everything lives,
+  with Open buttons for Lens Apps and Lens Browser.
+- **Lens Apps opens after your first setup.** The free tools are the first thing you see once setup
+  closes; turn that off on the Apps page.
+- **An optional Lens Apps icon on your desktop.** Off until you turn it on, in setup or in Settings ›
+  Lens Apps (which also gains an Open window button). It opens Lens Apps, starting Lens first if it
+  isn't running, and Remove all Lens changes and uninstalling take it away. `lens://apps` links
+  open Lens Apps too.
 - **Installed Lens updates on every push to main.** A new update channel, **Every update to main**
   (the default during the beta), checks hourly for a signed build of the latest main and shows
   Restart to update; **Releases only** keeps to published releases. Settings › About & Testing ›

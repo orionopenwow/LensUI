@@ -382,6 +382,20 @@
         "transparent": true
       },
       {
+        "label": "setup",
+        "url": "index.html?surface=setup",
+        "title": "Lens setup",
+        "width": 1280,
+        "height": 800,
+        "center": true,
+        "maximized": true,
+        "visible": false,
+        "decorations": false,
+        "transparent": false,
+        "resizable": true,
+        "create": false
+      },
+      {
         "label": "cleaner",
         "url": "index.html?surface=cleaner",
         "title": "Lens Cleaner",

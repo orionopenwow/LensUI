@@ -15,6 +15,7 @@ import { installOriginBeacon } from "./ui/motion/origin";
 const surfaces: Record<string, React.LazyExoticComponent<React.ComponentType>> = {
   dock: lazy(() => import("./surfaces/DockSurface").then((m) => ({ default: m.DockSurface }))),
   topbar: lazy(() => import("./surfaces/TopBarSurface").then((m) => ({ default: m.TopBarSurface }))),
+  setup: lazy(() => import("./setup/SetupSurface").then((m) => ({ default: m.SetupSurface }))),
   settings: lazy(() =>
     import("./surfaces/ControlCenterSurface").then((m) => ({ default: m.ControlCenterSurface }))
   ),

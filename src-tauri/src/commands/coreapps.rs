@@ -1097,6 +1097,9 @@ pub(crate) async fn coreapp_speed_test(endpoint: String) -> Result<SpeedResult, 
 
 /// Dock icon for a "lens-app:<id>" pin.
 pub(crate) fn pin_icon(path: &str) -> Option<String> {
+    if coreapps::is_store_pin(path) {
+        return Some(coreapps::store_icon_data_url());
+    }
     coreapps::pin_target(path).and_then(coreapps::icon_data_url)
 }
 
