@@ -7,6 +7,15 @@ up and migrates `%APPDATA%\LensUI` where it can.
 
 ## [Unreleased]
 
+### Added
+- **Installed Lens updates on every push to main.** A new update channel, **Every update to main**
+  (the default during the beta), checks hourly for a signed build of the latest main and shows
+  Restart to update; **Releases only** keeps to published releases. Settings › About & Testing ›
+  Updates. Starts once the project's updater signing key is set up (docs/RELEASING.md).
+- **Restart to update for Lens run from the source folder.** A build made from a clone of the
+  repository checks `origin/main` every 30 minutes; when main has new commits the Top Bar pill and
+  Settings › Updates say **Restart to update**, which pulls, rebuilds and starts Lens again.
+
 ## [0.4.0] - 2026-11-27
 
 ### Installing
