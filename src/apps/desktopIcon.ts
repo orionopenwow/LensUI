@@ -28,7 +28,8 @@ export async function lensAppsIconPng(size = 256): Promise<number[] | null> {
 }
 
 /** Whether the Lens Apps icon is on the desktop. */
-export const desktopIconOn = (): Promise<boolean> => invoke<boolean>("apps_desktop_icon_get").catch(() => false);
+export const desktopIconOn = (): Promise<boolean> =>
+  invoke<boolean>("apps_desktop_icon_get").then((on) => on === true, () => false);
 
 /** Puts the icon on the desktop or takes it off; resolves to whether it is on afterwards. */
 export async function setDesktopIcon(on: boolean): Promise<boolean> {

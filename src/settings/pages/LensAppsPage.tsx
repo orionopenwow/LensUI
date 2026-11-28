@@ -16,7 +16,7 @@ const LensAppsShortcuts: React.FC = () => {
   const toggle = async () => {
     setBusy(true);
     try {
-      setIconOn(await setDesktopIcon(!iconOn));
+      setIconOn((await setDesktopIcon(!iconOn)) === true);
     } catch (e) {
       toast.error(`Couldn't ${iconOn ? "remove" : "add"} the Lens Apps desktop icon. ${String(e)}`);
     } finally {
