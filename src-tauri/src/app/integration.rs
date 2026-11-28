@@ -8,7 +8,7 @@
 use crate::*;
 use std::collections::HashMap;
 use std::sync::OnceLock;
-use tauri::Listener;
+use tauri::{Listener, Manager};
 
 // ===================================================================================== setup
 
@@ -530,22 +530,86 @@ fn wire_browser_welcome(handle: &AppHandle) {
             open_in_browser(&app, url);
         });
     }
+    // The welcome opens once, from whichever comes first: setup's hand-off event, or Lens seeing
+    // the first setup finish and every first-run window it opened close again (this also covers
+    // a setup that never sends the event).
     let app = handle.clone();
-    handle.listen_any(FIRST_RUN_DONE, move |_| {
-        let app = app.clone();
-        std::thread::spawn(move || {
-            // Only a browser that has never been set up: its window opens on the welcome.
-            if crate::browser::host::rt().state.settings.setup_seen {
-                return;
-            }
-            crate::tester::log("info", "browser", "Lens Browser opened for its welcome after the first setup");
-            if let Err(e) = crate::browser::host::ensure_window(&app) {
-                eprintln!("[Lens UI] couldn't open Lens Browser after setup: {e}");
-                return;
-            }
-            crate::browser::host::start_maintenance(app);
-        });
+    handle.listen_any(FIRST_RUN_DONE, move |_| open_browser_welcome(&app, "setup's hand-off"));
+    let first_run = !handle.state::<AppState>().config.lock().unwrap_or_else(|e| e.into_inner()).onboarding_completed;
+    if first_run {
+        let app = handle.clone();
+        std::thread::spawn(move || watch_first_setup(app));
+    }
+}
+
+static WELCOME_OPENED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Opens Lens Browser on its welcome, once per run, and only while it has never been set up.
+fn open_browser_welcome(app: &AppHandle, why: &str) {
+    if WELCOME_OPENED.swap(true, std::sync::atomic::Ordering::SeqCst) {
+        return;
+    }
+    let app = app.clone();
+    let why = why.to_string();
+    std::thread::spawn(move || {
+        if crate::browser::host::rt().state.settings.setup_seen {
+            return;
+        }
+        crate::tester::log("info", "browser", &format!("Lens Browser opened for its welcome after the first setup ({why})"));
+        if let Err(e) = crate::browser::host::ensure_window(&app) {
+            eprintln!("[Lens UI] couldn't open Lens Browser after setup: {e}");
+            return;
+        }
+        crate::browser::host::start_maintenance(app);
     });
+}
+
+/// First run only: waits for the first setup to finish, then for the Lens Apps window it may open
+/// to close, then opens the browser welcome. Gives up
+/// after an hour so a setup left open does not keep a thread around forever.
+fn watch_first_setup(app: AppHandle) {
+    use std::time::{Duration, Instant};
+    let up = |label: &str| app.get_window(label).map(|w| w.is_visible().unwrap_or(false) && !w.is_minimized().unwrap_or(false)).unwrap_or(false);
+    let begun = Instant::now();
+    let mut done_since: Option<Instant> = None;
+    while begun.elapsed() < Duration::from_secs(3600) {
+        std::thread::sleep(Duration::from_millis(500));
+        if WELCOME_OPENED.load(std::sync::atomic::Ordering::SeqCst) {
+            return;
+        }
+        let done = app.state::<AppState>().config.lock().unwrap_or_else(|e| e.into_inner()).onboarding_completed;
+        if !done {
+            done_since = None;
+            continue;
+        }
+        // Setup just finished: give it a moment to open what it opens next (Lens Apps).
+        let since = *done_since.get_or_insert_with(Instant::now);
+        if since.elapsed() < Duration::from_millis(1500) {
+            continue;
+        }
+        if browser_welcome_may_open(up("apps"), up("browser")) {
+            open_browser_welcome(&app, "first setup finished");
+            return;
+        }
+    }
+}
+
+/// Pure: the welcome waits while the Lens Apps window setup opened is on screen, and is not
+/// needed when Lens Browser is already open. (Settings may stay open after setup; the browser is
+/// its own window and opens beside it.)
+pub(crate) fn browser_welcome_may_open(apps_up: bool, browser_up: bool) -> bool {
+    !apps_up && !browser_up
+}
+
+#[cfg(test)]
+mod browser_welcome_tests {
+    #[test]
+    fn the_welcome_waits_for_setup_and_lens_apps() {
+        use super::browser_welcome_may_open as may;
+        assert!(may(false, false));
+        assert!(!may(true, false), "Lens Apps open after setup");
+        assert!(!may(false, true), "the browser is already open");
+    }
 }
 
 fn wire_bridge(handle: &AppHandle) {
