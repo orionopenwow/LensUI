@@ -207,6 +207,14 @@ Settings › Music › **Show on Discord**: "Listening to …" on your Discord p
 - Artwork: Discord can only show web images. With Spotify connected, Lens passes Spotify's https cover address (Discord loads it); otherwise no picture. Windows' thumbnail is never uploaded.
 - Retries every 5 s, doubling to a minute, while Discord isn't running; status text in Settings. Closing Lens closes the pipe and Discord clears the activity.
 
+## Cover Spotify with Lens Music
+
+The first time Spotify opens while Lens runs, Lens asks once in its Notification Overlay (bottom right): "Use Lens Music" or "Not now" (`src-tauri/src/music/spotify_overlay.rs`, a 1.5 s window-list watcher). Yes turns Music on, sets `spotifyOverlay` and opens the Now Playing window over Spotify's window; from then on it does so each time Spotify opens. The question is not asked again (`spotifyOfferDone`); with Do Not Disturb on it waits for a later opening. Settings → Music → "Cover Spotify with Lens Music" turns it on or off. Lens only reads where Spotify's window is; it never changes Spotify.
+
+With Music off, the Now Playing window says so ("Lens Music is off") with a "Turn on Lens Music" button instead of "Nothing is playing".
+
+The Dock pop-out's glow uses auto gain (`soundGlow.ts › autoGain`): each peak is shown relative to the recent loudest one, so the glow pulses fully at any volume; an edge halo around the card (`haloFrame`) beats with it.
+
 ## Music setup and Tweaks
 
 Until finished or skipped, Settings › Music opens with a three-step **Set up Lens Music**: where your music comes from (Windows media = Lens Music itself, Spotify, your .lrc folder), lyrics and scrobbling (LRCLIB, Last.fm), share and control (Discord; a phone remote is planned and nothing listens on the network today). Every choice is a normal switch; nothing is turned on for you. The advanced options sit in a collapsible **Tweaks** section grouped as Look, Sources, Lyrics, Immersive and Playground.

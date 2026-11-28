@@ -25,6 +25,7 @@ pub mod scrobble;
 pub mod session;
 pub mod spicetify;
 pub mod spotify;
+pub mod spotify_overlay;
 pub mod timeline;
 pub mod translate;
 #[cfg(windows)]
@@ -97,6 +98,11 @@ pub struct MusicConfig {
     pub setup_done: bool,
     /// Lens Remote (Tester mode): minutes without a request before it stops by itself.
     pub remote_idle_min: u32,
+    /// Lens asked once (the first time Spotify opened) whether to cover Spotify with Lens Music.
+    pub spotify_offer_done: bool,
+    /// Whenever Spotify opens, Lens Music opens over its window (the answer to that question;
+    /// Settings › Music turns it off again).
+    pub spotify_overlay: bool,
 }
 
 impl Default for MusicConfig {
@@ -135,6 +141,8 @@ impl Default for MusicConfig {
             discord_show_progress: true,
             setup_done: false,
             remote_idle_min: 10,
+            spotify_offer_done: false,
+            spotify_overlay: false,
         }
     }
 }

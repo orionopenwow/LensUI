@@ -27,6 +27,44 @@ export function smoothLevel(previous: number, raw: number, dtMs = FRAME_MS): num
   return prev + (target - prev) * share;
 }
 
+// ------------------------------------------------------------------------- auto gain
+
+/** The quietest "loud" the gain ever assumes, so silence and hiss never fill the glow. */
+export const GAIN_FLOOR = 0.12;
+/** Per-frame (60 Hz) share the remembered loudest peak falls back by: about 4 s to halve. */
+export const GAIN_DECAY = 0.003;
+
+/**
+ * Windows' peak meter follows the volume slider, so quiet listening barely moved the glow. The
+ * loop remembers the recent loudest peak (rising at once, falling slowly) and shows each peak
+ * relative to it: the glow pulses fully at any volume.
+ */
+export function autoGain(previousMax: number, raw: number, dtMs = FRAME_MS): number {
+  const prev = Number.isFinite(previousMax) ? Math.min(1, Math.max(GAIN_FLOOR, previousMax)) : GAIN_FLOOR;
+  const r = Number.isFinite(raw) ? Math.min(1, Math.max(0, raw)) : 0;
+  if (r >= prev) return r;
+  const frames = Math.min(Math.max(Number.isFinite(dtMs) ? dtMs : FRAME_MS, 0), 250) / FRAME_MS;
+  return Math.max(GAIN_FLOOR, prev * Math.pow(1 - GAIN_DECAY, frames));
+}
+
+/** A raw peak shown relative to the remembered loudest one (0..1). */
+export function gained(raw: number, max: number): number {
+  const r = Number.isFinite(raw) ? Math.min(1, Math.max(0, raw)) : 0;
+  const m = Number.isFinite(max) ? Math.max(GAIN_FLOOR, max) : GAIN_FLOOR;
+  return Math.min(1, r / m);
+}
+
+/**
+ * The pop-out's edge halo (a coloured rim around the whole card) for a level: it is the part of
+ * the glow that visibly pulses with each beat while the card is hovered.
+ */
+export function haloFrame(level: number, opts: { playing: boolean; reduced: boolean }): number {
+  if (opts.reduced) return opts.playing ? 0.55 : 0.3;
+  if (!opts.playing) return 0.25;
+  const l = Number.isFinite(level) ? Math.min(1, Math.max(0, level)) : 0;
+  return 0.18 + 0.82 * Math.pow(l, 1.4);
+}
+
 // ------------------------------------------------------------------------- visibility gating
 
 export interface LoopGate {

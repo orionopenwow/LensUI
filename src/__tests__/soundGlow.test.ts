@@ -3,7 +3,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   GLOW_MAX_ALPHA, GLOW_MIN_BEHIND, LEVEL_ASK_MS, REST_BAR, STATIC_BARS, cssToHex, glowFrame, glowPlan, levelLoopActive, livePositionMs, meterBars,
-  progressLabels, seekFromKey, seekFromPointer, smoothLevel,
+  progressLabels, seekFromKey, seekFromPointer, smoothLevel, autoGain, gained, haloFrame, GAIN_FLOOR,
 } from "../music/soundGlow";
 import { contrast, formatTime, hexToRgb, mix, type RGB } from "../music/model";
 import { THEME_PACKS } from "../themes/packs";
@@ -173,5 +173,34 @@ describe("timeline", () => {
     expect(seekFromKey("End", 10_000, 200_000)).toBe(199_000);
     expect(seekFromKey("a", 10_000, 200_000)).toBeNull();
     expect(seekFromKey("ArrowRight", 10_000, 0)).toBeNull();
+  });
+});
+
+describe("auto gain and edge halo", () => {
+  test("a quiet song still fills the glow; silence never does", () => {
+    let max = 0;
+    for (let i = 0; i < 30; i++) max = autoGain(max, 0.2);
+    expect(gained(0.2, max)).toBeCloseTo(1, 5);
+    expect(gained(0, max)).toBe(0);
+    // Hiss below the floor stays small.
+    expect(gained(0.01, autoGain(0, 0.01))).toBeLessThan(0.1);
+  });
+
+  test("the remembered peak rises at once and falls back slowly", () => {
+    expect(autoGain(0.2, 0.9)).toBe(0.9);
+    const later = autoGain(0.9, 0, 1000);
+    expect(later).toBeLessThan(0.9);
+    expect(later).toBeGreaterThan(0.6);
+    expect(autoGain(0.13, 0, 250)).toBeGreaterThanOrEqual(GAIN_FLOOR);
+    expect(autoGain(Number.NaN, Number.NaN)).toBe(GAIN_FLOOR);
+  });
+
+  test("the halo pulses with the level and holds still when motion is reduced or paused", () => {
+    const lo = haloFrame(0, { playing: true, reduced: false });
+    const hi = haloFrame(1, { playing: true, reduced: false });
+    expect(hi).toBeGreaterThan(lo + 0.5);
+    expect(hi).toBeLessThanOrEqual(1);
+    expect(haloFrame(1, { playing: true, reduced: true })).toBe(haloFrame(0, { playing: true, reduced: true }));
+    expect(haloFrame(1, { playing: false, reduced: false })).toBe(haloFrame(0, { playing: false, reduced: false }));
   });
 });

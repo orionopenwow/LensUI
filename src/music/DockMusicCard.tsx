@@ -15,8 +15,8 @@ import { formatTime, type RGB } from "./model";
 import { reducedMotion } from "../ui/motion/tokens";
 import "./dockMusicCard.css";
 import {
-  LEVEL_ASK_MS, cssToHex, glowFrame, glowPlan, levelLoopActive, livePositionMs, meterBars, progressLabels, seekFromKey, seekFromPointer,
-  smoothLevel, type GlowPlan,
+  LEVEL_ASK_MS, autoGain, cssToHex, gained, glowFrame, glowPlan, haloFrame, levelLoopActive, livePositionMs, meterBars, progressLabels, seekFromKey,
+  seekFromPointer, smoothLevel, type GlowPlan,
 } from "./soundGlow";
 
 export type DockEdgeName = "bottom" | "top" | "left" | "right";
@@ -36,7 +36,12 @@ function glowVars(plan: GlowPlan | null): React.CSSProperties {
     const v = parseInt(hex.slice(1), 16);
     return `rgb(${(v >> 16) & 255} ${(v >> 8) & 255} ${v & 255} / ${plan.alpha})`;
   };
-  return { ["--dmc-g1" as string]: rgba(plan.colors[0]), ["--dmc-g2" as string]: rgba(plan.colors[1]) };
+  return {
+    ["--dmc-g1" as string]: rgba(plan.colors[0]),
+    ["--dmc-g2" as string]: rgba(plan.colors[1]),
+    // The edge halo is a thin rim, clear of the text: it can use the colour at full strength.
+    ["--dmc-h1" as string]: plan.colors[0],
+  };
 }
 
 export const DockMusicCard: React.FC<Props> = ({ edge, fallbackTitle }) => {
@@ -50,6 +55,7 @@ export const DockMusicCard: React.FC<Props> = ({ edge, fallbackTitle }) => {
   const reduced = useMemo(() => reducedMotion(), []);
   const cardRef = useRef<HTMLDivElement>(null);
   const glowRef = useRef<HTMLDivElement>(null);
+  const haloRef = useRef<HTMLDivElement>(null);
   const meterRef = useRef<HTMLDivElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
 
@@ -117,6 +123,8 @@ export const DockMusicCard: React.FC<Props> = ({ edge, fallbackTitle }) => {
         g.style.opacity = String(f.opacity);
         g.style.transform = edge === "left" || edge === "right" ? `scaleX(${f.scale})` : `scaleY(${f.scale})`;
       }
+      const h = haloRef.current;
+      if (h) h.style.opacity = String(haloFrame(level, { playing, reduced }));
       const m = meterRef.current;
       if (m) {
         const bars = meterBars(level, t, { playing, reduced });
@@ -129,6 +137,7 @@ export const DockMusicCard: React.FC<Props> = ({ edge, fallbackTitle }) => {
     }
     let raf = 0;
     let raw = 0;
+    let max = 0;
     let level = 0;
     let last = performance.now();
     let asked = 0;
@@ -142,7 +151,9 @@ export const DockMusicCard: React.FC<Props> = ({ edge, fallbackTitle }) => {
           .catch(() => (raw = 0))
           .finally(() => (inflight = false));
       }
-      level = smoothLevel(level, raw, t - last);
+      // Relative to the recent loudest peak, so the glow pulses fully at any volume.
+      max = autoGain(max, raw, t - last);
+      level = smoothLevel(level, gained(raw, max), t - last);
       last = t;
       paint(level, t);
       raf = requestAnimationFrame(frame);
@@ -183,6 +194,7 @@ export const DockMusicCard: React.FC<Props> = ({ edge, fallbackTitle }) => {
       data-glow-source={plan ? (plan.fromArt ? "art" : "accent") : undefined}
     >
       {prefs.glow && <div ref={glowRef} className="dmc-glow" aria-hidden="true" />}
+      {prefs.glow && <div ref={haloRef} className="dmc-halo" aria-hidden="true" />}
       <div className="dmc-head">
         {art ? (
           <img src={art} alt="" className="dmc-art" />
