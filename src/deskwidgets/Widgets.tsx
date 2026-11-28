@@ -20,7 +20,7 @@ import type { Size } from "./grid";
 import { useEvery, useTick } from "./tick";
 import {
   CALENDAR_KEY, cityOf, handAngles, hhmm, offsetLabel, parseZones, readCalendar, ringDash, secondDelay, tickOff, timeIn, timeLeft, todayOpen,
-  weatherFrom, type CalEvent, type WeatherNow,
+  weatherFrom, monthGrid, weekStart, weekdayLetters, type CalEvent, type WeatherNow,
 } from "./model";
 
 export interface WidgetProps {
@@ -101,6 +101,111 @@ export const ClockWidget: React.FC<WidgetProps> = ({ size, params, preview }) =>
             </li>
           ))}
       </ul>
+    </div>
+  );
+};
+
+// ---- Calendar -----------------------------------------------------------------------------------
+
+/** "10:09" and "AM" apart (no day period on a 24-hour PC). */
+function timeParts(now: Date): { time: string; period: string } {
+  const parts = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).formatToParts(now);
+  const period = parts.find((p) => p.type === "dayPeriod")?.value ?? "";
+  const time = parts
+    .filter((p) => p.type !== "dayPeriod")
+    .map((p) => p.value)
+    .join("")
+    .trim();
+  return { time, period };
+}
+
+const MonthGrid: React.FC<{ now: Date }> = ({ now }) => {
+  const first = useMemo(() => weekStart(), []);
+  const letters = useMemo(() => weekdayLetters(first), [first]);
+  const weeks = monthGrid(now.getFullYear(), now.getMonth(), first);
+  const today = now.getDate();
+  return (
+    <div className="dwk-month" role="grid" aria-label={now.toLocaleDateString(undefined, { month: "long", year: "numeric" })}>
+      <span className="dwk-month-name">{now.toLocaleDateString(undefined, { month: "long" })}</span>
+      <div className="dwk-row is-head" role="row">
+        {letters.map((l, i) => (
+          <span key={i} role="columnheader">
+            {l}
+          </span>
+        ))}
+      </div>
+      {weeks.map((w, i) => (
+        <div key={i} className="dwk-row" role="row">
+          {w.map((d, j) => (
+            <span key={j} role="gridcell" className={d === today ? "is-today" : undefined} aria-current={d === today ? "date" : undefined}>
+              {d ?? ""}
+            </span>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+/** Clock, date and this month: the widget the flyout puts top-left. */
+export const CalendarWidget: React.FC<WidgetProps> = ({ size, preview }) => {
+  const live = useTick("minute");
+  const now = preview ? new Date(2026, 0, 15, 10, 9, 30) : live;
+  const { time, period } = timeParts(now);
+  const weekday = now.toLocaleDateString(undefined, { weekday: "long" });
+  const date = now.toLocaleDateString(undefined, { month: "long", day: "numeric" });
+  const [events] = useState<CalEvent[]>(() => (preview ? sampleToday(now) : readCalendar(safeGet(CALENDAR_KEY))));
+  const face = (
+    <div className="dwk-face">
+      <span className="dwk-weekday">{weekday}</span>
+      <span className="dwk-time dw-num">
+        {time}
+        {period && <span className="dwk-period">{period}</span>}
+      </span>
+      <span className="dw-sub">{date}</span>
+    </div>
+  );
+  if (size === "small") {
+    return (
+      <div className="dw-calendar is-small" aria-label={`${weekday}, ${date}, ${time} ${period}`.trim()}>
+        <span className="dwk-weekday">{now.toLocaleDateString(undefined, { weekday: "short" })}</span>
+        <span className="dwk-day dw-num">{now.getDate()}</span>
+        <span className="dw-sub dw-num">
+          {time} {period}
+        </span>
+      </div>
+    );
+  }
+  if (size === "medium") {
+    return (
+      <div className="dw-calendar is-medium">
+        {face}
+        <MonthGrid now={now} />
+      </div>
+    );
+  }
+  const open = todayOpen(events, now).slice(0, 4);
+  return (
+    <div className="dw-calendar is-large">
+      <div className="dwk-top">
+        {face}
+        <MonthGrid now={now} />
+      </div>
+      <div className="dwk-agenda">
+        <span className="dw-head">Today</span>
+        {open.length === 0 ? (
+          <span className="dw-sub">Nothing left today.</span>
+        ) : (
+          <ul className="dw-list">
+            {open.map((e) => (
+              <li key={e.id}>
+                <span className="dw-clip">{e.title}</span>
+                {e.time && <span className="dw-num dw-sub">{e.time}</span>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 };
@@ -453,6 +558,7 @@ export const GalleryWidget: React.FC<WidgetProps> = ({ params, preview, store })
 };
 
 export const WIDGETS: Record<string, React.FC<WidgetProps>> = {
+  calendar: CalendarWidget,
   clock: ClockWidget,
   weather: WeatherWidget,
   batteries: BatteriesWidget,

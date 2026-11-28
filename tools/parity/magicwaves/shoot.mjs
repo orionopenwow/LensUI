@@ -177,6 +177,42 @@ const DESK_SCENES = [
     if (!calls.includes(false)) errors.push("Esc didn't leave edit mode");
     if (await pg.locator(".dwg-panel").count()) errors.push("the gallery stayed after Esc");
   } },
+  // Widget flyout: tucked away, then flown out from the top-left (Calendar first), then drawn
+  // back in by Esc. Mid-flight shots show the legs; the widgets are gone again at the end.
+  { id: "desk-flyout", desk: "flyout", magic: "widgetFlyout", run: async (pg, errors) => {
+    if ((await deskCount(pg)) !== 0) errors.push(`${await deskCount(pg)} widgets showed before the flyout went out`);
+    await pg.evaluate(() => window.__deskFly(true));
+    await pg.waitForTimeout(140);
+    await pg.screenshot({ path: join(shots, "desk-flyout-mid.png") });
+    await pg.waitForTimeout(700);
+    if ((await deskCount(pg)) < 7) errors.push(`only ${await deskCount(pg)} widgets flew out`);
+    if (!(await pg.locator(".dwg-flydim").count())) errors.push("no dim behind the flown-out widgets");
+    const cal = await pg.locator('.dwg-item[data-kind="calendar"]').first().boundingBox();
+    if (!cal || cal.x > 40 || cal.y > 80) errors.push(`the Calendar isn't top-left (${JSON.stringify(cal)})`);
+    if (!(await pg.locator(".dwk-month .is-today").count())) errors.push("the Calendar doesn't mark today");
+    const moving = await pg.evaluate(() => document.getAnimations().filter((a) => a.playState === "running" && a.effect?.target?.classList?.contains("dwg-item")).length);
+    if (moving) errors.push(`${moving} fly animations still running after the leg`);
+    await pg.screenshot({ path: join(shots, "desk-flyout-out.png") });
+    await pg.keyboard.press("Escape");
+    await pg.waitForTimeout(200);
+    await pg.screenshot({ path: join(shots, "desk-flyout-in-mid.png") });
+    await pg.waitForTimeout(700);
+    const calls = await pg.evaluate(() => window.__lensCallLog.filter((c) => c.cmd === "desktop_widgets_flyout").map((c) => c.args.on));
+    if (!calls.includes(false)) errors.push("Esc didn't put the widgets away");
+    if ((await deskCount(pg)) !== 0) errors.push("widgets stayed after the draw-in");
+  } },
+  // Turning round mid-way: out, then in again 120 ms later, then out: no widget is left stuck.
+  { id: "desk-flyout-reverse", desk: "flyout", magic: "widgetFlyout", run: async (pg, errors) => {
+    await pg.evaluate(() => window.__deskFly(true));
+    await pg.waitForTimeout(120);
+    await pg.evaluate(() => window.__deskFly(false));
+    await pg.waitForTimeout(90);
+    await pg.evaluate(() => window.__deskFly(true));
+    await pg.waitForTimeout(900);
+    const stuck = await pg.evaluate(() => [...document.querySelectorAll(".dwg-item")].filter((el) => getComputedStyle(el).opacity !== "1" || getComputedStyle(el).transform !== "none").length);
+    if (stuck) errors.push(`${stuck} widgets not in place after turning round`);
+    if ((await deskCount(pg)) < 7) errors.push("widgets missing after turning round");
+  } },
 ];
 for (const preset of PRESETS) {
   for (const sc of DESK_SCENES) {
@@ -184,7 +220,7 @@ for (const preset of PRESETS) {
     const errors = [];
     pg.on("pageerror", (e) => errors.push(e.message));
     pg.on("console", (m) => m.type() === "error" && !/Failed to load resource/.test(m.text()) && errors.push(m.text().slice(0, 200)));
-    await pg.goto(`${base}/harness.html?surface=deskwidgets&preset=${preset}&magic=desktopWidgets&desk=${sc.desk}`);
+    await pg.goto(`${base}/harness.html?surface=deskwidgets&preset=${preset}&magic=${sc.magic ?? "desktopWidgets"}&desk=${sc.desk}`);
     await pg.waitForTimeout(1100);
     await sc.run(pg, errors).catch((e) => errors.push(`run: ${e.message.slice(0, 120)}`));
     await pg.screenshot({ path: join(shots, `${preset}-${sc.id}.png`) });

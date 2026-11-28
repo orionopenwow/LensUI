@@ -14,7 +14,7 @@ use std::sync::Mutex;
 /// Widget sizes, in grid cells: small 1×1, medium 2×1, large 2×2.
 pub const SIZES: &[&str] = &["small", "medium", "large"];
 /// Built-in kinds, plus "gallery" (a Dashboard gallery widget the person already approved).
-pub const KINDS: &[&str] = &["clock", "weather", "batteries", "music", "notes", "today", "gallery"];
+pub const KINDS: &[&str] = &["calendar", "clock", "weather", "batteries", "music", "notes", "today", "gallery"];
 /// Most widgets on one monitor.
 pub const MAX_ITEMS: usize = 24;
 /// Grid coordinates are kept inside this square, whatever the file says.
@@ -108,11 +108,12 @@ pub fn sanitize(mut l: DeskLayout) -> DeskLayout {
     l
 }
 
-/// What a monitor shows the first time desktop widgets are turned on: a clock, today's list and
-/// the latest notes, top-left. All local; nothing that fetches.
+/// What a monitor shows the first time desktop widgets (or the widget flyout) are turned on: the
+/// Calendar (clock, date and this month) in the top-left corner, then the latest notes and
+/// today's list. All local; nothing that fetches.
 pub fn default_items() -> Vec<DeskItem> {
-    let item = |id: &str, kind: &str, size: &str| DeskItem { id: id.into(), kind: kind.into(), size: size.into(), col: -1, row: -1, params: BTreeMap::new() };
-    vec![item("clock-1", "clock", "small"), item("notes-1", "notes", "small"), item("today-1", "today", "medium")]
+    let item = |id: &str, kind: &str, size: &str, col: i32, row: i32| DeskItem { id: id.into(), kind: kind.into(), size: size.into(), col, row, params: BTreeMap::new() };
+    vec![item("calendar-1", "calendar", "medium", 0, 0), item("notes-1", "notes", "small", -1, -1), item("today-1", "today", "medium", -1, -1)]
 }
 
 // ---- storage ---------------------------------------------------------------------------------
@@ -233,8 +234,9 @@ pub enum ZPlace {
     Front,
 }
 
-pub fn z_place(editing: bool, desktop_in_front: bool) -> ZPlace {
-    if editing {
+/// `front` is edit mode or the widget flyout being out (or still drawing back in).
+pub fn z_place(front: bool, desktop_in_front: bool) -> ZPlace {
+    if front {
         ZPlace::Front
     } else if desktop_in_front {
         ZPlace::AboveDesktop
@@ -260,6 +262,27 @@ pub const EDIT_AWAY_MS: u64 = 1500;
 
 pub fn leave_edit_when_away(held_foreground: bool, away_ms: u64) -> bool {
     held_foreground && away_ms >= EDIT_AWAY_MS
+}
+
+/// The host runs while desktop widgets or the widget flyout is on (the flyout needs no second
+/// switch).
+pub fn host_on(desktop_widgets: bool, widget_flyout: bool) -> bool {
+    desktop_widgets || widget_flyout
+}
+
+/// How long the page takes to draw the widgets back in; the host stays in front until then so
+/// app windows don't cover them halfway.
+pub const FLYOUT_TUCK_MS: u64 = 560;
+
+/// Where the widgets fly out from and back to, in CSS pixels inside the host window: a screen
+/// point (the hot corner, a button) when one is given and it lies on the host's monitor. `None`
+/// lets the page use its own default: the top-left corner under the Top Bar, where the Calendar
+/// lives.
+pub fn flyout_origin(point: Option<(i32, i32)>, origin: (i32, i32), size: (u32, u32), scale: f64) -> Option<[f64; 2]> {
+    let s = if scale.is_finite() && scale > 0.0 { scale } else { 1.0 };
+    let (x, y) = point?;
+    let inside = x >= origin.0 && y >= origin.1 && x < origin.0 + size.0 as i32 && y < origin.1 + size.1 as i32;
+    inside.then(|| [(x - origin.0) as f64 / s, (y - origin.1) as f64 / s])
 }
 
 #[cfg(test)]
@@ -319,8 +342,28 @@ mod tests {
     fn defaults_are_local_and_top_left() {
         let d = default_items();
         assert!(d.iter().all(|i| i.kind != "weather" && i.kind != "gallery"), "nothing that fetches by default");
-        assert!(d.iter().all(|i| i.col == -1 && i.row == -1));
+        assert_eq!((d[0].kind.as_str(), d[0].col, d[0].row), ("calendar", 0, 0), "the Calendar sits in the top-left corner");
+        assert!(d[1..].iter().all(|i| i.col == -1 && i.row == -1));
         assert_eq!(sanitize_items(d.clone()), d);
+    }
+
+    #[test]
+    fn flyout_runs_the_host_and_comes_to_the_front() {
+        assert!(host_on(false, true) && host_on(true, false) && !host_on(false, false));
+        assert_eq!(z_place(true, false), ZPlace::Front);
+        assert_eq!(z_place(false, true), ZPlace::AboveDesktop);
+    }
+
+    #[test]
+    fn flyout_origin_uses_a_point_on_this_monitor_at_any_scale() {
+        // A 150 % monitor to the right of the primary one.
+        let (o, s) = ((1920, 0), (2880u32, 1620u32));
+        assert_eq!(flyout_origin(Some((1920, 0)), o, s, 1.5), Some([0.0, 0.0]));
+        assert_eq!(flyout_origin(Some((1920 + 300, 150)), o, s, 1.5), Some([200.0, 100.0]));
+        assert_eq!(flyout_origin(Some((1920 + 300, 150)), o, s, f64::NAN), Some([300.0, 150.0]), "a bad scale counts as 100 %");
+        // Off this monitor, or no point: the page's own top-left default.
+        assert_eq!(flyout_origin(Some((10, 10)), o, s, 1.5), None);
+        assert_eq!(flyout_origin(None, o, s, 1.5), None);
     }
 
     #[test]

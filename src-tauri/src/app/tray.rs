@@ -72,7 +72,7 @@ pub(crate) fn build_tray(app: &tauri::App) -> tauri::Result<()> {
             }
             "open_palette" => toggle_surface(app.clone(), "palette".into()),
             "open_tester_hub" => toggle_surface(app.clone(), "testerhub".into()),
-            "open_widgets" => toggle_surface(app.clone(), "widgets".into()),
+            "open_widgets" => crate::commands::desktop_widgets::widgets_key(app, None),
             // Wallpaper Switcher: the next one from the library, through the Lens wallpaper host.
             "next_wallpaper" => crate::commands::wallpapers::step_from_menu(app.clone()),
             // Settings › About & Testing, at the updates card (which checks on open) or the

@@ -358,3 +358,39 @@ html[data-motion="reduce"] .dwg [data-weight][data-pressed] { transform: none; }
 .dwg-carry { position: absolute; z-index: 30; pointer-events: none; opacity: 0.94; }
 .dwg-carry .dwg-item { box-shadow: inset 0 0 0 1px rgb(var(--lens-ink) / 0.16), 0 18px 40px rgb(0 0 0 / 0.45); }
 .dwg .dw-check[data-pressed] { box-shadow: inset 0 0 0 1.5px rgb(var(--lens-ink) / 0.35), inset 0 0 0 999px rgb(var(--lens-ink) / 0.1); }
+
+/* Widget flyout: tucked away until called, then the widgets fly out over a light dim (a
+   dashboard over the desktop) and are drawn back in. The legs themselves are Web Animations in
+   DeskWidgetsSurface.tsx (transform and opacity only); CSS only fades the dim and keeps the
+   mount pop out of the way. */
+.dwg.is-fly .dwg-item { animation: none; }
+.dwg.is-fly.is-out .dwg-item, .dwg.is-fly.is-tucking .dwg-item { z-index: 2; will-change: transform, opacity; }
+.dwg-flydim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: rgb(0 0 0 / 0.34);
+  animation: dwg-fade var(--lens-dur-slower, 360ms) var(--lens-ease-out) both;
+}
+.dwg-flydim.is-leaving { pointer-events: none; animation: dwg-fade-out 520ms var(--lens-ease-out) both; }
+@keyframes dwg-fade-out { from { opacity: 1; } to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .dwg-flydim, .dwg-flydim.is-leaving { animation-duration: var(--lens-dur-fast, 140ms); } }
+html[data-motion="reduce"] .dwg-flydim, html[data-motion="reduce"] .dwg-flydim.is-leaving { animation-duration: var(--lens-dur-fast, 140ms); }
+
+/* Calendar: the time and date on the left, this month on the right. */
+.dw-calendar { display: flex; gap: 14px; }
+.dw-calendar.is-small { flex-direction: column; justify-content: center; gap: 0; }
+.dw-calendar.is-small .dwk-day { font-size: 54px; font-weight: 600; line-height: 1; letter-spacing: -0.03em; margin: 2px 0 4px; }
+.dw-calendar.is-large { flex-direction: column; gap: 12px; }
+.dwk-top { display: flex; gap: 14px; }
+.dwk-face { display: flex; flex-direction: column; justify-content: center; gap: 2px; min-width: 0; flex: 1; }
+.dwk-weekday { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #ff9f0a; }
+.dwk-time { display: flex; align-items: baseline; gap: 4px; font-size: 40px; font-weight: 600; line-height: 1.05; letter-spacing: -0.03em; white-space: nowrap; }
+.dwk-period { font-size: 13px; font-weight: 600; letter-spacing: 0; color: var(--lens-fg-secondary); }
+.dwk-month { display: flex; flex-direction: column; gap: 1px; flex: none; width: 140px; }
+.dwk-month-name { margin-bottom: 2px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--lens-fg-secondary); }
+.dwk-row { display: grid; grid-template-columns: repeat(7, 1fr); }
+.dwk-row > span { display: grid; place-items: center; height: 14px; border-radius: 50%; font-size: 9.5px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--lens-fg); }
+.dwk-row.is-head > span { font-size: 9px; color: var(--lens-fg-secondary); }
+.dwk-row > span.is-today { background: #ff9f0a; color: #09090b; }
+.dwk-agenda { display: flex; flex-direction: column; gap: 6px; min-height: 0; padding-top: 10px; border-top: 1px solid var(--dwg-line); }

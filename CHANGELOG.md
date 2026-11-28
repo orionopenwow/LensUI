@@ -7,6 +7,15 @@ up and migrates `%APPDATA%\LensUI` where it can.
 
 ## [Unreleased]
 
+### Added
+- **Widget flyout (opt-in).** Your desktop widgets wait out of sight until you call them: Alt+W,
+  the Widgets hot corner, the tray's Widgets item or Command `widgets` flies them out over the
+  desktop on the monitor under your pointer, and Esc, a click on the desktop or going to another app
+  draws them back in with the same motion in reverse. Turn it on in Settings › About & Testing ›
+  Magic (preview) › Widget flyout; it needs no other switch.
+- **Calendar widget.** The time, today's date and this month (with today's items on the large size).
+  New widget layouts start with it in the top-left corner.
+
 ## [0.4.0] - 2026-11-27
 
 ### Installing

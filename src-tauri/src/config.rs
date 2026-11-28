@@ -927,6 +927,10 @@ pub struct MagicWavesConfig {
     /// Desktop widgets: widgets pinned on the desktop, above the wallpaper and below every app
     /// window (docs/features/desktop-widgets.md). Local data only.
     pub desktop_widgets: bool,
+    /// Widget flyout: the desktop widgets stay tucked away until called (the Widgets key, the
+    /// Widgets hot corner, Command "widgets"), then fly out over the desktop and are drawn back
+    /// in when put away. Turning it on starts the desktop widgets host by itself.
+    pub widget_flyout: bool,
 }
 
 impl Default for MagicWavesConfig {
@@ -941,6 +945,7 @@ impl Default for MagicWavesConfig {
             studio_v2: false,
             learn: false,
             desktop_widgets: false,
+            widget_flyout: false,
         }
     }
 }
@@ -956,7 +961,7 @@ impl MagicWavesConfig {
 
     /// True when any Magic feature is on (used to skip all Magic work when everything is off).
     pub fn any_on(&self) -> bool {
-        self.dashboard || self.widgets || self.mouse || self.start_button || self.shelf_notes || self.studio_v2 || self.learn || self.desktop_widgets
+        self.dashboard || self.widgets || self.mouse || self.start_button || self.shelf_notes || self.studio_v2 || self.learn || self.desktop_widgets || self.widget_flyout
     }
 }
 

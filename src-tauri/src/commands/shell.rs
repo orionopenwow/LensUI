@@ -37,7 +37,8 @@ pub(crate) fn run_corner_action(app: &AppHandle, action: &str) {
         "overview" => toggle_surface(app.clone(), "overview".into()),
         "launcher" => toggle_surface(app.clone(), "launcher".into()),
         "palette" => toggle_surface(app.clone(), "palette".into()),
-        "widgets" => toggle_surface(app.clone(), "widgets".into()),
+        // The widget flyout (flying out from the corner) while it's on, the Widget Drawer otherwise.
+        "widgets" => crate::commands::desktop_widgets::widgets_key(app, crate::commands::desktop_widgets::pointer()),
         "quick-settings" | "notifications" => {
             let tab = if action == "quick-settings" { "quick" } else { "notifications" };
             open_quicksettings_tab_cmd(app.clone(), app.state::<AppState>(), tab.into(), None, None);

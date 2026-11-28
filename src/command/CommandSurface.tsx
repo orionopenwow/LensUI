@@ -44,7 +44,7 @@ import { isLensAppStub, lensAppTemplates, runLensAppSlash } from "../report/comm
 import { dashboardTemplates, isDashboardPhrase, isDashboardStub, openDashboard } from "../dashboard/command";
 import { immersiveTemplates, isImmersivePhrase, isImmersiveStub, openImmersive } from "../music/command";
 import { isSearchThat, magicSearchQuery, openMagicSearch } from "../magic/search/command";
-import { editDesktopWidgets, isEditWidgetsPhrase } from "../deskwidgets/api";
+import { editDesktopWidgets, flyoutPhrase, isEditWidgetsPhrase, toggleWidgetFlyout, widgetFlyoutOn } from "../deskwidgets/api";
 
 const MODE_ICON: Record<Mode, React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
   ask: Sparkles,
@@ -456,6 +456,14 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
     // "dashboard", "open the dashboard" or /dashboard, while the Magic Dashboard is on.
     // Rust has the last word on the flag, so a Command opened before it was turned on still works.
     const dashboardAsked = isDashboardStub(template) || (!template && isDashboardPhrase(rest) && (await invoke<boolean>("dashboard_available").catch(() => false)));
+    // "widgets", "show widgets", "hide widgets" while the widget flyout is on.
+    const fly = template ? null : flyoutPhrase(rest);
+    if (fly !== null && (await widgetFlyoutOn())) {
+      setText("");
+      await hide();
+      void toggleWidgetFlyout(fly).then((err) => err && flash(err, false));
+      return;
+    }
     // "edit widgets" while desktop widgets are on: the widget gallery on the desktop.
     if (!template && isEditWidgetsPhrase(rest) && (await invoke<boolean>("desktop_widgets_available").catch(() => false))) {
       setText("");
@@ -713,6 +721,12 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
     if (musicOn && isImmersivePhrase(typed)) {
       await hide();
       void openImmersive().then((err) => err && flash(err, false));
+      return;
+    }
+    const flyTyped = flyoutPhrase(typed);
+    if (flyTyped !== null && (await widgetFlyoutOn())) {
+      await hide();
+      void toggleWidgetFlyout(flyTyped).then((err) => err && flash(err, false));
       return;
     }
     if (isEditWidgetsPhrase(typed) && (await invoke<boolean>("desktop_widgets_available").catch(() => false))) {

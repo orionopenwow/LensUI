@@ -2,7 +2,7 @@
 // Everything here reads data Lens already has on this PC; nothing fetches.
 import type { Size } from "./grid";
 
-export type KindId = "clock" | "weather" | "batteries" | "music" | "notes" | "today" | "gallery";
+export type KindId = "calendar" | "clock" | "weather" | "batteries" | "music" | "notes" | "today" | "gallery";
 
 export interface KindDef {
   id: KindId;
@@ -18,6 +18,7 @@ export interface KindDef {
 
 export const KINDS: readonly KindDef[] = [
   { id: "batteries", name: "Batteries", desc: "This PC's battery: charge, charging and time left.", sizes: ["small", "medium", "large"], words: "battery power charge laptop", fetches: false },
+  { id: "calendar", name: "Calendar", desc: "The time, today's date and this month, with today's items on the large size.", sizes: ["small", "medium", "large"], words: "calendar date month clock time day today", fetches: false },
   { id: "clock", name: "Clock", desc: "An analog clock, and a world clock with four cities.", sizes: ["small", "medium", "large"], words: "time world clock cities analog", fetches: false },
   { id: "music", name: "Now playing", desc: "What's playing, with play, pause and skip.", sizes: ["small", "medium", "large"], words: "music now playing spotify media song", fetches: false },
   { id: "notes", name: "Notes", desc: "Your latest Lens Notes. Click one to open it.", sizes: ["small", "medium", "large"], words: "notes shelf memo", fetches: false },
@@ -106,6 +107,59 @@ export function hhmm(t: { h: number; m: number }, hour12 = true): string {
   if (!hour12) return `${String(t.h).padStart(2, "0")}:${m}`;
   const h = t.h % 12 || 12;
   return `${h}:${m}`;
+}
+
+// ---- calendar ----------------------------------------------------------------------------------
+
+/** The first day of the week for this PC's language (0 Sunday … 6 Saturday); Sunday if unknown. */
+export function weekStart(locale?: string): number {
+  try {
+    const loc = new Intl.Locale(locale ?? navigator.language) as Intl.Locale & { weekInfo?: { firstDay: number }; getWeekInfo?: () => { firstDay: number } };
+    const day = (loc.getWeekInfo?.() ?? loc.weekInfo)?.firstDay;
+    return typeof day === "number" ? day % 7 : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/** The month of `year`/`month` (0-based) as weeks of day numbers, null where a week has no day
+ *  of this month; weeks start on `first` (0 Sunday). Always whole weeks, 4 to 6 of them. */
+export function monthGrid(year: number, month: number, first = 0): (number | null)[][] {
+  const days = new Date(year, month + 1, 0).getDate();
+  const lead = (new Date(year, month, 1).getDay() - first + 7) % 7;
+  const cells: (number | null)[] = [...Array(lead).fill(null), ...Array.from({ length: days }, (_, i) => i + 1)];
+  while (cells.length % 7) cells.push(null);
+  const weeks: (number | null)[][] = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+  return weeks;
+}
+
+/** Narrow weekday letters in grid order ("S M T W T F S" for Sunday first). */
+export function weekdayLetters(first = 0, locale?: string): string[] {
+  const f = new Intl.DateTimeFormat(locale, { weekday: "narrow" });
+  // 2026-11-01 is a Sunday.
+  return Array.from({ length: 7 }, (_, i) => f.format(new Date(2026, 10, 1 + ((first + i) % 7))));
+}
+
+// ---- flyout ------------------------------------------------------------------------------------
+
+/** Where a widget starts when it flies out (and ends when it is drawn back in): shrunk onto the
+ *  origin point, as a transform from its own place. `t` is 0 at the origin, 1 in place. */
+export function flyFrom(rect: { x: number; y: number; w: number; h: number }, origin: { x: number; y: number }, scale = 0.18): { dx: number; dy: number; scale: number } {
+  const cx = rect.x + rect.w / 2;
+  const cy = rect.y + rect.h / 2;
+  return { dx: origin.x - cx, dy: origin.y - cy, scale };
+}
+
+/** Stagger for each widget: the nearest to the origin leaves first and comes back last, so the
+ *  fly-out and the draw-in mirror each other. Returns a delay in ms per index; total ≤ `span`. */
+export function flyStagger(rects: { x: number; y: number; w: number; h: number }[], origin: { x: number; y: number }, step = 32, span = 180): number[] {
+  const dist = rects.map((r) => Math.hypot(r.x + r.w / 2 - origin.x, r.y + r.h / 2 - origin.y));
+  const order = dist.map((d, i) => [d, i] as const).sort((a, b) => a[0] - b[0]);
+  const each = order.length > 1 ? Math.min(step, span / (order.length - 1)) : 0;
+  const out = new Array<number>(rects.length).fill(0);
+  order.forEach(([, i], rank) => (out[i] = Math.round(rank * each)));
+  return out;
 }
 
 // ---- today -------------------------------------------------------------------------------------
