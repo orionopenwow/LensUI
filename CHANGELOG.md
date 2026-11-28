@@ -7,6 +7,25 @@ up and migrates `%APPDATA%\LensUI` where it can.
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-11-28
+
+### Fixed
+- **Dock window previews you can actually reach.** Hovering an app with several windows showed
+  their previews, but the card faded the moment the pointer reached a live picture and a click on it
+  did nothing: the picture is a native window and it was taking the mouse. Previews are now
+  click-through, the card waits a moment before closing and bridges the gap to its icon on every
+  Dock edge, so you can hover, pick and click a window.
+- **Switching between an app's windows.** Clicking the icon of an app whose window is in front now
+  goes to its next window (as Alt+number did) instead of minimizing only that one.
+
+### Changed
+- **Every window you can see in the preview card is live.** The windows peeking in beside the
+  current one are live pictures too, cut to what shows and dimmed. They are drawn by Windows itself:
+  nothing is captured or polled.
+- **Apps asking for attention glow, like on the Windows taskbar.** A soft glow in the attention
+  colour pulses a few times and then stays until you open the app, and an auto-hidden Dock comes out
+  for a few seconds so you see it.
+
 ### Added
 - **Installed Lens updates on every push to main.** A new update channel, **Every update to main**
   (the default during the beta), checks hourly for a signed build of the latest main and shows
