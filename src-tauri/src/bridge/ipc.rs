@@ -67,6 +67,18 @@ fn emitter() -> &'static RwLock<Option<Emit>> {
     E.get_or_init(|| RwLock::new(None))
 }
 
+/// Opens a web link in Lens Browser (set by the app at start-up; `browser_open`).
+pub type Opener = Arc<dyn Fn(String) + Send + Sync>;
+
+fn opener() -> &'static RwLock<Option<Opener>> {
+    static O: OnceLock<RwLock<Option<Opener>>> = OnceLock::new();
+    O.get_or_init(|| RwLock::new(None))
+}
+
+pub fn set_browser_opener(o: Opener) {
+    *opener().write().unwrap_or_else(|e| e.into_inner()) = Some(o);
+}
+
 pub fn set_emitter(e: Emit) {
     if let Ok(mut s) = emitter().write() {
         *s = Some(e);
@@ -211,6 +223,23 @@ pub fn handle(req: BridgeRequest) -> Value {
             return reply_err("Too many requests in a minute; try again shortly.");
         }
         ib.recent.push_back(now);
+    }
+
+    // Windows handing a link to Lens Browser: only a program on this PC (`--open-url`), never a
+    // page through the browser extension, and only a web link (validated with the request).
+    if req.action == "browser_open" {
+        if req.origin != Origin::Cli {
+            return reply_err("Only Lens itself can open links in Lens Browser.");
+        }
+        let Some(url) = req.url.clone() else { return reply_err("browser_open needs a url.") };
+        let open = opener().read().unwrap_or_else(|e| e.into_inner()).clone();
+        return match open {
+            Some(f) => {
+                f(url);
+                reply_ok(None, "delivered", json!({}))
+            }
+            None => reply_err("Lens Browser isn't ready yet; try again in a moment."),
+        };
     }
 
     // Micro-saves are instant and tiny: saved straight away, no inbox entry, no window.

@@ -368,6 +368,8 @@ const scenes: Record<string, BrowserInitial> = {
   "tabs-customise": { view: withAppearance({ tabsLayout: "horizontal", tabStyle: "joined" }), panel: "customise", chats, mockPage: <MockPage />, now: NOW, nav: back },
   // ---- First-open setup, one scene per step ----
   "setup-welcome": { view: setupView, panel: null, chats: [], now: NOW, setup: { step: "welcome" } },
+  "setup-tour": { view: setupView, panel: null, chats: [], now: NOW, setup: { step: "welcome", tour: 0 } },
+  "setup-tour-colour": { view: setupView, panel: null, chats: [], now: NOW, setup: { step: "welcome", tour: 4 } },
   "setup-import": { view: setupView, panel: null, chats: [], now: NOW, setup: { step: "import", sources: importSources, draft: { importFrom: { browser: "arc", profile: "arc", label: "Arc" } }, counts: { bookmarks: 412, history: 18_204, openTabs: 0, pinnedTabs: 23, spaces: 3, notes: [] } } },
   "setup-look": { view: setupView, panel: null, chats: [], now: NOW, setup: { step: "look", draft: { tabsLayout: "horizontal", tabStyle: "compact" } } },
   "setup-privacy": { view: setupView, panel: null, chats: [], now: NOW, setup: { step: "privacy" } },
@@ -394,6 +396,9 @@ const scenes: Record<string, BrowserInitial> = {
     },
   },
   customise: { view, panel: "customise", chats, mockPage: <MockPage />, now: NOW },
+  "newtab-aurora": { view: withAppearance({ scheme: "dark", accent: "#7dd3fc", backdrop: "aurora", theme: "aurora" }), panel: null, chats, now: NOW, start: true, history: historySeed },
+  "newtab-paper": { view: withAppearance({ scheme: "light", accent: "#3f3f46", backdrop: "none", theme: "paper", dither: 20, grain: 30 }), panel: null, chats, now: NOW, start: true, history: historySeed },
+  "tabs-tint": { view: withAppearance({ tabTint: true }), panel: "customise", chats, mockPage: <MockPage />, now: NOW },
   import: { view, panel: "import", chats, mockPage: <MockPage />, now: NOW, importSeed: { sources: importSources, pick: { browser: "arc", profile: "arc" }, counts: { bookmarks: 412, history: 18_204, openTabs: 0, pinnedTabs: 23, spaces: 3, notes: [] }, progress: { bookmarks: "done", history: "done", spaces: "running" } } },
   ai: { view, panel: "ai", chats, mockPage: <MockPage />, now: NOW, aiStatus: aiStatusMock },
   timeline: { view, panel: "ask", chats, mockPage: <MockPage />, now: NOW, agent: { items: timelineItems, startedAt: NOW - 72_000, actions: 5, running: true, pending: payPending } },

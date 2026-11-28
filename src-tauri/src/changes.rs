@@ -239,6 +239,18 @@ pub const CHANGES: &[Change] = &[
         undo: undo_url_scheme,
     },
     Change {
+        id: "default-browser",
+        label: "Lens Browser offered as a Windows browser",
+        scope: Scope::Persistent,
+        writes: &[
+            "HKCU\\Software\\Classes\\LensBrowserHTML",
+            "HKCU\\Software\\Clients\\StartMenuInternet\\LensBrowser",
+            "HKCU\\Software\\RegisteredApplications::Lens Browser",
+        ],
+        sources: &["browser/default_browser.rs"],
+        undo: undo_default_browser,
+    },
+    Change {
         id: "explorer-verbs",
         label: "File Explorer right-click",
         scope: Scope::Persistent,
@@ -523,6 +535,10 @@ fn undo_input_hooks(config: &mut LensConfig) -> Result<String, String> {
 // The next four remove only keys Lens marked as its own (docs/BROWSER_BRIDGE.md, docs/SNIP.md).
 fn undo_browser_bridge(_: &mut LensConfig) -> Result<String, String> {
     crate::commands::bridge::bridge_uninstall().map(|x| x.message)
+}
+
+fn undo_default_browser(_: &mut LensConfig) -> Result<String, String> {
+    crate::browser::default_browser::unregister()
 }
 
 fn undo_url_scheme(_: &mut LensConfig) -> Result<String, String> {

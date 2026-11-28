@@ -1446,3 +1446,66 @@
 @container (max-width: 84px) {
   .lb-stab .lb-tab-title, .lb-stab .lb-tab-x, .lb-stab .lb-pill { display: none; }
 }
+
+/* ---------- Brand mark, backdrops, tab tint (src/browser/themes.ts) ---------- */
+.lb-mark { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 4px; }
+.lb-mark h1 { margin: 0; text-align: center; }
+.lb-mark-orb { position: relative; display: block; width: 56px; height: 56px; border-radius: 50%; overflow: hidden; --lc-bezel: 2px; box-shadow: 0 6px 28px rgb(0 0 0 / 0.35), 0 0 0 1px var(--lens-border); }
+/* The new tab's backdrop: "halo" is the drifting Lens glow above; the others are still light. */
+.lb-newtab:not([data-backdrop="halo"])::before {
+  inset: 0; left: 0; top: 0; width: auto; aspect-ratio: auto; border-radius: 0; transform: none; animation: none;
+  background: var(--lb-backdrop); opacity: 1;
+}
+.lb-newtab:not([data-backdrop="halo"])::after { display: none; }
+.lb-newtab[data-backdrop="none"]::before { display: none; }
+/* Tint each tab with its site's colour: a quiet wash and an edge in the site's hue. */
+.lb-tint .lb-tab, .lb-tint .lb-stab { background-image: linear-gradient(90deg, hsl(var(--lb-tab-hue, 220) 70% 55% / 0.14), hsl(var(--lb-tab-hue, 220) 70% 55% / 0.04)); box-shadow: inset 2px 0 0 hsl(var(--lb-tab-hue, 220) 70% 58% / 0.85); }
+.lb-tint .lb-tab.is-active, .lb-tint .lb-stab.is-active { background-image: linear-gradient(90deg, hsl(var(--lb-tab-hue, 220) 70% 55% / 0.26), hsl(var(--lb-tab-hue, 220) 70% 55% / 0.08)); }
+/* Theme gallery and backdrop picker (Make it yours, setup's look step). */
+.lb-themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.lb-theme {
+  all: unset; box-sizing: border-box; display: grid; gap: 6px; padding: 6px; border-radius: 12px; border: 1px solid var(--lens-border); cursor: default; font-size: 12px; text-align: left;
+}
+.lb-theme:hover { background: var(--lens-bg-hover); }
+.lb-theme:focus-visible { box-shadow: 0 0 0 1px var(--lens-focus-ring); }
+.lb-theme[aria-checked="true"] { border-color: var(--lens-accent-ui); background: color-mix(in srgb, var(--lens-accent-ui) var(--lens-accent-wash, 12%), transparent); }
+.lb-theme-pic { position: relative; height: 44px; border-radius: 8px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--lens-border); }
+.lb-theme-pic b { position: absolute; left: 8px; bottom: 7px; width: 18px; height: 6px; border-radius: 3px; background: var(--lb-theme-ink); }
+.lb-backdrops { display: flex; flex-wrap: wrap; gap: 6px; }
+.lb-backdrop {
+  all: unset; box-sizing: border-box; width: 44px; height: 30px; border-radius: 8px; background-color: var(--lens-bg-base); box-shadow: inset 0 0 0 1px var(--lens-border); cursor: default;
+}
+.lb-backdrop[aria-checked="true"] { box-shadow: inset 0 0 0 2px var(--lens-accent-ui); }
+.lb-backdrop:focus-visible { outline: 1px solid var(--lens-focus-ring); outline-offset: 1px; }
+
+/* ---------- Setup: welcome actions, what's new, tour ---------- */
+.lb-setup-hero { display: flex; align-items: center; gap: 14px; }
+.lb-setup-hero .lb-mark-orb { flex: none; width: 52px; height: 52px; }
+.lb-setup-hero h1 { margin: 0; }
+.lb-setup-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.lb-setup-action {
+  all: unset; box-sizing: border-box; display: grid; gap: 4px; align-content: start; padding: 12px; border-radius: 12px; border: 1px solid var(--lens-border); cursor: default; font-size: 13px;
+}
+.lb-setup-action svg { color: var(--lens-accent-ui); }
+.lb-setup-action span { color: var(--lens-fg-secondary); font-size: 12px; line-height: 17px; }
+.lb-setup-action:hover { background: var(--lens-bg-hover); }
+.lb-setup-action:focus-visible { box-shadow: 0 0 0 1px var(--lens-focus-ring); }
+.lb-setup-action[data-done="true"] { border-color: var(--lens-accent-ui); }
+.lb-setup-new { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; }
+.lb-setup-new li { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; font-size: 13px; line-height: 18px; }
+.lb-setup-new li svg { grid-row: span 2; margin-top: 2px; color: var(--lens-fg-secondary); }
+.lb-setup-new li span { color: var(--lens-fg-secondary); font-size: 12px; }
+.lb-setup-links { display: flex; flex-wrap: wrap; gap: 6px; }
+.lb-tour { display: grid; gap: 14px; }
+.lb-tour-pic {
+  position: relative; height: 150px; border-radius: 14px; overflow: hidden; display: grid; place-items: center;
+  background: var(--lb-tour-bg, var(--lens-bg-elevated)); box-shadow: inset 0 0 0 1px var(--lens-border);
+}
+.lb-tour-pic svg { width: 44px; height: 44px; color: var(--lens-fg-strong); filter: drop-shadow(0 4px 18px rgb(0 0 0 / 0.4)); }
+.lb-tour-pic .lb-mark-orb { width: 72px; height: 72px; }
+.lb-tour-count { font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--lens-fg-muted); }
+.lb-tour ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13px; color: var(--lens-fg-secondary); }
+@media (max-width: 640px) { .lb-setup-actions, .lb-setup-new { grid-template-columns: 1fr; } }
+.lb-linkbtn { all: unset; color: var(--lens-fg); text-decoration: underline; text-underline-offset: 2px; cursor: default; }
+.lb-linkbtn:focus-visible { outline: 1px solid var(--lens-focus-ring); outline-offset: 2px; border-radius: 3px; }
+.lb-setup-action:disabled { opacity: 1; }

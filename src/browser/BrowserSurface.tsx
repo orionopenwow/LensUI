@@ -857,7 +857,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
     <div
       ref={rootRef}
       data-guide-id="browser"
-      className={`lb-root${sideOpen && !horizontal ? "" : " no-side"}${shown ? " has-panel" : ""} lb-${appearance.density}${appearance.scheme === "auto" ? "" : ` lb-scheme-${appearance.scheme}`}${sidePrefs.side === "right" ? " lb-side-right" : ""}${sidePrefs.mode === "stack" ? " lb-side-stack" : ""}`}
+      className={`lb-root${sideOpen && !horizontal ? "" : " no-side"}${shown ? " has-panel" : ""} lb-${appearance.density}${appearance.scheme === "auto" ? "" : ` lb-scheme-${appearance.scheme}`}${sidePrefs.side === "right" ? " lb-side-right" : ""}${sidePrefs.mode === "stack" ? " lb-side-stack" : ""}${appearance.tabTint ? " lb-tint" : ""}`}
       style={rootStyle}
       data-lb-scheme={appearance.scheme}
     >
@@ -1080,6 +1080,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
               onReopen={() => { setStartOpen(false); void apply(reopenClosed()); }}
               onImport={() => setPanel("import")}
               onHistory={() => setPanel("history")}
+              backdrop={appearance.backdrop}
             />
           ) : shownSplit && !live && area.w > 0 ? (
             // Parity: stand-ins where the core puts the two pages.

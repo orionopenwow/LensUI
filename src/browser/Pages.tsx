@@ -9,6 +9,8 @@ import { Key } from "./ApprovalCard";
 import { hostOf, relTime } from "./model";
 import { errorInfo, topSites } from "./nav";
 import { Avatar } from "./Sidebar";
+import { LensCloud } from "../presence/LensCloud";
+import { backdropCss } from "./themes";
 
 export const SHORTCUTS: [string, string][] = [
   ["Ctrl L", "Address"],
@@ -35,6 +37,20 @@ interface StartProps {
   onReopen(): void;
   onImport(): void;
   onHistory(): void;
+  /** The backdrop id from Appearance (src/browser/themes.ts). */
+  backdrop?: string;
+}
+
+/** The Lens orb with the wordmark: the brand mark on Lens Browser's own pages. */
+export function LensBrand({ title = "Lens Browser" }: { title?: string }) {
+  return (
+    <div className="lb-mark">
+      <span className="lb-mark-orb" aria-hidden>
+        <LensCloud />
+      </span>
+      <h1>{title}</h1>
+    </div>
+  );
 }
 
 /** The new-tab page: search, the sites you use most, bookmarks, and what you just closed. */
@@ -45,9 +61,9 @@ export function StartPage(p: StartProps) {
   const closed = [...p.closed].reverse().slice(0, 4);
   const empty = sites.length === 0 && marks.length === 0;
   return (
-    <div className="lb-start lb-newtab lb-glow" role="region" aria-label="New tab">
+    <div className="lb-start lb-newtab lb-glow" role="region" aria-label="New tab" style={{ "--lb-backdrop": backdropCss(p.backdrop) } as React.CSSProperties} data-backdrop={p.backdrop ?? "halo"}>
       <div className="lb-newtab-col">
-        <h1>Lens Browser</h1>
+        <LensBrand />
         <form
           className="lb-compose lb-newtab-search"
           onSubmit={(e) => {

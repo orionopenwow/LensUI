@@ -133,6 +133,12 @@ pub struct Appearance {
     pub density: String,
     /// "lens" | "system" | "mono" | "serif"
     pub typeface: String,
+    /// The new-tab backdrop (src/browser/themes.ts BACKDROPS).
+    pub backdrop: String,
+    /// The stock theme last picked (src/browser/themes.ts STOCK_THEMES), shown as chosen.
+    pub theme: Option<String>,
+    /// Tint each tab with its site's colour.
+    pub tab_tint: bool,
     /// How the vertical tab sidebar looks.
     pub sidebar: SidebarPrefs,
     /// How the reader view sets its text.
@@ -150,11 +156,17 @@ impl Default for Appearance {
             tab_style: "dynamic".into(),
             density: "comfortable".into(),
             typeface: "lens".into(),
+            backdrop: "halo".into(),
+            theme: Some("lens".into()),
+            tab_tint: false,
             sidebar: SidebarPrefs::default(),
             reader: ReaderPrefs::default(),
         }
     }
 }
+
+/// New-tab backdrops (src/browser/themes.ts BACKDROPS; a test keeps the two lists equal).
+pub const BACKDROPS: [&str; 9] = ["none", "halo", "aurora", "dusk", "ocean", "forest", "ember", "spectrum", "grid"];
 
 pub const READER_SIZE_MIN: u8 = 14;
 pub const READER_SIZE_MAX: u8 = 26;
@@ -1201,6 +1213,12 @@ impl BrowserState {
         }
         if !["lens", "system", "mono", "serif"].contains(&a.typeface.as_str()) {
             a.typeface = d.typeface;
+        }
+        if !BACKDROPS.contains(&a.backdrop.as_str()) {
+            a.backdrop = d.backdrop;
+        }
+        if a.theme.as_deref().is_some_and(|t| t.len() > 32 || !t.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')) {
+            a.theme = None;
         }
         let sb = &mut a.sidebar;
         let sd = SidebarPrefs::default();

@@ -24,6 +24,7 @@ pub(crate) fn setup(app: &tauri::App, cfg: &LensConfig) {
     start_cursor_fx(&handle);
     start_playground_idle(&handle);
     wire_bridge(&handle);
+    wire_browser_welcome(&handle);
     crate::commands::clip::init(&handle);
     crate::commands::snip::init(&handle);
     if cfg.edge_shelf_enabled() {
@@ -500,6 +501,51 @@ impl crate::bridge::ports::ShelfPort for LensShelf {
         items.sort_by(|a, b| b.created_ms.cmp(&a.created_ms));
         Ok(items.iter().take(limit).map(shelf_summary).collect())
     }
+}
+
+/// Fired once by the first Lens setup (src/apps/desktopIcon.ts FIRST_RUN_DONE), after setup and
+/// the Lens Apps window it opened have both closed. That is when Lens Browser opens with its own
+/// welcome, so the two first-run windows come one after the other instead of stacking.
+pub(crate) const FIRST_RUN_DONE: &str = "lens://setup/first-run-done";
+
+fn open_in_browser(app: &AppHandle, url: String) {
+    let app = app.clone();
+    std::thread::spawn(move || {
+        let r = tauri::async_runtime::block_on(crate::commands::browser::browser_open(app, Some(url), Some("Windows".into())));
+        if let Err(e) = r {
+            eprintln!("[Lens UI] couldn't open a link in Lens Browser: {e}");
+        }
+    });
+}
+
+fn wire_browser_welcome(handle: &AppHandle) {
+    // Links Windows hands to Lens Browser (default browser, browser/default_browser.rs).
+    let opener_app = handle.clone();
+    crate::bridge::ipc::set_browser_opener(std::sync::Arc::new(move |url: String| open_in_browser(&opener_app, url)));
+    // This process was started by a link (no Lens was running): open it once Lens is up.
+    if let Some(url) = crate::browser::default_browser::take_pending() {
+        let app = handle.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(1500));
+            open_in_browser(&app, url);
+        });
+    }
+    let app = handle.clone();
+    handle.listen_any(FIRST_RUN_DONE, move |_| {
+        let app = app.clone();
+        std::thread::spawn(move || {
+            // Only a browser that has never been set up: its window opens on the welcome.
+            if crate::browser::host::rt().state.settings.setup_seen {
+                return;
+            }
+            crate::tester::log("info", "browser", "Lens Browser opened for its welcome after the first setup");
+            if let Err(e) = crate::browser::host::ensure_window(&app) {
+                eprintln!("[Lens UI] couldn't open Lens Browser after setup: {e}");
+                return;
+            }
+            crate::browser::host::start_maintenance(app);
+        });
+    });
 }
 
 fn wire_bridge(handle: &AppHandle) {

@@ -7,6 +7,7 @@ import { sidebarPrefs } from "./tabAi";
 import { Key } from "./ApprovalCard";
 import { oops } from "./oops";
 import { TAB_STYLES, validStyle, type TabStyle } from "./tabModes";
+import { applyTheme, BACKDROPS, matchingTheme, STOCK_THEMES, type StockTheme } from "./themes";
 
 /** hsl → #rrggbb */
 export function hslHex(h: number, s: number, l: number): string {
@@ -40,14 +41,6 @@ export function fieldColor(x: number, y: number): string {
   return hslHex(cx * 360, 0.82, 0.68 - cy * 0.42);
 }
 
-export const PRESETS: { id: string; label: string; a: string; b: string; accent: string | null; scheme?: Appearance["scheme"] }[] = [
-  { id: "obsidian", label: "Obsidian", a: "#fafafa", b: "#0b0b0d", accent: null, scheme: "dark" },
-  { id: "paper", label: "Paper", a: "#f4f1ea", b: "#1c1b19", accent: "#3f3f46", scheme: "light" },
-  { id: "sage", label: "Sage", a: "#a8c5a0", b: "#16201a", accent: "#86b18a" },
-  { id: "iris", label: "Iris", a: "#a99cf2", b: "#17142a", accent: "#8b7cf0" },
-  { id: "rose", label: "Rose", a: "#e5a3b0", b: "#2a161b", accent: "#e08aa0" },
-  { id: "contrast", label: "Contrast", a: "#ffffff", b: "#000000", accent: "#ffffff", scheme: "dark" },
-];
 
 function Seg<T extends string>({ value, options, onChange, label }: { value: T; options: [T, string, React.ReactNode?][]; onChange(v: T): void; label: string }) {
   return (
@@ -130,21 +123,10 @@ export function CustomisePanel({ value, onChange }: { value: Appearance; onChang
             ["dark", "Dark", <Moon key="d" size={13} />],
           ]}
         />
-        <div className="lb-swatches" role="radiogroup" aria-label="Presets">
-          {PRESETS.map((p) => {
-            const on = (a.accent ?? null) === p.accent && (!p.scheme || p.scheme === a.scheme);
-            return (
-              <button data-weight="medium"
-                key={p.id}
-                role="radio"
-                aria-checked={on}
-                aria-label={p.label}
-                className={`lb-swatch${on ? " is-on" : ""}`}
-                style={{ background: `linear-gradient(135deg, ${p.a} 0 50%, ${p.b} 50% 100%)` }}
-                onClick={() => set({ accent: p.accent, ...(p.scheme ? { scheme: p.scheme } : {}) })}
-              />
-            );
-          })}
+        <ThemeGallery value={matchingTheme({ ...a, backdrop: a.backdrop ?? "halo" })?.id ?? null} onPick={(id) => onChange(applyTheme(a, id))} />
+        <div className="lb-make-row">
+          <span className="lb-label">New tab</span>
+          <BackdropPicker value={a.backdrop ?? "halo"} onChange={(backdrop) => set({ backdrop })} />
         </div>
         <Slider label="Dither" value={a.dither} onChange={(dither) => set({ dither })} dithered />
         <Slider label="Grain" value={a.grain} onChange={(grain) => set({ grain })} />
@@ -177,6 +159,10 @@ export function CustomisePanel({ value, onChange }: { value: Appearance; onChang
         </div>
         {sb.mode === "full" ? <Slider label="Width" value={sb.width} min={SIDEBAR_WIDTH.min} max={SIDEBAR_WIDTH.max} onChange={(width) => setSb({ width })} /> : null}
         <div className="lb-make-toggles">
+          <label className="lb-make-toggle">
+            <span>Tab colours by site</span>
+            <Toggle on={!!a.tabTint} label="Tint each tab with its site's colour" onChange={(tabTint) => set({ tabTint })} />
+          </label>
           {([["showChats", "Chats"], ["showMedia", "Now playing"], ["showSpaces", "Spaces"]] as [keyof SidebarPrefs, string][]).map(([k, label]) => (
             <label key={k} className="lb-make-toggle">
               <span>{label}</span>
@@ -191,7 +177,7 @@ export function CustomisePanel({ value, onChange }: { value: Appearance; onChang
           </button>
         </footer>
       </section>
-      <p className="lb-hint">Change tabs, the sidebar, density, theme and type. Don't like the dither? Slide it to 0.</p>
+      <p className="lb-hint">Pick a theme, then change anything: accent, backdrop, tabs, the sidebar, density and type. Don't like the dither? Slide it to 0.</p>
     </div>
   );
 }
@@ -234,6 +220,44 @@ export function TabModePicker({ value, onChange }: { value: "vertical" | TabStyl
           <ModeThumb mode={m.id} />
           <span>{m.label}</span>
         </button>
+      ))}
+    </div>
+  );
+}
+
+/** A stock theme drawn as a tiny window: its background, backdrop and accent. */
+function ThemePic({ t }: { t: StockTheme }) {
+  const light = t.patch.scheme === "light";
+  const bg = light ? t.a : t.b;
+  const ink = light ? t.b : t.a;
+  const backdrop = BACKDROPS.find((x) => x.id === t.patch.backdrop)?.css ?? "none";
+  return (
+    <span className="lb-theme-pic" style={{ background: backdrop === "none" ? bg : `${backdrop}, ${bg}`, ["--lb-theme-ink" as string]: t.patch.accent ?? ink, ["--lens-accent-ui" as string]: t.patch.accent ?? ink } as React.CSSProperties} aria-hidden>
+      <b />
+    </span>
+  );
+}
+
+/** The built-in themes as a radio group. Picking one changes colours only, never tabs or type. */
+export function ThemeGallery({ value, onPick }: { value: string | null; onPick(id: string): void }) {
+  return (
+    <div className="lb-themes" role="radiogroup" aria-label="Themes">
+      {STOCK_THEMES.map((t) => (
+        <button key={t.id} type="button" role="radio" aria-checked={value === t.id} aria-label={`${t.label}: ${t.line}`} data-weight="medium" className="lb-theme" onClick={() => onPick(t.id)}>
+          <ThemePic t={t} />
+          <span>{t.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** The new-tab backdrop, as small swatches. */
+export function BackdropPicker({ value, onChange }: { value: string; onChange(id: string): void }) {
+  return (
+    <div className="lb-backdrops" role="radiogroup" aria-label="New tab backdrop">
+      {BACKDROPS.map((b) => (
+        <button key={b.id} type="button" role="radio" aria-checked={value === b.id} aria-label={b.label} data-weight="medium" className="lb-backdrop" style={{ background: `${b.id === "halo" ? "radial-gradient(70% 90% at 50% 0%, rgb(56 189 248 / .45), rgb(168 85 247 / .3) 45%, transparent 75%), " : b.css === "none" ? "" : `${b.css}, `}var(--lens-bg-base)` }} onClick={() => onChange(b.id)} />
       ))}
     </div>
   );

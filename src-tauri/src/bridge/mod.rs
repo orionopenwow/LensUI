@@ -63,6 +63,10 @@ pub fn save_settings(s: &BridgeSettings) -> Result<(), String> {
 /// as a forwarding CLI, do that and return the exit code instead of starting the shell.
 pub fn early_exit_code() -> Option<i32> {
     let args: Vec<String> = std::env::args().skip(1).collect();
+    // Windows opening a link with Lens Browser (browser/default_browser.rs).
+    if args.iter().any(|a| a == crate::browser::default_browser::OPEN_URL_FLAG) {
+        return crate::browser::default_browser::early_open_url(&args);
+    }
     if let Some(caller) = native_host::detect(&args) {
         return Some(native_host::run(caller));
     }

@@ -53,6 +53,8 @@ pub const ACTIONS: &[(&str, ActionKind)] = &[
     ("command_open", ActionKind::Ui),
     // lens://settings/<page>#<section>; the page id travels in `selection` (docs/SETTINGS_HUB.md).
     ("settings_open", ActionKind::Ui),
+    // Windows handing a link to Lens Browser (`lens-ui.exe --open-url`); scripts on this PC only.
+    ("browser_open", ActionKind::Meta),
 ];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]

@@ -57,6 +57,12 @@ export interface Appearance {
   tabStyle?: "curved" | "joined" | "compact" | "dynamic" | "merged";
   density: "compact" | "comfortable";
   typeface: "lens" | "system" | "mono" | "serif";
+  /** The new-tab backdrop (src/browser/themes.ts BACKDROPS); missing in settings saved before it existed. */
+  backdrop?: string;
+  /** The stock theme last picked (src/browser/themes.ts), for showing it as chosen. */
+  theme?: string;
+  /** Tint each tab with its site's colour. */
+  tabTint?: boolean;
   /** The vertical tab sidebar (missing in settings saved before it existed). */
   sidebar?: SidebarPrefs;
   /** The reader view's text (missing in settings saved before it existed). */
@@ -95,7 +101,7 @@ export interface BrowserAi {
   transcripts: boolean;
 }
 
-export const DEFAULT_APPEARANCE: Appearance = { scheme: "auto", accent: null, dither: 40, grain: 20, tabsLayout: "vertical", tabStyle: "dynamic", density: "comfortable", typeface: "lens", sidebar: DEFAULT_SIDEBAR, reader: DEFAULT_READER };
+export const DEFAULT_APPEARANCE: Appearance = { scheme: "auto", accent: null, dither: 40, grain: 20, tabsLayout: "vertical", tabStyle: "dynamic", density: "comfortable", typeface: "lens", backdrop: "halo", theme: "lens", tabTint: false, sidebar: DEFAULT_SIDEBAR, reader: DEFAULT_READER };
 export const DEFAULT_BROWSER_AI: BrowserAi = { enabled: true, agentInNewTabs: false, pageSummaries: true, askInAddressBar: true, transcripts: true };
 
 export interface BrowserSettings {
@@ -423,3 +429,10 @@ export interface SentRequest { purpose: "filter_list" | "favicon"; host: string;
 export const sentRequests = () => invoke<SentRequest[]>("browser_sent");
 export const linkRuleAdd = (when: LinkRule["when"], value: string, space: string) => invoke<BrowserView>("browser_link_rule_add", { when, value, space });
 export const linkRuleRemove = (id: string) => invoke<BrowserView>("browser_link_rule_remove", { id });
+
+/** Lens Browser as a Windows browser (src-tauri/src/browser/default_browser.rs). */
+export interface DefaultBrowserStatus { registered: boolean; isDefault: boolean }
+export const defaultBrowserStatus = () => invoke<DefaultBrowserStatus>("browser_default_status");
+/** Registers Lens Browser with Windows and opens Default apps on it; the person picks it there. */
+export const makeDefaultBrowser = () => invoke<DefaultBrowserStatus>("browser_make_default");
+export const unregisterDefaultBrowser = () => invoke<string>("browser_unregister_default");

@@ -401,6 +401,9 @@ pub fn run() {
             commands::guide::guide_progress_reset,
             // Lens Browser (docs/LENS_BROWSER.md)
             commands::browser::browser_open,
+            commands::browser::browser_default_status,
+            commands::browser::browser_make_default,
+            commands::browser::browser_unregister_default,
             commands::browser::browser_split,
             commands::browser::browser_link_rule_add,
             commands::browser::browser_link_rule_remove,

@@ -8,7 +8,7 @@ const base: BrowserSettings = { sleepAfterMin: 15, maxLiveTabs: 6, searchUrl: "h
 describe("browser setup", () => {
   test("the draft starts from the current settings", () => {
     const d = initialDraft(base);
-    expect(d).toEqual({ importFrom: null, tabsLayout: "vertical", tabStyle: "dynamic", blockTrackers: true, searchUrl: base.searchUrl, aiEnabled: true });
+    expect(d).toEqual({ importFrom: null, tabsLayout: "vertical", tabStyle: "dynamic", blockTrackers: true, searchUrl: base.searchUrl, aiEnabled: true, theme: "lens" });
   });
   test("skip changes nothing but seen", () => {
     const next = skipSettings(base);
