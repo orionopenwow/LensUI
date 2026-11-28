@@ -194,8 +194,12 @@ const SCENARIOS = [
       await waitStartupBuilt(s);
       const cc = await showSurface(s, "settings");
       const take = watchErrors(cc);
-      // The first-run wizard has its own scenario.
-      if (await cc.locator(".wiz").count()) await cc.locator(".wiz").press("Escape").catch(() => {});
+      // The first-run setup (its own full-screen window) has its own scenario: put it away here.
+      const setupPage = surfaces(s).setup;
+      if (setupPage && (await setupPage.locator(".wiz").count())) await setupPage.locator(".wiz").press("Escape").catch(() => {});
+      // Skipping the first setup opens Lens Apps; close it so the tabs below are in front.
+      await sleep(600);
+      await invoke(cc, "hide_surface", { label: "apps" }).catch(() => {});
       await sleep(400);
       const tabs = cc.locator(".cc-nav-btn").filter({ hasNotText: /Setup Wizard|Quit Lens/ });
       const n = await tabs.count();
@@ -595,24 +599,33 @@ const SCENARIOS = [
   },
   {
     id: "setup-wizard",
-    title: "the setup wizard can be skipped and completed",
+    title: "the setup slides can be skipped and completed",
     async run(s) {
-      const cc = await showSurface(s, "settings");
+      // Lens setup has its own full-screen window (src/setup/SetupSurface.tsx).
       const open = async () => {
-        if (!(await cc.locator(".wiz").count())) await domClick(cc.locator(".cc-nav-btn", { hasText: "Setup Wizard" }));
-        await cc.waitForSelector(".wiz[role=dialog]", { timeout: 5000 });
+        const st = await showSurface(s, "setup");
+        await st.waitForSelector(".wiz[role=dialog]", { timeout: 15000 });
+        return st;
       };
-      await open();
-      await cc.locator(".wiz").press("Escape");
-      await cc.waitForSelector(".wiz", { state: "detached", timeout: 5000 }).catch(() => { throw new Error("Escape did not close the wizard"); });
-      await open();
-      for (let i = 0; i < 8 && (await cc.locator(".wiz").count()); i++) {
-        await domClick(cc.locator("[data-wiz-next]"));
-        await sleep(500);
-        await shot(cc, `wizard-step-${i + 1}`);
+      let st = await open();
+      await st.locator(".wiz").press("Escape");
+      await sleep(800);
+      if ((await invoke(st, "get_config")).onboardingCompleted !== true) throw new Error("Esc did not skip setup");
+      st = await open();
+      let finished = false;
+      for (let i = 0; i < 12; i++) {
+        const page = await st.locator(".wiz").getAttribute("data-setup-page");
+        await shot(st, `wizard-step-${i + 1}-${page}`);
+        await domClick(st.locator("[data-wiz-next]"));
+        await sleep(600);
+        if (page === "done") {
+          finished = true;
+          break;
+        }
       }
-      if (await cc.locator(".wiz").count()) throw new Error("the wizard never finished");
-      if ((await invoke(cc, "get_config")).onboardingCompleted !== true) throw new Error("finishing the wizard did not set onboardingCompleted");
+      if (!finished) throw new Error("the setup never reached its last slide");
+      if ((await invoke(st, "get_config")).onboardingCompleted !== true) throw new Error("finishing setup did not set onboardingCompleted");
+      await invoke(st, "hide_surface", { label: "apps" }).catch(() => {});
     },
   },
   {

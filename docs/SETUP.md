@@ -1,6 +1,9 @@
 # Lens setup
 
-The setup opens over Control Center:
+The setup is a set of full-screen slides in its own window (`setup`, `src/setup/SetupSurface.tsx`,
+styles in `src/setup/setup.css`). Rust builds that window at start-up only when the setup is due and
+opens it by itself; Settings › Setup Wizard, About › Setup and Command "setup" open it any time.
+It opens:
 
 * on the **first launch** after installing or downloading Lens;
 * **once after every new version** (Lens compares the running version with `setupSeenVersion`
@@ -28,12 +31,14 @@ config switches as Settings, so **Remove all Lens changes** undoes it.
 
 | First launch / Run setup again | After an update |
 |---|---|
-| Welcome | What's new in *version* (from `CHANGELOG.md`) |
-| Dock: Floating, Slim, Taskbar, Split, and the screen edge | Extras added since the last setup that are still off (page skipped when there are none) |
-| Colour: Dark / Light / Day & night, the featured looks, the accent | Done |
-| Apps: tick Lens's own apps to pin them to the Dock; Lens Apps (open it when setup closes, on by default on the first setup; a desktop icon, off); where widgets and Lens Cleaner live | |
+| Welcome (the Lens orb and what's coming) | What's new in *version* (from `CHANGELOG.md`) |
+| Dock: Floating, Slim, Taskbar, Split, Unified, and the screen edge | Extras added since the last setup that are still off (skipped when there are none) |
+| Colours: Dark / Light / Day & night, the featured looks, the accent | Done |
+| Lens Apps: where it lives. On the Dock (a `lens-surface:apps` pin, on by default on the first setup), on the desktop (off), open it when setup finishes (on by default on the first setup), always in Settings | |
+| Widgets: put desktop widgets on (`magicWaves.desktopWidgets`, on by default on the first setup) and where they live | |
+| Your apps: tick Lens's own apps to pin them to the Dock | |
 | Optional extras (all off), plus where to set up Windhawk styling and voice transcription | |
-| Done: exactly what Finish will change | |
+| Done: what Finish will change, and where everything lives (Open buttons for Lens Apps and Lens Browser) | |
 
 ## After the first setup
 

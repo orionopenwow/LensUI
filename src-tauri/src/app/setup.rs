@@ -37,8 +37,10 @@ pub(crate) fn apply_win11_obsidian_backdrop(window: &tauri::WebviewWindow, _acry
 pub(crate) fn apply_win11_obsidian_backdrop(_window: &tauri::WebviewWindow, _acrylic: bool) {}
 
 /// Surfaces that may be marked `"create": false` in tauri.conf.json and built on first use.
-pub(crate) const LAZY_LABELS: [&str; 10] = [
+pub(crate) const LAZY_LABELS: [&str; 11] = [
     "cleaner",
+    // Lens setup, full screen: built at start-up only when the setup is due, else on first use.
+    "setup",
     "settings",
     "palette",
     "widgets",
@@ -215,9 +217,22 @@ fn show_settings_on_launch(handle: &AppHandle) {
     if SHOWN.swap(true, std::sync::atomic::Ordering::SeqCst) {
         return;
     }
+    // The setup has its own full-screen window; Settings waits until it's asked for.
+    if handle.get_webview_window("setup").is_some() {
+        return;
+    }
     let _ = win.show();
     let _ = win.set_focus();
     let _ = handle.emit("lens://settings-open", true);
+}
+
+/// The setup is due (first launch or a new version): its full-screen window opens by itself.
+fn show_setup_on_launch(handle: &AppHandle) {
+    let h = handle.clone();
+    let _ = handle.run_on_main_thread(move || {
+        let st = h.state::<crate::app::AppState>();
+        crate::commands::surfaces::open_surface(h.clone(), st, "setup".into());
+    });
 }
 
 /// Builds the start-up windows in `labels`, one at a time, off the main thread.
@@ -244,6 +259,9 @@ fn build_lazy_windows(handle: &AppHandle, labels: &[&'static str]) {
         let built = rx.recv_timeout(LAZY_BUILD_LIMIT).is_ok();
         if built && label == "settings" {
             show_settings_on_launch(handle);
+        }
+        if built && label == "setup" {
+            show_setup_on_launch(handle);
         }
         if !built {
             all_built = false;
@@ -288,13 +306,15 @@ pub(crate) fn run_setup(
         .iter()
         .copied()
         .filter(|&label| {
+            if label == "setup" {
+                return crate::commands::setup_flow::setup_due(&initial_config);
+            }
             // Lens Command and Lens Cleaner are always built on first use.
             label != "command"
                 && label != "cleaner"
                 && label != "testerhub"
                 && label != "studio"
-                && (!initial_config.func.lazy_windows
-                    || (label == "settings" && crate::commands::setup_flow::setup_due(&initial_config)))
+                && !initial_config.func.lazy_windows
         })
         .collect();
     let lazy_handle = handle.clone();

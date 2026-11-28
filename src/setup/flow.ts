@@ -12,6 +12,7 @@ import { applyFeaturedLook, FEATURED_LOOKS } from "../themes/featured";
 import { packById } from "../themes/packs";
 import { DOCK_STYLES, withDock } from "../dock/styles";
 import { WHATS_NEW, type WhatsNewRelease } from "./whatsNew";
+import { withFlag } from "../magicwaves/flags";
 
 export type SetupReason = "first" | "update" | "forced";
 
@@ -161,7 +162,14 @@ export interface SetupChoices {
   extras: Partial<Record<ExtraId, boolean>>;
   /** Lens's own apps to pin to the Dock (src/coreapps/registry.ts pinEntry); ones already pinned are skipped. */
   pins?: PinnedApp[];
+  /** Put a Lens Apps button on the Dock (STORE_PIN). */
+  pinStore?: boolean;
+  /** Turn on desktop widgets (magicWaves.desktopWidgets); undefined = keep. */
+  widgets?: boolean;
 }
+
+/** The Dock pin that opens Lens Apps (launch_app_cmd knows "lens-surface:apps"). */
+export const STORE_PIN: PinnedApp = { id: "lens-apps", name: "Lens Apps", path: "lens-surface:apps", iconHint: null };
 
 export const NO_CHOICES: SetupChoices = { extras: {} };
 
@@ -226,8 +234,10 @@ export function applyChoices(base: LensConfig, choices: SetupChoices, version: s
   if (x.livePreviews !== undefined) next = { ...next, dock: { ...next.dock, livePreviews: x.livePreviews } };
   if (x.tester !== undefined) next = { ...next, tester: { ...next.tester, enabled: x.tester } };
   const have = new Set((next.dock.pinnedApps ?? []).map((p) => p.path));
-  const add = (choices.pins ?? []).filter((p) => !have.has(p.path) && (have.add(p.path), true));
+  const wanted = [...(choices.pinStore ? [STORE_PIN] : []), ...(choices.pins ?? [])];
+  const add = wanted.filter((p) => !have.has(p.path) && (have.add(p.path), true));
   if (add.length) next = { ...next, dock: { ...next.dock, pinnedApps: [...(next.dock.pinnedApps ?? []), ...add] } };
+  if (choices.widgets !== undefined) next = withFlag(next, "desktopWidgets", choices.widgets);
   return markSeen(next, version);
 }
 
@@ -242,6 +252,8 @@ export function describeChoices(choices: SetupChoices, lookLabel: (id: string) =
     const v = choices.extras[e.id];
     if (v !== undefined) out.push(`${e.label}: ${v ? "on" : "off"}`);
   }
+  if (choices.pinStore) out.push("Lens Apps on the Dock: on");
+  if (choices.widgets !== undefined) out.push(`Desktop widgets: ${choices.widgets ? "on" : "off"}`);
   if (choices.pins?.length) out.push(`Pin to the Dock: ${choices.pins.map((p) => p.name).join(", ")}`);
   return out;
 }

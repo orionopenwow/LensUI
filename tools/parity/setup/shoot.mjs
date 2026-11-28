@@ -13,7 +13,7 @@ await mkdir(shots, { recursive: true });
 const { chromium } = await import("playwright");
 
 const PRESETS = (process.env.PARITY_PRESETS || "obsidian,alabaster-daylight").split(",");
-const FLOWS = { first: ["welcome", "dock", "colour", "apps", "extras", "done"], update: ["whatsnew", "extras", "done"] };
+const FLOWS = { first: ["welcome", "dock", "colour", "store", "widgets", "apps", "extras", "done"], update: ["whatsnew", "extras", "done"] };
 const T = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".png": "image/png", ".svg": "image/svg+xml" };
 
 const srv = createServer(async (q, r) => {
@@ -30,11 +30,11 @@ const browser = await chromium.launch();
 const report = [];
 for (const preset of PRESETS) {
   for (const [flow, expected] of Object.entries(FLOWS)) {
-    const pg = await browser.newPage({ viewport: { width: 760, height: 560 } });
+    const pg = await browser.newPage({ viewport: { width: 1280, height: 800 } });
     const errors = [];
     pg.on("pageerror", (e) => errors.push(e.message));
     pg.on("console", (m) => m.type() === "error" && !/Failed to load resource/.test(m.text()) && errors.push(m.text().slice(0, 200)));
-    await pg.goto(`${base}/harness.html?surface=settings&preset=${preset}&setup=${flow}`);
+    await pg.goto(`${base}/harness.html?surface=setup&preset=${preset}&setup=${flow}`);
     await pg.waitForTimeout(900);
     const seen = [];
     for (let i = 0; i < expected.length; i++) {

@@ -7,6 +7,7 @@ import {
   compareVersions,
   describeChoices,
   EXTRAS,
+  STORE_PIN,
   extrasFor,
   looksFor,
   markSeen,
@@ -112,6 +113,16 @@ describe("Apps page", () => {
   test("an app that is already pinned is not pinned twice", () => {
     const base = { ...sampleConfig(), dock: { ...sampleConfig().dock, pinnedApps: [timer] } };
     expect(applyChoices(base, { extras: {}, pins: [timer] }, "1").dock.pinnedApps).toEqual([timer]);
+  });
+
+  test("Lens Apps goes on the Dock once, and widgets follow the switch", () => {
+    const base = sampleConfig();
+    const out = applyChoices(base, { extras: {}, pinStore: true, widgets: true }, "1");
+    expect(out.dock.pinnedApps.filter((p) => p.path === STORE_PIN.path)).toHaveLength(1);
+    expect(out.magicWaves?.desktopWidgets).toBe(true);
+    expect(applyChoices(out, { extras: {}, pinStore: true }, "1").dock.pinnedApps.filter((p) => p.path === STORE_PIN.path)).toHaveLength(1);
+    expect(applyChoices(out, { extras: {}, widgets: false }, "1").magicWaves?.desktopWidgets).toBe(false);
+    expect(describeChoices({ extras: {}, pinStore: true, widgets: true }, (id) => id, (id) => id)).toEqual(["Lens Apps on the Dock: on", "Desktop widgets: on"]);
   });
 
   test("the Done page lists what gets pinned", () => {
