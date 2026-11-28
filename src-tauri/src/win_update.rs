@@ -31,6 +31,8 @@ pub struct UpdateSettings {
     pub mode: String,
     /// Unix ms of the last automatic check.
     pub last_check_ms: u64,
+    /// "main" (every push to main, the default during the beta) | "stable" (published releases).
+    pub channel: String,
 }
 
 impl Default for UpdateSettings {
@@ -38,6 +40,7 @@ impl Default for UpdateSettings {
         Self {
             mode: "notify".into(),
             last_check_ms: 0,
+            channel: "main".into(),
         }
     }
 }
@@ -66,17 +69,40 @@ pub fn normalize_mode(mode: &str) -> &'static str {
     }
 }
 
+pub fn normalize_channel(channel: &str) -> &'static str {
+    match channel {
+        "stable" => "stable",
+        _ => "main",
+    }
+}
+
+/// Where each channel's `latest.json` lives. "stable" is the endpoint in tauri.conf.json (the
+/// newest published release); "main" is the rolling `main-build` pre-release that
+/// .github/workflows/main-channel.yml rebuilds and signs on every push to main.
+pub const MAIN_ENDPOINT: &str = "https://github.com/orionopenwow/LensUI/releases/download/main-build/latest.json";
+
+fn updater(app: &AppHandle) -> Result<tauri_plugin_updater::Updater, String> {
+    let mut b = app.updater_builder();
+    if load_settings().channel == "main" {
+        let url: tauri::Url = MAIN_ENDPOINT.parse().map_err(|e| format!("{e}"))?;
+        b = b.endpoints(vec![url]).map_err(|e| e.to_string())?;
+    }
+    b.build().map_err(|e| e.to_string())
+}
+
 pub fn load_settings() -> UpdateSettings {
     let mut s: UpdateSettings = fs::read_to_string(settings_path())
         .ok()
         .and_then(|t| serde_json::from_str(&t).ok())
         .unwrap_or_default();
     s.mode = normalize_mode(&s.mode).into();
+    s.channel = normalize_channel(&s.channel).into();
     s
 }
 
 pub fn save_settings(mut s: UpdateSettings) -> Result<UpdateSettings, String> {
     s.mode = normalize_mode(&s.mode).into();
+    s.channel = normalize_channel(&s.channel).into();
     let path = settings_path();
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|e| e.to_string())?;
@@ -89,10 +115,14 @@ pub fn save_settings(mut s: UpdateSettings) -> Result<UpdateSettings, String> {
     Ok(s)
 }
 
-/// True when an automatic check is due (pure; unit-tested).
+/// True when an automatic check is due (pure; unit-tested): daily for releases, hourly for main.
 pub fn auto_check_due(settings: &UpdateSettings, now_ms: u64) -> bool {
-    const DAY_MS: u64 = 24 * 60 * 60 * 1000;
-    settings.mode != "off" && now_ms.saturating_sub(settings.last_check_ms) >= DAY_MS
+    settings.mode != "off" && now_ms.saturating_sub(settings.last_check_ms) >= check_interval_ms(settings)
+}
+
+pub fn check_interval_ms(settings: &UpdateSettings) -> u64 {
+    const HOUR_MS: u64 = 60 * 60 * 1000;
+    if settings.channel == "main" { HOUR_MS } else { 24 * HOUR_MS }
 }
 
 fn now_ms() -> u64 {
@@ -148,7 +178,7 @@ pub async fn check(app: &AppHandle) -> UpdateStatus {
         }
         return not_configured();
     }
-    let updater = match app.updater() {
+    let updater = match updater(app) {
         Ok(u) => u,
         Err(e) => return status("error", &format!("Updater unavailable: {}", e)),
     };
@@ -271,7 +301,7 @@ pub async fn download(app: &AppHandle) -> Result<UpdateStatus, String> {
     if let Some(st) = already {
         return Ok(st);
     }
-    let updater = app.updater().map_err(|e| e.to_string())?;
+    let updater = updater(app)?;
     let update = updater
         .check()
         .await
@@ -356,24 +386,29 @@ pub fn start_background_check(app: AppHandle) {
         start_source_check(app);
         return;
     }
+    if !pubkey_configured(&app) {
+        return;
+    }
     tauri::async_runtime::spawn(async move {
-        // Let the shell settle first.
+        // Let the shell settle first, then look every 15 minutes whether a check is due (hourly
+        // on the main channel, daily for releases), so a long-running Lens still hears of updates.
         tokio_sleep(60).await;
-        let mut settings = load_settings();
-        if !auto_check_due(&settings, now_ms()) || !pubkey_configured(&app) {
-            return;
+        loop {
+            let mut settings = load_settings();
+            if auto_check_due(&settings, now_ms()) {
+                settings.last_check_ms = now_ms();
+                let _ = save_settings(settings.clone());
+                let st = check(&app).await;
+                if st.state != "available" {
+                    if lock(&LAST).is_none() {
+                        *lock(&LAST) = Some(st);
+                    }
+                } else if !(settings.mode == "auto" && download(&app).await.is_ok()) {
+                    publish_if(&app, st);
+                }
+            }
+            tokio_sleep(15 * 60).await;
         }
-        settings.last_check_ms = now_ms();
-        let _ = save_settings(settings.clone());
-        let st = check(&app).await;
-        if st.state != "available" {
-            *lock(&LAST) = Some(st);
-            return;
-        }
-        if settings.mode == "auto" && download(&app).await.is_ok() {
-            return;
-        }
-        publish_if(&app, st);
     });
 }
 
@@ -458,6 +493,19 @@ mod tests {
     }
 
     #[test]
+    fn channels_normalize_and_main_is_the_beta_default() {
+        assert_eq!(normalize_channel("stable"), "stable");
+        assert_eq!(normalize_channel("main"), "main");
+        assert_eq!(normalize_channel("nightly"), "main");
+        assert_eq!(UpdateSettings::default().channel, "main");
+        let old: UpdateSettings = serde_json::from_str(r#"{"mode":"auto","lastCheckMs":5}"#).unwrap();
+        assert_eq!(old.channel, "main", "an updates.json from before channels gets the default");
+        let wf = include_str!("../../.github/workflows/main-channel.yml");
+        assert!(wf.contains("main-build"), "the workflow publishes where MAIN_ENDPOINT reads");
+        assert!(MAIN_ENDPOINT.ends_with("/releases/download/main-build/latest.json"));
+    }
+
+    #[test]
     fn modes_normalize() {
         assert_eq!(normalize_mode("off"), "off");
         assert_eq!(normalize_mode("auto"), "auto");
@@ -471,12 +519,18 @@ mod tests {
         let s = UpdateSettings {
             mode: "notify".into(),
             last_check_ms: 10 * day,
+            channel: "stable".into(),
         };
         assert!(!auto_check_due(&s, 10 * day + 1));
         assert!(auto_check_due(&s, 11 * day));
+        // The main channel looks hourly.
+        let main = UpdateSettings { channel: "main".into(), ..s.clone() };
+        assert!(!auto_check_due(&main, 10 * day + 59 * 60 * 1000));
+        assert!(auto_check_due(&main, 10 * day + 60 * 60 * 1000));
         let off = UpdateSettings {
             mode: "off".into(),
             last_check_ms: 0,
+            channel: "main".into(),
         };
         assert!(!auto_check_due(&off, 100 * day));
         assert!(auto_check_due(&UpdateSettings::default(), day));
