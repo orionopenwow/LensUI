@@ -15,6 +15,9 @@ up and migrates `%APPDATA%\LensUI` where it can.
   Magic (preview) › Widget flyout; it needs no other switch.
 - **Calendar widget.** The time, today's date and this month (with today's items on the large size).
   New widget layouts start with it in the top-left corner.
+- **Restart to update for Lens run from the source folder.** A build made from a clone of the
+  repository checks `origin/main` every 30 minutes; when main has new commits the Top Bar pill and
+  Settings › Updates say **Restart to update**, which pulls, rebuilds and starts Lens again.
 
 ## [0.4.0] - 2026-11-27
 
