@@ -9,11 +9,17 @@ import "../update/update.css";
 interface UpdateSettings {
   mode: "off" | "notify" | "auto" | string;
   lastCheckMs: number;
+  channel?: "main" | "stable" | string;
 }
+
+const CHANNELS: { id: string; label: string; desc: string }[] = [
+  { id: "main", label: "Every update to main", desc: "A signed build of every change merged to main. Newest features first; checked hourly." },
+  { id: "stable", label: "Releases only", desc: "Only published releases. Fewer, more tested updates; checked daily." },
+];
 
 const MODES: { id: string; label: string; desc: string }[] = [
   { id: "off", label: "Off", desc: "Never checks." },
-  { id: "notify", label: "Tell me", desc: "Checks once a day and lets you decide." },
+  { id: "notify", label: "Tell me", desc: "Checks for updates and lets you decide." },
   { id: "auto", label: "Get it ready", desc: "Downloads signed updates in the background. You choose when to restart." },
 ];
 
@@ -61,6 +67,15 @@ export const UpdatesCard: React.FC = () => {
       .catch(() => {});
   };
 
+  const setChannel = (channel: string) => {
+    invoke<UpdateSettings>("set_update_settings_cmd", { settings: { ...(settings ?? { lastCheckMs: 0, mode: "notify" }), channel } })
+      .then((s) => {
+        setSettings(s);
+        void run(check);
+      })
+      .catch(() => {});
+  };
+
   const state = status.state;
   const notice = updateNotice(status);
   const shown = error ?? (status.message || (settings ? MODES.find((m) => m.id === settings.mode)?.desc : "Updates are unavailable in this build."));
@@ -102,6 +117,22 @@ export const UpdatesCard: React.FC = () => {
         ))}
       </div>
 
+      <div className="cc-chip-grid" role="radiogroup" aria-label="Update channel">
+        {CHANNELS.map((c) => (
+          <button data-weight="light"
+            key={c.id}
+            type="button"
+            role="radio"
+            aria-checked={(settings?.channel ?? "main") === c.id}
+            aria-label={`${c.label}: ${c.desc}`}
+            className={`cc-chip ${(settings?.channel ?? "main") === c.id ? "active" : ""}`}
+            onClick={() => setChannel(c.id)}
+          >
+            {c.label}
+          </button>
+        ))}
+      </div>
+
       <div className="cc-row">
         <div className="cc-desc lu-state" role="status">
           {notice ? "Your choice above is kept for when signed releases start." : shown}
@@ -112,7 +143,8 @@ export const UpdatesCard: React.FC = () => {
               {busy && state !== "downloading" ? "Checking…" : "Check now"}
             </button>
           )}
-          {state === "available" && (
+          {/* A source build behind main updates by hand (git pull); there is nothing to download. */}
+          {state === "available" && !status.newVersion?.startsWith("main ") && (
             <button data-weight="medium" type="button" className="cc-btn" disabled={busy} onClick={() => void run(download)}>
               Download {status.newVersion}
             </button>

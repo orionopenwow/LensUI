@@ -1,0 +1,159 @@
+# Lens main channel: every push to main becomes a signed update for installed copies.
+#
+#  Builds the NSIS installer at version <next patch>-main.<run number> (so it sorts above the last
+#  release and below the next one), signs the updater bundle with TAURI_SIGNING_PRIVATE_KEY, and
+#  replaces the files on the rolling `main-build` pre-release with it and a latest.json. Installed
+#  Lens on the "Every update to main" channel (the default during the beta; Settings › About &
+#  Testing › Updates) reads releases/download/main-build/latest.json (win_update::MAIN_ENDPOINT)
+#  and shows "Restart to update". The pre-release never becomes "Latest", so the README's download
+#  link keeps pointing at the newest published release.
+#
+#  Needs the same secrets as release.yml (docs/RELEASING.md). Without them it skips, green.
+name: main-channel
+
+on:
+  push:
+    branches: ["main"]
+    paths-ignore:
+      - "docs/**"
+      - "tools/site/**"
+      - "tools/media/**"
+      - "README.md"
+      - "*.md"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: main-channel
+  cancel-in-progress: true # the newest push wins
+
+env:
+  CARGO_TERM_COLOR: always
+  TAG: main-build
+
+jobs:
+  main-build:
+    name: Signed update for the main channel
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - name: Check signing configuration
+        id: keys
+        shell: pwsh
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_UPDATER_PUBKEY: ${{ vars.TAURI_UPDATER_PUBKEY }}
+        run: |
+          if ($env:TAURI_SIGNING_PRIVATE_KEY -and $env:TAURI_UPDATER_PUBKEY) { "ok=1" >> $env:GITHUB_OUTPUT }
+          else {
+            Write-Host "::notice::Main channel skipped: the updater signing key isn't configured (docs/RELEASING.md)."
+            "ok=0" >> $env:GITHUB_OUTPUT
+          }
+
+      - uses: actions/checkout@v4
+        if: steps.keys.outputs.ok == '1'
+
+      - uses: dtolnay/rust-toolchain@stable
+        if: steps.keys.outputs.ok == '1'
+
+      - uses: Swatinem/rust-cache@v2
+        if: steps.keys.outputs.ok == '1'
+        with:
+          workspaces: |
+            src-tauri
+            src-tauri/lens-dwm-hook
+          key: main-channel
+
+      - uses: oven-sh/setup-bun@v2
+        if: steps.keys.outputs.ok == '1'
+
+      - name: Install frontend dependencies
+        if: steps.keys.outputs.ok == '1'
+        run: bun install --frozen-lockfile
+
+      - name: Rebuild lens_dwm_hook.dll from source
+        if: steps.keys.outputs.ok == '1'
+        shell: pwsh
+        run: |
+          cargo build --release --manifest-path src-tauri/lens-dwm-hook/Cargo.toml
+          Copy-Item src-tauri/lens-dwm-hook/target/release/lens_dwm_hook.dll src-tauri/lens_dwm_hook.dll -Force
+
+      - name: Mission Control stays out (configs)
+        if: steps.keys.outputs.ok == '1'
+        run: node tools/mission/guard.mjs
+
+      - name: Version for this push
+        if: steps.keys.outputs.ok == '1'
+        id: ver
+        shell: pwsh
+        run: |
+          $base = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          $p = $base.Split('-')[0].Split('.')
+          $v = "{0}.{1}.{2}-main.{3}" -f $p[0], $p[1], ([int]$p[2] + 1), $env:GITHUB_RUN_NUMBER
+          "version=$v" >> $env:GITHUB_OUTPUT
+          Write-Host "Main channel version: $v"
+
+      - name: Build NSIS (signed updater artifacts)
+        if: steps.keys.outputs.ok == '1'
+        shell: pwsh
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          TAURI_UPDATER_PUBKEY: ${{ vars.TAURI_UPDATER_PUBKEY }}
+        run: |
+          $override = @{
+            version = "${{ steps.ver.outputs.version }}"
+            bundle  = @{ createUpdaterArtifacts = $true }
+            plugins = @{ updater = @{ pubkey = $env:TAURI_UPDATER_PUBKEY } }
+          } | ConvertTo-Json -Depth 5 -Compress
+          Set-Content -Path main-override.json -Value $override -Encoding utf8NoBOM
+          bun run tauri build --bundles nsis --config main-override.json
+
+      - name: Mission Control stays out (bundle)
+        if: steps.keys.outputs.ok == '1'
+        run: node tools/mission/guard.mjs dist
+
+      - name: Publish to the main-build pre-release
+        if: steps.keys.outputs.ok == '1'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          $repo = "${{ github.repository }}"
+          $nsis = Get-ChildItem "src-tauri/target/release/bundle/nsis/*.exe" | Select-Object -First 1
+          if (-not $nsis -or -not (Test-Path "$($nsis.FullName).sig")) { throw "Installer or its signature is missing." }
+          New-Item -ItemType Directory -Force -Path out | Out-Null
+          $exeName = "Lens-main-setup.exe"   # one fixed name: the URL in latest.json never dangles
+          Copy-Item $nsis.FullName "out/$exeName"
+          $subject = (git log -1 --format=%s).Trim()
+          $short = (git rev-parse --short HEAD).Trim()
+          $latest = [ordered]@{
+            version   = $env:VERSION
+            notes     = "main $short`: $subject"
+            pub_date  = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+            platforms = [ordered]@{
+              "windows-x86_64" = [ordered]@{
+                signature = (Get-Content "$($nsis.FullName).sig" -Raw).Trim()
+                url       = "https://github.com/$repo/releases/download/$env:TAG/$exeName"
+              }
+            }
+          }
+          $latest | ConvertTo-Json -Depth 5 | Set-Content -Path out/latest.json -Encoding utf8NoBOM
+
+          # Point the tag at this commit (create it the first time).
+          gh api -X PATCH "repos/$repo/git/refs/tags/$env:TAG" -f sha="$env:GITHUB_SHA" -F force=true 2>$null | Out-Null
+          if ($LASTEXITCODE -ne 0) { gh api -X POST "repos/$repo/git/refs" -f ref="refs/tags/$env:TAG" -f sha="$env:GITHUB_SHA" | Out-Null }
+
+          $notes = "Rolling build of main for the in-app **Every update to main** channel. Version $env:VERSION, commit $short`: $subject. For a stable download use the latest release instead."
+          gh release view $env:TAG -R $repo 2>$null | Out-Null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $env:TAG -R $repo --prerelease --latest=false --title "Lens main (every push)" --notes $notes
+          } else {
+            gh release edit $env:TAG -R $repo --prerelease --latest=false --notes $notes
+          }
+          # Installer first, latest.json last: a client never reads a latest.json ahead of its file.
+          gh release upload $env:TAG -R $repo "out/$exeName" --clobber
+          gh release upload $env:TAG -R $repo out/latest.json --clobber

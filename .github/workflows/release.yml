@@ -8,7 +8,7 @@
 #    secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD   its password (may be empty)
 #    vars.TAURI_UPDATER_PUBKEY                    contents of the matching .pub file
 #  The private key is never committed. Without these the installers are still built and attached
-#  to a draft PRE-release, with no latest.json: people can download and install Lens, and the
+#  to a draft release (not a pre-release: /releases/latest must find it), with no latest.json: people can download and install Lens, and the
 #  in-app updater stays off for that build (it shows "updates aren't available in this build").
 name: release
 
@@ -165,5 +165,5 @@ jobs:
           } elseif ($env:LENS_SIGNED -eq '1') {
             gh release create $env:TAG (Get-ChildItem release/*).FullName --draft --title "Lens $env:TAG" --notes "Draft. Paste the CHANGELOG section for $env:TAG here, then publish. Installers are not Authenticode-signed yet; Windows SmartScreen will warn."
           } else {
-            gh release create $env:TAG (Get-ChildItem release/*).FullName --draft --prerelease --title "Lens $env:TAG (preview)" --notes "Draft pre-release. Paste the CHANGELOG section for $env:TAG here, then publish. Installers are not Authenticode-signed yet; Windows SmartScreen will warn (More info > Run anyway). In-app updates are off in this build because the updater signing key is not configured yet; install new versions from this page."
+            gh release create $env:TAG (Get-ChildItem release/*).FullName --draft --title "Lens $env:TAG" --notes "Draft pre-release. Paste the CHANGELOG section for $env:TAG here, then publish. Installers are not Authenticode-signed yet; Windows SmartScreen will warn (More info > Run anyway). In-app updates are off in this build because the updater signing key is not configured yet; install new versions from this page."
           }

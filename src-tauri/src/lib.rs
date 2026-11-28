@@ -57,6 +57,7 @@ mod changes;
 mod desktop_shortcut;
 mod failsafe;
 mod win_update;
+mod source_update;
 mod tester;
 mod smooth;
 mod agentsafe;
