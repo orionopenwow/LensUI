@@ -56,6 +56,7 @@ mod input;
 mod changes;
 mod failsafe;
 mod win_update;
+mod source_update;
 mod tester;
 mod smooth;
 mod agentsafe;

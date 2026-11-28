@@ -8,6 +8,9 @@ up and migrates `%APPDATA%\LensUI` where it can.
 ## [Unreleased]
 
 ### Added
+- **Restart to update for Lens run from the source folder.** A build made from a clone of the
+  repository checks `origin/main` every 30 minutes; when main has new commits the Top Bar pill and
+  Settings › Updates say **Restart to update**, which pulls, rebuilds and starts Lens again.
 - **Lens Browser welcomes you.** After your first Lens setup (and the Lens Apps window it opens),
   Lens Browser opens on a new welcome: make it your default browser, take a five-slide tour, bring
   bookmarks and tabs from another browser, and see what's new (the AI beside the page, magic

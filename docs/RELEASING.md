@@ -100,6 +100,19 @@ The Updates card shows the release notes (the `notes` in `latest.json`, from the
 section pasted into the release) under "What's new". Every window gets the same state from
 `win_update` through `lens://update-state` (`src/update/useLensUpdate.ts`).
 
+### Builds run from the source folder
+
+A Lens built from a clone of the repository (`Launch-Lens-UI.bat` or `Build-Lens-UI.bat`) has no
+update key, so it follows `origin/main` instead (`src-tauri/src/source_update.rs`). A minute
+after start and then every 30 minutes (unless updates are **Off**) it runs `git fetch origin main`.
+When main has new commits and the folder is on `main` and can fast-forward, the same **Restart to
+update** pill appears in the Top Bar and in the Updates card, with the new commit subjects under
+"What's new". Restart puts the desktop back as Quit does; a helper window then runs
+`git pull --ff-only origin main`, rebuilds the way the build was made (`Launch-Lens-UI.bat` for a
+dev build, `tools/build/build-lens.ps1` for a standalone one) and starts Lens again. If the pull or
+the build fails it starts the build you had. On another branch, or when the folder has commits
+that aren't on main, the card says what to do by hand instead.
+
 ### Rollback
 
 1. Download the previous version's `.exe` (or `.msi`) from the Releases page and run it. It installs
