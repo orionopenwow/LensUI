@@ -9,8 +9,9 @@ import { clock, setTickPaused, subscribe, tickDebug } from "../deskwidgets/tick"
 import {
   DEFAULT_ZONES, KINDS, cityOf, handAngles, offsetLabel, parseZones, readCalendar, ringDash, searchKinds, secondDelay, tickOff, timeLeft, todayOpen, weatherFrom,
 } from "../deskwidgets/model";
-import { isEditWidgetsPhrase } from "../deskwidgets/api";
+import { flyoutPhrase, isEditWidgetsPhrase } from "../deskwidgets/api";
 import { MAGIC_DEFAULTS, MAGIC_FLAGS, magicFlags } from "../magicwaves/flags";
+import { flyFrom, flyStagger, monthGrid, weekdayLetters } from "../deskwidgets/model";
 
 const it = (id: string, size: string, col = -1, row = -1, kind = "clock"): GridItem => ({ id, kind, size, col, row, params: {} });
 const pos = (items: GridItem[]) => Object.fromEntries(layout(items, G).placed.map((p) => [p.id, [p.col, p.row]]));
@@ -306,5 +307,57 @@ describe("press weight", () => {
         expect(`${f}: ${tag.replace(/\s+/g, " ").slice(0, 160)}`).toMatch(/data-weight="(light|medium|heavy)"/);
       }
     }
+  });
+});
+
+describe("widget flyout and Calendar", () => {
+  test("the flyout is its own opt-in flag", () => {
+    expect(MAGIC_FLAGS).toContain("widgetFlyout");
+    expect(MAGIC_DEFAULTS.widgetFlyout).toBe(false);
+    expect(magicFlags({ magicWaves: { widgetFlyout: true } }).widgetFlyout).toBe(true);
+    expect(magicFlags(null).widgetFlyout).toBe(false);
+  });
+
+  test("Calendar is a local kind with all three sizes", () => {
+    const cal = KINDS.find((k) => k.id === "calendar");
+    expect(cal?.fetches).toBe(false);
+    expect(searchKinds("month").map((k) => k.id)).toContain("calendar");
+  });
+
+  test("month grid: whole weeks, the first on the right weekday", () => {
+    // November 2026 starts on a Sunday and has 30 days.
+    const sun = monthGrid(2026, 10, 0);
+    expect(sun[0][0]).toBe(1);
+    expect(sun.flat().filter(Boolean).length).toBe(30);
+    expect(sun.every((w) => w.length === 7)).toBe(true);
+    const mon = monthGrid(2026, 10, 1);
+    expect(mon[0].indexOf(1)).toBe(6);
+    expect(mon.length).toBe(6);
+    // February 2026 starts on a Sunday and fills exactly four weeks.
+    expect(monthGrid(2026, 1, 0).length).toBe(4);
+    expect(weekdayLetters(0, "en-US")).toEqual(["S", "M", "T", "W", "T", "F", "S"]);
+    expect(weekdayLetters(1, "en-US")[0]).toBe("M");
+  });
+
+  test("fly-out legs start on the origin and the nearest widget leads", () => {
+    const origin = { x: 20, y: 60 };
+    const near = { x: 20, y: 60, w: 152, h: 152 };
+    const far = { x: 900, y: 500, w: 320, h: 152 };
+    const f = flyFrom(near, origin);
+    expect([f.dx, f.dy]).toEqual([-76, -76]);
+    expect(f.scale).toBeLessThan(0.3);
+    expect(flyStagger([far, near], origin)).toEqual([32, 0]);
+    // Many widgets: the stagger never stretches past its span.
+    const many = Array.from({ length: 20 }, (_, i) => ({ x: i * 10, y: 0, w: 10, h: 10 }));
+    expect(Math.max(...flyStagger(many, origin, 32, 160))).toBeLessThanOrEqual(160);
+    expect(flyStagger([near], origin)).toEqual([0]);
+  });
+
+  test("Command phrases for the flyout", () => {
+    expect(flyoutPhrase("widgets")).toBeUndefined();
+    expect(flyoutPhrase("Show my widgets.")).toBe(true);
+    expect(flyoutPhrase("open desktop widgets")).toBe(true);
+    expect(flyoutPhrase("hide the widgets")).toBe(false);
+    for (const p of ["edit widgets", "what are widgets", "widgets please", "/widgets"]) expect(flyoutPhrase(p)).toBeNull();
   });
 });

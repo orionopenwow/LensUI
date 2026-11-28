@@ -525,14 +525,18 @@ if (params.get("music") === "1") {
 
 // Desktop widgets (docs/features/desktop-widgets.md). An in-memory layout for the `deskwidgets`
 // surface. ?desk=sample starts with one widget of each local kind (and a Weather widget from the
-// Dashboard sample when ?widgets=sample is set too); ?desk=edit opens edit mode as well. Notes and
+// Dashboard sample when ?widgets=sample is set too); ?desk=edit opens edit mode as well;
+// ?desk=flyout turns the widget flyout on (Calendar top-left, widgets tucked away until
+// `desktop_widgets_flyout` or window.__deskFly(true) brings them out). Notes and
 // today's calendar get clearly invented sample data. Nothing here touches the network.
 {
   // The host window only exists while the flag is on, so opening it bare (the hyper suite) turns
   // the flag on and shows the sample layout.
   if (params.get("surface") === "deskwidgets" && !params.get("magic")) (config as any).magicWaves = { ...((config as any).magicWaves ?? {}), desktopWidgets: true };
   const desk = params.get("desk") ?? (params.get("surface") === "deskwidgets" ? "sample" : null);
+  if (desk === "flyout") (config as any).magicWaves = { ...((config as any).magicWaves ?? {}), widgetFlyout: true };
   const sample = [
+    ...(desk === "flyout" ? [{ id: "calendar-1", kind: "calendar", size: "medium", col: 0, row: 0, params: {} }] : []),
     { id: "clock-1", kind: "clock", size: "small", col: -1, row: -1, params: {} },
     { id: "today-1", kind: "today", size: "medium", col: -1, row: -1, params: {} },
     { id: "music-1", kind: "music", size: "medium", col: -1, row: -1, params: {} },
@@ -543,14 +547,23 @@ if (params.get("music") === "1") {
   ];
   const state = {
     key: "DISPLAY1@1920x1080",
-    items: desk === "sample" || desk === "edit" ? sample : [{ id: "clock-1", kind: "clock", size: "small", col: -1, row: -1, params: {} }],
+    items: desk === "sample" || desk === "edit" || desk === "flyout" ? sample : [{ id: "clock-1", kind: "clock", size: "small", col: -1, row: -1, params: {} }],
     editing: desk === "edit",
+    out: false,
   };
-  const on = () => !!(config as any).magicWaves?.desktopWidgets;
+  const fly = () => !!(config as any).magicWaves?.widgetFlyout;
+  const on = () => !!(config as any).magicWaves?.desktopWidgets || fly();
+  handlers.desktop_widgets_flyout = (a) => {
+    if (!fly()) return Promise.reject("Turn on the widget flyout first.");
+    state.out = a.on === null || a.on === undefined ? !state.out : !!a.on;
+    emitLocal("lens://deskwidgets-flyout", { out: state.out, origin: null, key: state.key });
+    return state.out;
+  };
+  (W as any).__deskFly = (out?: boolean) => handlers.desktop_widgets_flyout({ on: out ?? null });
   handlers.desktop_widgets_available = () => on();
   handlers.desktop_widgets_state = () => {
     if (!on()) return Promise.reject("Turn on desktop widgets first.");
-    return { key: state.key, items: JSON.parse(JSON.stringify(state.items)), editing: state.editing, shown: true, covered: false };
+    return { key: state.key, items: JSON.parse(JSON.stringify(state.items)), editing: state.editing, shown: true, covered: false, flyout: fly(), out: state.out };
   };
   handlers.desktop_widgets_save = (a) => {
     if (!on()) return Promise.reject("Turn on desktop widgets first.");

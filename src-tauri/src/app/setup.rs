@@ -468,7 +468,8 @@ pub(crate) fn run_setup(
     let h_wid = handle.clone();
     let _ = app.global_shortcut().on_shortcut(widgets_shortcut, move |_app, _s, ev| {
         if ev.state == ShortcutState::Pressed {
-            toggle_surface(h_wid.clone(), "widgets".into());
+            // The widget flyout while it's on, the Widget Drawer otherwise.
+            crate::commands::desktop_widgets::widgets_key(&h_wid, None);
         }
     });
 

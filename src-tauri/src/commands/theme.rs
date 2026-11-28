@@ -156,7 +156,7 @@ pub(crate) fn save_config_cmd(
     save_config(&new_config)?;
     crate::app::integration::on_config_saved(&app, &prev_config, &new_config);
     crate::commands::dashboard::on_flag_changed(&app, prev_config.magic_waves.dashboard, new_config.magic_waves.dashboard);
-    crate::commands::desktop_widgets::on_flag_changed(&app, prev_config.magic_waves.desktop_widgets, new_config.magic_waves.desktop_widgets);
+    crate::commands::desktop_widgets::on_flags_changed(&app, &prev_config.magic_waves, &new_config.magic_waves);
 
     // Only touch taskbar/startup/window geometry when those specific settings actually changed!
     // Never call set_size/set_position/backdrop on every Opacity/Roundness/Color dial tick (eliminates flicker!).

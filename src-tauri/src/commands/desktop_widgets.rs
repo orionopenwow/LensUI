@@ -29,6 +29,18 @@ pub(crate) const LABEL: &str = "deskwidgets";
 pub(crate) const EVT_EDIT: &str = "lens://deskwidgets-edit";
 /// Sent to the host page when it is shown or hidden, covered or not, or moved to another monitor.
 pub(crate) const EVT_STATE: &str = "lens://deskwidgets-state";
+/// Sent to the host page: the widget flyout goes out (`out: true`, from `origin`) or back in.
+pub(crate) const EVT_FLYOUT: &str = "lens://deskwidgets-flyout";
+
+/// The widget flyout is out (widgets over the desktop, the host in front).
+static OUT: AtomicBool = AtomicBool::new(false);
+/// The widgets are being drawn back in: the host stays in front until then.
+static TUCK_UNTIL: Mutex<Option<Instant>> = Mutex::new(None);
+/// The flyout opened on the monitor under the pointer: its work area, scale and key, used instead
+/// of Lens's monitor until the widgets are back in.
+static FLY_TARGET: Mutex<Option<Target>> = Mutex::new(None);
+
+type Target = ((i32, i32, u32, u32), f64, String);
 
 /// The host loop is running.
 static RUNNING: AtomicBool = AtomicBool::new(false);
@@ -49,6 +61,8 @@ pub(crate) struct HostStatus {
     pub running: bool,
     pub shown: bool,
     pub editing: bool,
+    /// The widget flyout is out.
+    pub out: bool,
     pub covered: bool,
     /// The window lets the pointer through right now.
     pub click_through: bool,
@@ -72,12 +86,26 @@ pub(crate) struct DeskState {
     pub editing: bool,
     pub shown: bool,
     pub covered: bool,
+    /// The widget flyout is on: widgets stay tucked away until called.
+    pub flyout: bool,
+    /// The flyout is out right now.
+    pub out: bool,
+}
+
+/// (desktop widgets, widget flyout) from the config.
+fn flags(app: &AppHandle) -> (bool, bool) {
+    app.try_state::<AppState>()
+        .and_then(|s| s.config.lock().ok().map(|c| (c.magic_waves.desktop_widgets, c.magic_waves.widget_flyout)))
+        .unwrap_or((false, false))
 }
 
 fn enabled(app: &AppHandle) -> bool {
-    app.try_state::<AppState>()
-        .and_then(|s| s.config.lock().ok().map(|c| c.magic_waves.desktop_widgets))
-        .unwrap_or(false)
+    let (d, f) = flags(app);
+    dw::host_on(d, f)
+}
+
+fn flyout_mode(app: &AppHandle) -> bool {
+    flags(app).1
 }
 
 fn require(app: &AppHandle) -> Result<(), String> {
@@ -86,6 +114,11 @@ fn require(app: &AppHandle) -> Result<(), String> {
     } else {
         Err("Turn on desktop widgets first (Settings › About & Testing › Magic (preview)).".into())
     }
+}
+
+/// The host stays in front: edit mode, the flyout out, or the widgets still drawing back in.
+fn in_front() -> bool {
+    EDITING.load(Ordering::SeqCst) || OUT.load(Ordering::SeqCst) || TUCK_UNTIL.lock().ok().and_then(|t| *t).map(|t| Instant::now() < t).unwrap_or(false)
 }
 
 fn status() -> HostStatus {
@@ -112,7 +145,7 @@ fn emit_state(app: &AppHandle) {
 /// Whether desktop widgets are on (Settings, the Dashboard and Command use it).
 #[tauri::command]
 pub(crate) fn desktop_widgets_available(state: State<AppState>) -> bool {
-    state.config.lock().map(|c| c.magic_waves.desktop_widgets).unwrap_or(false)
+    state.config.lock().map(|c| dw::host_on(c.magic_waves.desktop_widgets, c.magic_waves.widget_flyout)).unwrap_or(false)
 }
 
 /// This monitor's widgets (the defaults the first time).
@@ -121,7 +154,15 @@ pub(crate) fn desktop_widgets_state(app: AppHandle) -> Result<DeskState, String>
     require(&app)?;
     let s = status();
     let key = if s.key.is_empty() { primary_key(&app) } else { s.key.clone() };
-    Ok(DeskState { items: dw::items_for(&key), key, editing: EDITING.load(Ordering::SeqCst), shown: s.shown, covered: s.covered })
+    Ok(DeskState {
+        items: dw::items_for(&key),
+        key,
+        editing: EDITING.load(Ordering::SeqCst),
+        shown: s.shown,
+        covered: s.covered,
+        flyout: flyout_mode(&app),
+        out: OUT.load(Ordering::SeqCst),
+    })
 }
 
 /// Stores one monitor's widgets (after an add, move, resize or remove).
@@ -150,7 +191,122 @@ pub(crate) fn desktop_widgets_status() -> HostStatus {
     let mut s = status();
     s.running = RUNNING.load(Ordering::SeqCst);
     s.editing = EDITING.load(Ordering::SeqCst);
+    s.out = OUT.load(Ordering::SeqCst);
     s
+}
+
+/// The widget flyout out or back in (`on` absent: toggle). Out brings the host in front of every
+/// window on the monitor under the pointer, with the widgets flying out from the top-left corner;
+/// back in draws them in again and returns the host behind the windows. Refused while the flyout
+/// is off, and while a fullscreen app or a protected game is in front.
+#[tauri::command]
+pub(crate) fn desktop_widgets_flyout(app: AppHandle, on: Option<bool>) -> Result<bool, String> {
+    if !flyout_mode(&app) {
+        return Err("Turn on the widget flyout first (Settings › About & Testing › Magic (preview)).".into());
+    }
+    let want = on.unwrap_or(!OUT.load(Ordering::SeqCst));
+    set_flyout(&app, want, None, "asked")?;
+    Ok(want)
+}
+
+/// The Widgets key, the Widgets hot corner and the tray's Widgets item: the flyout while it is on,
+/// the Widget Drawer otherwise. `point` is where the call came from (a hot corner), so the
+/// widgets fly out from there.
+pub(crate) fn widgets_key(app: &AppHandle, point: Option<(i32, i32)>) {
+    if flyout_mode(app) {
+        let want = !OUT.load(Ordering::SeqCst);
+        if let Err(e) = set_flyout(app, want, point, "widgets key") {
+            eprintln!("[Lens UI] widget flyout: {e}");
+        }
+    } else {
+        crate::commands::surfaces::toggle_surface(app.clone(), "widgets".into());
+    }
+}
+
+fn set_flyout(app: &AppHandle, on: bool, point: Option<(i32, i32)>, why: &str) -> Result<(), String> {
+    if on {
+        if let Some(r) = status().hidden_reason.filter(|r| r != "starting") {
+            return Err(format!("Desktop widgets are hidden right now ({r})."));
+        }
+        if !RUNNING.load(Ordering::SeqCst) {
+            ensure_running(app.clone());
+        }
+    }
+    let was = OUT.swap(on, Ordering::SeqCst);
+    set_status(|s| s.out = on);
+    if was == on {
+        return Ok(());
+    }
+    eprintln!("[Lens UI] widget flyout: {} ({why})", if on { "out" } else { "in" });
+    let Some(w) = app.get_webview_window(LABEL) else {
+        OUT.store(false, Ordering::SeqCst);
+        set_status(|s| s.out = false);
+        return Err("Desktop widgets are still starting. Try again in a moment.".into());
+    };
+    if on {
+        if let Ok(mut t) = TUCK_UNTIL.lock() {
+            *t = None;
+        }
+        // Out on the monitor under the pointer (Lens's monitor when there is no pointer).
+        let at = point.or_else(platform::cursor);
+        let tgt = at.and_then(|(x, y)| monitor_at(app, x, y)).or_else(|| target(app));
+        let mut origin = None;
+        if let Some((rect, scale, key)) = tgt.clone() {
+            crate::app::place::place_window(&w, rect.0, rect.1, rect.2, rect.3);
+            origin = dw::flyout_origin(point, (rect.0, rect.1), (rect.2, rect.3), scale);
+            let moved = status().key != key;
+            set_status(|s| {
+                s.key = key.clone();
+                s.rect = [rect.0, rect.1, rect.0 + rect.2 as i32, rect.1 + rect.3 as i32];
+            });
+            if moved {
+                emit_state(app);
+            }
+        }
+        if let Ok(mut f) = FLY_TARGET.lock() {
+            *f = tgt;
+        }
+        let _ = crate::app::place::set_click_through(&w, false);
+        platform::set_activatable(&w, true);
+        platform::show_noactivate(&w);
+        platform::z(&w, ZPlace::Front);
+        let _ = w.set_focus();
+        let _ = app.emit_to(LABEL, EVT_FLYOUT, serde_json::json!({ "out": true, "origin": origin, "key": status().key }));
+    } else {
+        if let Ok(mut t) = TUCK_UNTIL.lock() {
+            *t = Some(Instant::now() + Duration::from_millis(dw::FLYOUT_TUCK_MS));
+        }
+        let _ = app.emit_to(LABEL, EVT_FLYOUT, serde_json::json!({ "out": false, "origin": null, "key": status().key }));
+        // Behind the windows again once the widgets are in (unless they went out again meanwhile).
+        let app = app.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(dw::FLYOUT_TUCK_MS + 20));
+            if in_front() {
+                return;
+            }
+            if let Ok(mut f) = FLY_TARGET.lock() {
+                *f = None;
+            }
+            if let Some(w) = app.get_webview_window(LABEL) {
+                platform::set_activatable(&w, false);
+                platform::z(&w, ZPlace::Bottom);
+            }
+        });
+    }
+    Ok(())
+}
+
+/// Where the pointer is now (physical screen pixels), for a hot corner.
+pub(crate) fn pointer() -> Option<(i32, i32)> {
+    platform::cursor()
+}
+
+/// The work area, scale and layout key of the monitor at a screen point.
+fn monitor_at(app: &AppHandle, x: i32, y: i32) -> Option<Target> {
+    let m = app.monitor_from_point(x as f64, y as f64).ok().flatten()?;
+    let wa = m.work_area();
+    let key = dw::monitor_key(m.name().map(|s| s.as_str()).unwrap_or(""), m.size().width, m.size().height);
+    Some(((wa.position.x, wa.position.y, wa.size.width, wa.size.height), m.scale_factor(), key))
 }
 
 /// Edit mode on or off (`on` absent: toggle). On brings the host in front and gives it the
@@ -186,9 +342,11 @@ fn set_edit(app: &AppHandle, on: bool, why: &str) {
             platform::show_noactivate(&w);
             platform::z(&w, ZPlace::Front);
             let _ = w.set_focus();
-        } else {
+        } else if !OUT.load(Ordering::SeqCst) {
             platform::set_activatable(&w, false);
             platform::z(&w, ZPlace::Bottom);
+        } else {
+            let _ = w.set_focus();
         }
     }
 }
@@ -201,14 +359,38 @@ pub(crate) fn start(app: AppHandle) {
     }
 }
 
-/// Called after settings are saved.
-pub(crate) fn on_flag_changed(app: &AppHandle, was: bool, now: bool) {
+/// Called after settings are saved: desktop widgets or the widget flyout turned on or off.
+pub(crate) fn on_flags_changed(app: &AppHandle, prev: &crate::config::MagicWavesConfig, next: &crate::config::MagicWavesConfig) {
+    let was = dw::host_on(prev.desktop_widgets, prev.widget_flyout);
+    let now = dw::host_on(next.desktop_widgets, next.widget_flyout);
+    if prev.widget_flyout != next.widget_flyout {
+        eprintln!("[Lens UI] widget flyout: turned {}", if next.widget_flyout { "on" } else { "off" });
+        // Off while out: the widgets just stay where they are on the desktop (or the host closes).
+        if !next.widget_flyout && OUT.swap(false, Ordering::SeqCst) {
+            set_status(|s| s.out = false);
+            if let Ok(mut f) = FLY_TARGET.lock() {
+                *f = None;
+            }
+            if let Some(w) = app.get_webview_window(LABEL) {
+                if !EDITING.load(Ordering::SeqCst) {
+                    platform::set_activatable(&w, false);
+                    platform::z(&w, ZPlace::Bottom);
+                }
+            }
+        }
+        let _ = app.emit_to(LABEL, EVT_FLYOUT, serde_json::json!({ "out": false, "origin": null, "key": status().key, "mode": next.widget_flyout }));
+    }
+    on_flag_changed(app, was, now);
+}
+
+fn on_flag_changed(app: &AppHandle, was: bool, now: bool) {
     if now && !was {
         eprintln!("[Lens UI] desktop widgets: turned on");
         ensure_running(app.clone());
     } else if was && !now {
         eprintln!("[Lens UI] desktop widgets: turned off; the host closes");
         EDITING.store(false, Ordering::SeqCst);
+        OUT.store(false, Ordering::SeqCst);
         // The loop sees the flag off within one pass and closes the window.
     }
 }
@@ -266,6 +448,10 @@ fn ensure_running(app: AppHandle) {
             let _ = w.close();
         }
         EDITING.store(false, Ordering::SeqCst);
+        OUT.store(false, Ordering::SeqCst);
+        if let Ok(mut f) = FLY_TARGET.lock() {
+            *f = None;
+        }
         HELD.store(false, Ordering::SeqCst);
         if let Ok(mut h) = HITS.lock() {
             h.clear();
@@ -310,7 +496,9 @@ fn run_host(app: &AppHandle) {
         // Placement: the work area of Lens's monitor (also after DPI, monitor or Explorer changes).
         if due(&last_place, Duration::from_secs(2)) {
             last_place = Some(Instant::now());
-            if let Some(((x, y, w, h), s, k)) = target(app) {
+            // The flyout's monitor while it is out (or drawing back in), Lens's monitor otherwise.
+            let fly = FLY_TARGET.lock().ok().and_then(|f| f.clone());
+            if let Some(((x, y, w, h), s, k)) = fly.or_else(|| target(app)) {
                 crate::app::place::place_window(&win, x, y, w, h);
                 origin = (x, y);
                 scale = s;
@@ -333,15 +521,21 @@ fn run_host(app: &AppHandle) {
             let (fullscreen_front, protected_front, desktop, ours) = platform::front_facts(&win);
             let facts = dw::HostFacts { on: true, fullscreen_front, protected_front, editing };
             desktop_front = desktop;
-            // Edit mode ends when the person has gone to another app.
-            if editing {
+            // Edit mode and the flyout end when the person has gone to another app.
+            let out = OUT.load(Ordering::SeqCst);
+            if editing || out {
                 if ours {
                     held_fg = true;
                     away_since = None;
                 } else {
                     let since = *away_since.get_or_insert_with(Instant::now);
                     if dw::leave_edit_when_away(held_fg, since.elapsed().as_millis() as u64) {
-                        set_edit(app, false, "another app came to the front");
+                        if editing {
+                            set_edit(app, false, "another app came to the front");
+                        }
+                        if out {
+                            let _ = set_flyout(app, false, None, "another app came to the front");
+                        }
                         held_fg = false;
                         away_since = None;
                         z_now = None;
@@ -361,6 +555,9 @@ fn run_host(app: &AppHandle) {
                     if editing {
                         set_edit(app, false, reason.unwrap_or("hidden"));
                     }
+                    if OUT.load(Ordering::SeqCst) {
+                        let _ = set_flyout(app, false, None, reason.unwrap_or("hidden"));
+                    }
                     let _ = crate::app::place::hide_window(&win);
                 }
                 shown = want;
@@ -376,7 +573,8 @@ fn run_host(app: &AppHandle) {
         if shown {
             let editing = EDITING.load(Ordering::SeqCst);
             // Stacking: re-asserted every 3 s too (Explorer restarting re-stacks the desktop).
-            let want_z = dw::z_place(editing, desktop_front);
+            let front = in_front();
+            let want_z = dw::z_place(front, desktop_front);
             if Some(want_z) != z_now || (want_z == ZPlace::Bottom && due(&last_z, Duration::from_secs(3))) {
                 platform::z(&win, want_z);
                 z_now = Some(want_z);
@@ -389,7 +587,7 @@ fn run_host(app: &AppHandle) {
                 .map(|h| h.iter().filter_map(|r| dw::to_screen(*r, origin, scale)).collect())
                 .unwrap_or_default();
             let over = platform::cursor().map(|(x, y)| dw::hit(&rects, x, y)).unwrap_or(false);
-            let take = dw::takes_pointer(editing, HELD.load(Ordering::SeqCst), over);
+            let take = dw::takes_pointer(editing || OUT.load(Ordering::SeqCst), HELD.load(Ordering::SeqCst), over);
             if click_through != Some(!take) && crate::app::place::set_click_through(&win, !take) {
                 click_through = Some(!take);
                 set_status(|st| st.click_through = !take);
@@ -398,7 +596,7 @@ fn run_host(app: &AppHandle) {
             // Covered: every widget behind an app window, so the page can stop its clock.
             if due(&last_cover, Duration::from_millis(1500)) {
                 last_cover = Some(Instant::now());
-                let now = !editing && dw::covered(&rects, &crate::app::watcher::collect_overlap_rects());
+                let now = !front && dw::covered(&rects, &crate::app::watcher::collect_overlap_rects());
                 if now != covered {
                     covered = now;
                     set_status(|st| st.covered = now);

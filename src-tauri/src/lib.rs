@@ -975,6 +975,7 @@ pub fn run() {
             commands::desktop_widgets::desktop_widgets_hits,
             commands::desktop_widgets::desktop_widgets_status,
             commands::desktop_widgets::desktop_widgets_edit,
+            commands::desktop_widgets::desktop_widgets_flyout,
             commands::magic_start::magic_start_available,
             commands::magic_start::toggle_magic_start,
             commands::magic_start::magic_start_hide,

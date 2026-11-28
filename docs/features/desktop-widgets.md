@@ -18,7 +18,8 @@ Everything comes from Lens on this PC; nothing new leaves it.
   widget that fetches (Weather, a feed…) was approved on the Dashboard's consent screen; placing it
   on the desktop doesn't approve anything new.
 
-The first time, the desktop gets a clock, your latest note and today's list, top-left.
+The first time, the desktop gets the Calendar in the top-left corner, then your latest note and
+today's list.
 
 ## Using it
 
@@ -36,6 +37,7 @@ The first time, the desktop gets a clock, your latest note and today's list, top
 
 | Kind | Small | Medium | Large | Data |
 |---|---|---|---|---|
+| Calendar | weekday, day, time | time + date + this month | + today's items | this PC's clock and the Lens calendar (`lens_calendar_events_v1`), read only |
 | Clock | analog, smooth second hand | world clock, four cities | analog + three cities | this PC's clock; cities editable (Edit “Clock”…) |
 | Today | count + 2 items | 3 items with times | up to 8 | the Lens calendar (`lens_calendar_events_v1`); ticking off writes `done` there |
 | Notes | newest note | two notes | up to six | the "Notes" shelf (Lens Notes), read only; click opens the note |
@@ -47,6 +49,45 @@ The first time, the desktop gets a clock, your latest note and today's list, top
 Weather and "From the Dashboard" ask you to add the widget on the Dashboard first (its consent
 screen names every site); the desktop then shows that same widget. They follow the Dashboard's
 kill switch (**Stop all widget fetching**) and its Sources page.
+
+## Widget flyout (opt-in)
+
+`magicWaves.widgetFlyout`, off by default: **Settings › About & Testing › Magic (preview) › Widget
+flyout**. It is enough by itself (it starts the host even with Desktop widgets off). With it on, the
+widgets wait out of sight instead of sitting on the desktop:
+
+- **Out**: the Widgets key (**Alt+W**, which opens the Widget Drawer while the flyout is off), the
+  **Widgets** hot corner, the tray's **Widgets** item, or Command `widgets` / `show widgets`. The
+  host comes to the front on the monitor under the pointer, the desktop dims a little (a dashboard
+  over your windows) and every widget flies out to its place from the top-left cell where the
+  Calendar lives, or from the hot corner that called it. The nearest widget leaves first.
+- **Back in**: the same key or corner again, **Esc**, a click on the dimmed desktop, Command
+  `hide widgets`, or going to another app (after 1.5 s, like edit mode). The same animation plays
+  backwards: the farthest widget goes first, each accelerating into the origin, then the host goes
+  back behind the windows. Pressing the key again mid-way turns the widgets round where they are.
+- A fullscreen app or a protected game in front puts them away and refuses to bring them out.
+- Everything else works while they're out: right-click menus, Edit Widgets…, ticking off Today.
+- **Calendar** (new kind): small is the weekday, the day and the time; medium adds this month (the
+  week starts on the day your Windows language uses, today ringed); large adds today's open items
+  from the Lens calendar. New layouts (any monitor that never had widgets) start with a medium
+  Calendar in the top-left cell, then Notes and Today.
+- **Monitors and scaling**: the flyout opens on the monitor under the pointer and uses that
+  monitor's own layout; the host is placed with `place::place_window` (DPI-checked) before the
+  page is told to fly, and the page loads that monitor's widgets first if it was showing another
+  one. Origins Lens sends are converted to CSS pixels with that monitor's scale
+  (`flyout_origin`), so the legs land on the same spot at 100 %, 150 % or 200 %. When the widgets
+  are back in, the host returns to Lens's monitor.
+- **Motion**: one Web Animation per widget from "shrunk onto the origin" (scale 0.18, faded) to
+  "in place", 360 ms on the `out` curve with up to 160 ms of stagger; drawing in plays it in
+  reverse (the stagger is mirrored with `endDelay`). Transform and opacity only; the animations are
+  dropped once a leg ends, so drags and FLIP reflows are untouched. Reduced motion: a 140 ms fade.
+  Rust keeps the host in front for `FLYOUT_TUCK_MS` (560 ms) after "back in" so no window covers
+  the widgets halfway.
+- Code: `desktop_widgets_flyout` and `widgets_key` in `commands/desktop_widgets.rs` (the `OUT`,
+  `TUCK_UNTIL` and `FLY_TARGET` state), `host_on` / `flyout_origin` in
+  `magic_waves/desktop_widgets.rs`, `fly()` and the `EVT_FLYOUT` listener in
+  `DeskWidgetsSurface.tsx`, `CalendarWidget` in `Widgets.tsx`, `monthGrid` / `flyFrom` /
+  `flyStagger` in `model.ts`.
 
 ## How it works
 

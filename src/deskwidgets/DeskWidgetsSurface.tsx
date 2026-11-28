@@ -14,10 +14,10 @@ import type { DeskItem } from "../types/generated";
 import { useLensState } from "../hooks/useLensState";
 import { captureFlip, glide, usePresence } from "../ui/motion";
 import { usePressWeight } from "./press";
-import { reducedMotion } from "../ui/motion/tokens";
+import { DURATION_MS, EASE, reducedMotion } from "../ui/motion/tokens";
 import { EMPTY_STORE, WIDGETS_CHANGED, widgetsApi, type WidgetStore } from "../widgets/api";
 import { addItem, gridFor, layout, moveTo, newId, rectOf, removeItem, resize, settle, snapCell, cellAt, type Grid, type GridItem, type Size } from "./grid";
-import { kindDef, SIZE_LABEL } from "./model";
+import { flyFrom, flyStagger, kindDef, SIZE_LABEL } from "./model";
 import { WIDGETS } from "./Widgets";
 import { EditGallery, WidgetEditor, type AddRequest } from "./EditGallery";
 import { setTickPaused as pauseTick } from "./tick";
@@ -27,7 +27,7 @@ function setTickPaused(p: boolean) {
   pauseTick(p);
   document.documentElement.classList.toggle("dwg-paused", p);
 }
-import { deskApi, EVT_EDIT, EVT_STATE, type DeskApi } from "./api";
+import { deskApi, EVT_EDIT, EVT_FLYOUT, EVT_STATE, type DeskApi, type FlyoutEvent } from "./api";
 import "./deskwidgets.css";
 
 interface Menu {
@@ -69,7 +69,54 @@ const quiet = () => {};
 export interface DeskWidgetsProps {
   api?: DeskApi;
   /** Parity/preview: start from these instead of asking Lens. */
-  initial?: { key: string; items: DeskItem[]; editing?: boolean };
+  initial?: { key: string; items: DeskItem[]; editing?: boolean; flyout?: boolean; out?: boolean };
+}
+
+/** One fly-out (or draw-in) leg: the widgets travel this long, plus the stagger. */
+const FLY_MS = DURATION_MS.slower;
+const FLY_SPAN = 160;
+
+/**
+ * Flies every widget out of `origin` to its place (dir "out"), or draws it back in ("in").
+ * Each widget has one animation from "shrunk onto the origin" to "in place"; drawing in plays the
+ * same animation backwards, so the two legs mirror each other and either can turn round mid-way
+ * (an Alt+W pressed again while they are still flying). Transform and opacity only.
+ */
+function fly(root: HTMLElement | null, anims: Map<string, Animation>, dir: "out" | "in", origin: { x: number; y: number }): Promise<void> {
+  const els = Array.from(root?.querySelectorAll<HTMLElement>(".dwg-item[data-id]") ?? []);
+  const reduce = reducedMotion();
+  const rects = els.map((el) => ({ x: el.offsetLeft, y: el.offsetTop, w: el.offsetWidth, h: el.offsetHeight }));
+  const delays = flyStagger(rects, origin, 32, FLY_SPAN);
+  const max = Math.max(0, ...delays);
+  const done: Promise<unknown>[] = [];
+  els.forEach((el, i) => {
+    const id = el.dataset.id!;
+    let a = anims.get(id);
+    if (!a) {
+      const f = flyFrom(rects[i], origin);
+      const from = reduce ? { opacity: 0 } : { transform: `translate(${f.dx}px, ${f.dy}px) scale(${f.scale})`, opacity: 0 };
+      const to = reduce ? { opacity: 1 } : { transform: "translate(0px, 0px) scale(1)", opacity: 1 };
+      a = el.animate([from, { opacity: 1, offset: 0.4 }, to], {
+        duration: reduce ? DURATION_MS.fast : FLY_MS,
+        delay: reduce ? 0 : delays[i],
+        endDelay: reduce ? 0 : max - delays[i],
+        easing: EASE.out,
+        fill: "both",
+      });
+      anims.set(id, a);
+      if (dir === "in") {
+        // Already out without an animation (the page loaded while out): start from "in place".
+        a.finish();
+        a.reverse();
+      }
+    } else if ((dir === "out") !== a.playbackRate > 0) {
+      a.reverse();
+    } else if (a.playState !== "finished") {
+      a.play();
+    }
+    done.push(a.finished.catch(quiet));
+  });
+  return Promise.all(done).then(quiet);
 }
 
 export const DeskWidgetsSurface: React.FC<DeskWidgetsProps> = ({ api = deskApi, initial }) => {
@@ -85,6 +132,18 @@ export const DeskWidgetsSurface: React.FC<DeskWidgetsProps> = ({ api = deskApi, 
   const [store, setStore] = useState<WidgetStore>(EMPTY_STORE);
   const [view, setView] = useState({ w: window.innerWidth, h: window.innerHeight });
   const [error, setError] = useState<string | null>(null);
+  // Widget flyout: widgets tucked away until called, then flown out over the desktop.
+  const [flyMode, setFlyMode] = useState(!!initial?.flyout);
+  /** The widgets are on screen in flyout mode (out, or flying either way). */
+  const [flown, setFlown] = useState(!!initial?.out);
+  const [flyOut, setFlyOut] = useState(!!initial?.out);
+  const flyAnims = useRef(new Map<string, Animation>());
+  const flyDir = useRef<{ dir: "out" | "in"; origin: { x: number; y: number } | null; gen: number } | null>(null);
+  const flyGen = useRef(0);
+  const [flyTick, setFlyTick] = useState(0);
+  const lastOrigin = useRef<{ x: number; y: number } | null>(null);
+  const keyRef = useRef(key);
+  keyRef.current = key;
   const root = useRef<HTMLDivElement>(null);
   const flip = useRef<{ play: () => void } | null>(null);
   /** A widget just added from the gallery grows from its preview (DESIGN.md §5.3). */
@@ -106,13 +165,18 @@ export const DeskWidgetsSurface: React.FC<DeskWidgetsProps> = ({ api = deskApi, 
   const grid: Grid = useMemo(() => gridFor(view.w, view.h, { topInset }), [view.w, view.h, topInset]);
   const { placed, overflow } = useMemo(() => layout(items, grid), [items, grid]);
 
-  const load = useCallback(async () => {
+  /** Everything from Lens; `layoutOnly` (the host moved to another monitor) keeps the flyout as it is. */
+  const load = useCallback(async (layoutOnly = false) => {
     if (initial) return;
     try {
       const s = await api.state();
       setKey(s.key);
       setItems(toItems(s.items));
+      if (layoutOnly) return;
       setEditing(s.editing);
+      setFlyMode(s.flyout);
+      setFlown(s.out);
+      setFlyOut(s.out);
       setTickPaused(!s.shown || s.covered);
       setReady(true);
     } catch (e) {
@@ -140,10 +204,45 @@ export const DeskWidgetsSurface: React.FC<DeskWidgetsProps> = ({ api = deskApi, 
         setTickPaused(!p.shown || p.covered);
         if (p.key) {
           setKey((k) => {
-            if (k && k !== p.key) void load();
+            if (k && k !== p.key) void load(true);
             return p.key;
           });
         }
+      }),
+    );
+    keep(
+      listen<FlyoutEvent>(EVT_FLYOUT, async (e) => {
+        const p = e.payload;
+        const gen = ++flyGen.current;
+        if (typeof p.mode === "boolean") {
+          // The setting itself changed: start tucked away (or, turned off, just on the desktop).
+          flyAnims.current.forEach((a) => a.cancel());
+          flyAnims.current.clear();
+          setFlyMode(p.mode);
+          setFlown(false);
+          setFlyOut(false);
+          return;
+        }
+        if (p.out) {
+          // Out on another monitor: that monitor's widgets first, then they fly.
+          if (p.key && p.key !== keyRef.current) {
+            try {
+              const s = await api.state();
+              if (gen !== flyGen.current) return;
+              setKey(s.key);
+              setItems(toItems(s.items));
+            } catch {
+              /* the widgets this page has */
+            }
+          }
+          flyDir.current = { dir: "out", origin: p.origin ? { x: p.origin[0], y: p.origin[1] } : null, gen };
+          setFlown(true);
+          setFlyOut(true);
+        } else {
+          flyDir.current = { dir: "in", origin: null, gen };
+          setFlyOut(false);
+        }
+        setFlyTick((t) => t + 1);
       }),
     );
     keep(listen<WidgetStore>(WIDGETS_CHANGED, (e) => setStore(e.payload ?? EMPTY_STORE)));
@@ -180,6 +279,25 @@ export const DeskWidgetsSurface: React.FC<DeskWidgetsProps> = ({ api = deskApi, 
     }
   }, [items]);
 
+  // The flyout's legs, once the widgets for this leg are on the page. They fly from the origin
+  // Lens sent (a hot corner) or from the top-left cell, where the Calendar lives.
+  useLayoutEffect(() => {
+    const d = flyDir.current;
+    if (!d) return;
+    flyDir.current = null;
+    const corner = rectOf(0, 0, "small", grid);
+    const origin = d.dir === "out" ? (d.origin ?? { x: corner.x, y: corner.y }) : (lastOrigin.current ?? { x: corner.x, y: corner.y });
+    lastOrigin.current = origin;
+    void fly(root.current, flyAnims.current, d.dir, origin).then(() => {
+      if (flyGen.current !== d.gen) return; // turned round mid-way: the newer leg finishes the job
+      // Done: drop the animations (in place they change nothing, and they would hold a drag still).
+      flyAnims.current.forEach((a) => a.cancel());
+      flyAnims.current.clear();
+      if (d.dir === "in") setFlown(false);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flyTick]);
+
   // Tell Rust where the widgets are, so only they take the pointer.
   const lastHits = useRef("");
   useLayoutEffect(() => {
@@ -203,11 +321,20 @@ export const DeskWidgetsSurface: React.FC<DeskWidgetsProps> = ({ api = deskApi, 
       if (menu) setMenu(null);
       else if (editor) setEditor(null);
       else if (editing) leaveEdit();
+      else if (flyMode && flyOut) putAway();
     };
     window.addEventListener("keydown", on);
     return () => window.removeEventListener("keydown", on);
   });
 
+  const putAway = () => {
+    setMenu(null);
+    if (initial) {
+      flyDir.current = { dir: "in", origin: null, gen: ++flyGen.current };
+      setFlyOut(false);
+      setFlyTick((t) => t + 1);
+    } else void api.flyout(false).catch(quiet);
+  };
   const leaveEdit = () => {
     setEditor(null);
     setMenu(null);
@@ -304,18 +431,19 @@ export const DeskWidgetsSurface: React.FC<DeskWidgetsProps> = ({ api = deskApi, 
   return (
     <div
       ref={root}
-      className={`dwg${editing ? " is-editing" : ""}${drag?.moved ? " is-dragging" : ""}`}
+      className={`dwg${editing ? " is-editing" : ""}${drag?.moved ? " is-dragging" : ""}${flyMode ? " is-fly" : ""}${flyMode && flown ? (flyOut ? " is-out" : " is-tucking") : ""}`}
       data-ready={ready ? "1" : undefined}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={() => setDrag(null)}
     >
+      {flyMode && flown && !editing && <div className={`dwg-flydim${flyOut ? "" : " is-leaving"}`} onPointerDown={putAway} aria-hidden />}
       {dim.mounted && <div ref={dim.ref} className="dwg-dim" aria-hidden />}
       {(menu || editing) && <div className="dwg-catch" onPointerDown={() => setMenu(null)} aria-hidden />}
       {snap && dragging && <div className="dwg-ghost" style={ghostStyle(rectOf(snap.col, snap.row, dragging.size, grid))} aria-hidden />}
       {newDrag && newDragCell && <div className="dwg-ghost" style={ghostStyle(rectOf(newDragCell.col, newDragCell.row, newDrag.req.size, grid))} aria-hidden />}
       {newDrag && <CarriedPreview drag={newDrag} />}
-      {placed.map((p) => {
+      {(!flyMode || flown || editing) && placed.map((p) => {
         const Widget = WIDGETS[p.kind];
         const r = rectOf(p.col, p.row, p.size, grid);
         const isDrag = drag?.moved && drag.id === p.id;
