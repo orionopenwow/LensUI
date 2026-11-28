@@ -112,7 +112,8 @@ export const UpdatesCard: React.FC = () => {
               {busy && state !== "downloading" ? "Checking…" : "Check now"}
             </button>
           )}
-          {state === "available" && (
+          {/* A source build behind main updates by hand (git pull); there is nothing to download. */}
+          {state === "available" && !status.newVersion?.startsWith("main ") && (
             <button data-weight="medium" type="button" className="cc-btn" disabled={busy} onClick={() => void run(download)}>
               Download {status.newVersion}
             </button>
