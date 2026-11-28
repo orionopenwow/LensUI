@@ -7,6 +7,11 @@ up and migrates `%APPDATA%\LensUI` where it can.
 
 ## [Unreleased]
 
+### Added
+- **Restart to update for Lens run from the source folder.** A build made from a clone of the
+  repository checks `origin/main` every 30 minutes; when main has new commits the Top Bar pill and
+  Settings › Updates say **Restart to update**, which pulls, rebuilds and starts Lens again.
+
 ## [0.4.0] - 2026-11-27
 
 ### Installing

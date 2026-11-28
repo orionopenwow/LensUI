@@ -140,6 +140,12 @@ fn pubkey_configured(app: &AppHandle) -> bool {
 /// Checks GitHub Releases for a newer signed build. Never installs anything.
 pub async fn check(app: &AppHandle) -> UpdateStatus {
     if !pubkey_configured(app) {
+        // A build made from a clone of the repository follows origin/main (source_update.rs).
+        if let Some(repo) = crate::source_update::repo_root() {
+            return tauri::async_runtime::spawn_blocking(move || crate::source_update::check(&repo))
+                .await
+                .unwrap_or_else(|e| status("error", &e.to_string()));
+        }
         return not_configured();
     }
     let updater = match app.updater() {
@@ -184,7 +190,7 @@ pub fn current(app: &AppHandle) -> UpdateStatus {
     if let Some(st) = lock(&LAST).clone() {
         return st;
     }
-    if pubkey_configured(app) {
+    if pubkey_configured(app) || crate::source_update::repo_root().is_some() {
         status("idle", "")
     } else {
         not_configured()
@@ -254,6 +260,10 @@ pub async fn check_and_publish(app: &AppHandle) -> UpdateStatus {
 /// compiled-in key before returning the bytes). Nothing is installed.
 pub async fn download(app: &AppHandle) -> Result<UpdateStatus, String> {
     if !pubkey_configured(app) {
+        // Source builds have nothing to download: Restart pulls and rebuilds.
+        if crate::source_update::repo_root().is_some() {
+            return Ok(check_and_publish(app).await);
+        }
         return Err(not_configured_message(cfg!(debug_assertions)).into());
     }
     // Read and release the lock before any await, so the future stays Send.
@@ -300,6 +310,18 @@ fn ready_status(update: &tauri_plugin_updater::Update) -> UpdateStatus {
 /// it (taskbar, Explorer if Lens is the shell, hooks), runs the verified installer and exits; the
 /// installer starts Lens again. If installing fails, Lens restarts as it was.
 pub async fn restart_to_update(app: &AppHandle) -> Result<String, String> {
+    if !pubkey_configured(app) {
+        if let Some(repo) = crate::source_update::repo_root() {
+            let mut st = current(app);
+            if st.state != "ready" {
+                return Err(if st.message.is_empty() { "No update from main is ready.".into() } else { st.message });
+            }
+            st.state = "installing".into();
+            st.message = "Updating from main: pulling, rebuilding and starting Lens again…".into();
+            publish(app, st);
+            return crate::source_update::restart(app, &repo);
+        }
+    }
     let have = lock(&PENDING).is_some();
     if !have {
         download(app).await?;
@@ -330,6 +352,10 @@ pub async fn install(app: &AppHandle) -> Result<String, String> {
 /// Background check for "notify"/"auto" modes, at most once a day. "notify" reports that an
 /// update is available; "auto" downloads and verifies it and reports it ready. Neither installs.
 pub fn start_background_check(app: AppHandle) {
+    if !pubkey_configured(&app) && crate::source_update::repo_root().is_some() {
+        start_source_check(app);
+        return;
+    }
     tauri::async_runtime::spawn(async move {
         // Let the shell settle first.
         tokio_sleep(60).await;
@@ -348,6 +374,25 @@ pub fn start_background_check(app: AppHandle) {
             return;
         }
         publish_if(&app, st);
+    });
+}
+
+/// Source builds: look at origin/main a minute after start, then every 30 minutes, unless updates
+/// are "off". A new commit on main shows "Restart to update" (once per commit, one notification).
+fn start_source_check(app: AppHandle) {
+    tauri::async_runtime::spawn(async move {
+        tokio_sleep(60).await;
+        loop {
+            if load_settings().mode != "off" {
+                let st = check(&app).await;
+                if matches!(st.state.as_str(), "ready" | "available") {
+                    publish_if(&app, st);
+                } else if lock(&LAST).is_none() {
+                    *lock(&LAST) = Some(st);
+                }
+            }
+            tokio_sleep(30 * 60).await;
+        }
     });
 }
 
