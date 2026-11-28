@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useLensState } from "../hooks/useLensState";
 import { ToastHost } from "../ui/Toast";
+import { quiet } from "../ui/oops";
 import { lensAppsWindowLeft } from "./desktopIcon";
 import { LensApps } from "./LensApps";
 import { viewParam } from "./libraryModel";
@@ -24,10 +25,10 @@ export function AppsSurface() {
     document.addEventListener("visibilitychange", onVis);
     const un = getCurrentWindow()
       .onCloseRequested(() => lensAppsWindowLeft())
-      .catch(() => undefined);
+      .catch(quiet);
     return () => {
       document.removeEventListener("visibilitychange", onVis);
-      un.then((f) => f?.()).catch(() => {});
+      un.then((f) => f?.()).catch(quiet);
     };
   }, []);
   return (

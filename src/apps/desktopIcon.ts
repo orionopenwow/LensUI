@@ -4,6 +4,7 @@
 // Remove all Lens changes takes it off again.
 import { invoke } from "@tauri-apps/api/core";
 import { lensAppIconUrl } from "../icons/lensApps";
+import { quiet } from "../ui/oops";
 
 /** The Lens Apps icon as PNG bytes, or null when the page can't draw it. */
 export async function lensAppsIconPng(size = 256): Promise<number[] | null> {
@@ -73,5 +74,5 @@ export function lensAppsWindowLeft(): void {
 
 async function emitFirstRunDone(via: "setup-closed" | "apps-closed"): Promise<void> {
   const { emit } = await import("@tauri-apps/api/event");
-  await emit(FIRST_RUN_DONE, { via }).catch(() => {});
+  await emit(FIRST_RUN_DONE, { via }).catch(quiet);
 }

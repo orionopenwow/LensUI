@@ -11752,7 +11752,24 @@
    "source": "docs/LENS_APPS.md"
   },
   {
-   "id": "doc.lens-apps.3",
+   "id": "doc.lens-apps.2",
+   "kind": "doc",
+   "title": "Lens Apps: Getting there",
+   "text": "- Settings › Lens Apps, Command /apps , voice \"Lens, install …\", and lens://apps links. - The first setup has an Apps page and opens Lens Apps when it closes (docs/SETUP.md). - An optional desktop icon , off until turned on in setup or Settings › Lens Apps. It is one shortcut, Lens Apps.lnk , on the Windows desktop with the Lens Apps icon (drawn by the page as a PNG and saved as %APPDATA%\\LensUI\\icons\\lens-apps.ico ). It runs lens-ui.exe --open-apps : a running Lens gets the request through the bridge ( settings open with lens-apps ); if Lens isn't running, Lens starts and opens Lens Apps once it is up, and if Lens is running with the bridge off it says so instead of starting a second Lens. Lens only removes a Lens Apps.lnk whose arguments carry --open-apps . Commands: apps desktop icon get , apps desktop icon set .",
+   "path": [
+    "Docs",
+    "Lens Apps",
+    "Getting there"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LENS_APPS.md",
+    "heading": "Getting there"
+   },
+   "source": "docs/LENS_APPS.md"
+  },
+  {
+   "id": "doc.lens-apps.4",
    "kind": "doc",
    "title": "Lens Apps: Commands and events",
    "text": "Command What it does --- --- apps catalog The bundled catalogue. apps catalog refresh Disabled until signed catalogues land; returns a plain message. apps settings get / apps settings set {autoUpdate: false, checkUpdates: \"weekly\", showNonOpenSource: true, liveThumbnails: true} . autoUpdate is the opt-in \"Update apps automatically\" switch (off by default; read by useAppsController when Lens Apps checks, B-122). checkUpdates is stored but read by nothing and has no switch. apps installed One winget list , giving installed and available versions of catalogue apps. apps lens installed Ids Lens installed. apps audit The audit log. apps show winget show : version, publisher, licence and agreements, shown before Install. apps run(appId, op) install \\ upgrade \\ uninstall through winget. Returns a job id. apps cancel(jobId) Cancels a running job. apps release prepare(appId) Downloads, checks the",
@@ -11769,7 +11786,7 @@
    "source": "docs/LENS_APPS.md"
   },
   {
-   "id": "doc.lens-apps.7",
+   "id": "doc.lens-apps.8",
    "kind": "doc",
    "title": "Lens Apps: §2 Standalone window (`main.tsx`, `tauri.conf.json`, `capabilities/default.json`)",
    "text": "Add \"apps\" to the windows list in capabilities/default.json . Open it with ?surface=apps&app=<id or &q=<query .",
@@ -11786,7 +11803,7 @@
    "source": "docs/LENS_APPS.md"
   },
   {
-   "id": "doc.lens-apps.8",
+   "id": "doc.lens-apps.9",
    "kind": "doc",
    "title": "Lens Apps: §3 Voice and Command (voice package / `src/command/*`)",
    "text": "Phrases covered by tests: - \"Lens, install ArtCraft\" - \"open the charting app\" - \"update all my apps\" - \"what does Concat do\" - \"what should I use for slides\" - /apps video - /install concat Installs and uninstalls are confirm-risk: the sheet is the approval card.",
@@ -11803,7 +11820,7 @@
    "source": "docs/LENS_APPS.md"
   },
   {
-   "id": "doc.lens-apps.9",
+   "id": "doc.lens-apps.10",
    "kind": "doc",
    "title": "Lens Apps: §4 Right-click catalogue (`src/context/actions.ts`, feature/rightclick-context)",
    "text": "Read apps integrations().openWith (app id → extensions). For a file whose extension matches, add { id: \"open in app\", label: \"Open in <App name \", run: () = invoke(\"apps open\", { appId }) } . The magic right-click window uses the same list under \"Open with…\". Listen to lens://apps/integrations to refresh.",
@@ -11820,7 +11837,7 @@
    "source": "docs/LENS_APPS.md"
   },
   {
-   "id": "doc.lens-apps.10",
+   "id": "doc.lens-apps.11",
    "kind": "doc",
    "title": "Lens Apps: §5 Dock (`DockSurface.tsx` / config)",
    "text": "On lens://apps/integrations , add any new dock ids as pins using the Start-menu shortcut Lens finds for that app (the apps open lookup). On revert, remove only pins the recipe added (the event carries the full list).",
@@ -11837,7 +11854,7 @@
    "source": "docs/LENS_APPS.md"
   },
   {
-   "id": "doc.lens-apps.11",
+   "id": "doc.lens-apps.12",
    "kind": "doc",
    "title": "Lens Apps: §6 Lens AI (feature/ai-core)",
    "text": "When integrations.localProvider is \"ollama\" or \"lmstudio\" , call ai set config with that provider as the local engine, restoring the previous value on revert. The MCP entries in integrations.mcp go into the MCP client list with per-tool approval.",
@@ -11854,7 +11871,7 @@
    "source": "docs/LENS_APPS.md"
   },
   {
-   "id": "doc.lens-apps.12",
+   "id": "doc.lens-apps.13",
    "kind": "doc",
    "title": "Lens Apps: §7 Guide (feature/lens-guide)",
    "text": "Index catalog.json (name, pitch, why, category, replaces) so \"what tool should I use for slides?\" answers from the catalogue. The ready-made logic is parseAppsIntent → recommend . Lesson stubs come from integrations.guide .",
@@ -11871,7 +11888,7 @@
    "source": "docs/LENS_APPS.md"
   },
   {
-   "id": "doc.lens-apps.13",
+   "id": "doc.lens-apps.14",
    "kind": "doc",
    "title": "Lens Apps: §8 Backup and uninstall (`win_backup.rs`, `win_uninstall.rs`)",
    "text": "- Include %APPDATA%\\LensUI\\apps\\{settings,integrations,journals,installed}.json in backups. - \"Remove all Lens changes\" should call apps recipe revert for each id in journals.json . - \"Remove all Lens changes\" does not uninstall apps; that is a separate, explicit button in AppsCard.",
@@ -11888,7 +11905,7 @@
    "source": "docs/LENS_APPS.md"
   },
   {
-   "id": "doc.lens-apps.14",
+   "id": "doc.lens-apps.15",
    "kind": "doc",
    "title": "Lens Apps: Portable apps and ThumbDesk",
    "text": "A GitHub-release app can set \"portable\": true in its install object when the release ships one program file instead of an installer. Lens then keeps the verified file in %APPDATA%\\LensUI\\apps\\portable\\<id \\ (nothing is written outside Lens's data folder), Open runs it, and Uninstall deletes the folder ( apps portable remove ). ThumbDesk, the controller companion from the makers of Lens, is the first: see docs/apps/THUMBDESK.md.",
@@ -11905,7 +11922,7 @@
    "source": "docs/LENS_APPS.md"
   },
   {
-   "id": "doc.lens-apps.16",
+   "id": "doc.lens-apps.17",
    "kind": "doc",
    "title": "Lens Apps: Editing the catalogue",
    "text": "1. Edit the table in tools/apps/make catalog.py . 2. Run python3 tools/apps/make catalog.py . 3. Run bun test src/ tests /apps.test.ts . The schema tests check every https URL, licence, winget id and recipe step. 4. Optionally run rustc --edition 2021 --test src-tauri/src/apps/mod.rs , which checks the backend accepts every install spec.",
@@ -14679,7 +14696,7 @@
    "id": "doc.setup.2",
    "kind": "doc",
    "title": "Lens setup: Pages",
-   "text": "First launch / Run setup again After an update --- --- Welcome What's new in version (from CHANGELOG.md ) Dock: Floating, Slim, Taskbar, Split, and the screen edge Extras added since the last setup that are still off (page skipped when there are none) Colour: Dark / Light / Day & night, the featured looks, the accent Done Optional extras (all off), plus where to set up Windhawk styling and voice transcription Done: exactly what Finish will change \"Day & night\" turns on the theme schedule: a light look from 7:00, a dark look from 19:00.",
+   "text": "First launch / Run setup again After an update --- --- Welcome What's new in version (from CHANGELOG.md ) Dock: Floating, Slim, Taskbar, Split, and the screen edge Extras added since the last setup that are still off (page skipped when there are none) Colour: Dark / Light / Day & night, the featured looks, the accent Done Apps: tick Lens's own apps to pin them to the Dock; Lens Apps (open it when setup closes, on by default on the first setup; a desktop icon, off); where widgets and Lens Cleaner live Optional extras (all off), plus where to set up Windhawk styling and voice transcription Done: exactly what Finish will change",
    "path": [
     "Docs",
     "Lens setup",
@@ -14694,6 +14711,23 @@
   },
   {
    "id": "doc.setup.3",
+   "kind": "doc",
+   "title": "Lens setup: After the first setup",
+   "text": "On the very first setup (the config has never been through setup), Lens Apps opens in its own window when setup closes, whether by Finish or Skip, so the free tools are the first thing people see. The switch on the Apps page turns that off. \"Run setup again\" leaves it off unless you turn it on. Other first-run welcomes wait their turn: lens://setup/first-run-done ( FIRST RUN DONE in src/apps/desktopIcon.ts , payload { via: \"setup-closed\" \"apps-closed\" } ) is emitted once, when the first setup closes with \"Open Lens Apps\" off, or when the Lens Apps window it opened is closed or hidden. The Lens Apps icon on the desktop is opt-in. Finish asks Rust to write one shortcut, Lens Apps.lnk ( src-tauri/src/desktop shortcut.rs ); Settings › Lens Apps turns it on and off later, and Remove all Lens changes (change registry row lens-apps-shortcut ) and the uninstaller remove it. It runs lens-ui.exe -",
+   "path": [
+    "Docs",
+    "Lens setup",
+    "After the first setup"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETUP.md",
+    "heading": "After the first setup"
+   },
+   "source": "docs/SETUP.md"
+  },
+  {
+   "id": "doc.setup.4",
    "kind": "doc",
    "title": "Lens setup: Adding an extra",
    "text": "Add it to EXTRAS in src/setup/flow.ts with since set to the version it first ships in. People who update see it once on the extras page of that version's setup; new installs see every extra. Handle it in extraIsOn and applyChoices , and add a test.",
@@ -14710,7 +14744,7 @@
    "source": "docs/SETUP.md"
   },
   {
-   "id": "doc.setup.4",
+   "id": "doc.setup.5",
    "kind": "doc",
    "title": "Lens setup: What's new",
    "text": "src/setup/whatsNew.ts is generated from CHANGELOG.md by node tools/setup/whats-new.mjs ( bun run gen:whatsnew ). src/ tests /setupFlow.test.ts fails when it is out of date. Each line is the first sentence of a changelog bullet, so write the bullets with a plain first sentence.",
@@ -14727,7 +14761,7 @@
    "source": "docs/SETUP.md"
   },
   {
-   "id": "doc.setup.5",
+   "id": "doc.setup.6",
    "kind": "doc",
    "title": "Lens setup: Checks",
    "text": "bun test src/ tests /setupFlow.test.ts : when the setup opens; Skip changes only the seen markers; Finish writes only the chosen keys; a look doesn't move the Dock. bun run parity:setup : screenshots every page of both flows in a dark and a light theme and fails on a page error or a page that doesn't render (CI: the Visual parity job). Rust: commands::setup flow tests when the setup is due.",
