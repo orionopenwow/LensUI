@@ -13,6 +13,33 @@ export interface WhatsNewRelease {
 
 export const WHATS_NEW: WhatsNewRelease[] = [
   {
+    "version": "0.4.1",
+    "date": "2026-11-28",
+    "sections": [
+      {
+        "title": "Fixed",
+        "items": [
+          "Dock window previews you can actually reach",
+          "Switching between an app's windows"
+        ]
+      },
+      {
+        "title": "Changed",
+        "items": [
+          "Every window you can see in the preview card is live",
+          "Apps asking for attention glow, like on the Windows taskbar"
+        ]
+      },
+      {
+        "title": "Added",
+        "items": [
+          "Installed Lens updates on every push to main",
+          "Restart to update for Lens run from the source folder"
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.4.0",
     "date": "2026-11-27",
     "sections": [

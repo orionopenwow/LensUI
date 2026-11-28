@@ -175,6 +175,20 @@ pub(crate) struct DockPreviewTileCss {
     y: f64,
     w: f64,
     h: f64,
+    /// Visible part of the tile in the same CSS px: { x, y, w, h }.
+    #[serde(default)]
+    clip: Option<DockPreviewClipCss>,
+    /// 0..1 opacity (a dimmed neighbour).
+    #[serde(default)]
+    opacity: Option<f64>,
+}
+
+#[derive(serde::Deserialize)]
+pub(crate) struct DockPreviewClipCss {
+    x: f64,
+    y: f64,
+    w: f64,
+    h: f64,
 }
 
 #[tauri::command]
@@ -206,6 +220,12 @@ pub(crate) async fn dock_preview_show_cmd(
             y: origin.y + (t.y * scale).round() as i32,
             w: (t.w * scale).round() as i32,
             h: (t.h * scale).round() as i32,
+            clip: t.clip.as_ref().map(|c| {
+                let l = origin.x + (c.x * scale).round() as i32;
+                let tp = origin.y + (c.y * scale).round() as i32;
+                (l, tp, l + (c.w * scale).round() as i32, tp + (c.h * scale).round() as i32)
+            }),
+            alpha: t.opacity.map(|o| (o.clamp(0.05, 1.0) * 255.0).round() as u8).unwrap_or(255),
         })
         .collect();
     // The Dock's previews live in its hover card: they stay while the pointer is on the card or

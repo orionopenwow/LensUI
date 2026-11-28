@@ -1240,7 +1240,9 @@ pub(crate) fn spawn_watcher(
                             settings_away_since = None;
                         }
 
-                        let should_hide_dock = if dock_flyout_open {
+                        // An app that starts asking for attention brings an auto-hidden Dock out for
+                        // a few seconds so its glow is seen, like Windows' auto-hidden taskbar.
+                        let should_hide_dock = if dock_flyout_open || crate::attention::wants_dock_revealed() {
                             false
                         } else {
                             match cfg.dock.auto_hide.as_str() {

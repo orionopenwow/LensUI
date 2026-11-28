@@ -358,6 +358,39 @@ pub struct PreviewTile {
     pub y: i32,
     pub w: i32,
     pub h: i32,
+    /// Only this part of the tile is on screen (left, top, right, bottom), e.g. a carousel
+    /// neighbour half tucked under the current window. The picture keeps the size and place it
+    /// would have in the whole tile; the native window covers just the visible part.
+    #[serde(default)]
+    pub clip: Option<(i32, i32, i32, i32)>,
+    /// Opacity, 0–255 (a dimmed neighbour). 255 when not given.
+    #[serde(default = "opaque")]
+    pub alpha: u8,
+}
+
+fn opaque() -> u8 {
+    255
+}
+
+#[cfg(test)]
+impl PreviewTile {
+    pub fn new(hwnd: isize, x: i32, y: i32, w: i32, h: i32) -> Self {
+        PreviewTile { hwnd, x, y, w, h, clip: None, alpha: 255 }
+    }
+}
+
+/// Pure: where a tile's native window goes and where the picture sits inside it.
+/// Returns (x, y, w, h) of the window on screen and the (dx, dy) to add to a rect laid out for the
+/// whole tile, or None when nothing of the tile is visible.
+pub fn tile_window_rect(t: &PreviewTile) -> Option<((i32, i32, i32, i32), (i32, i32))> {
+    let (mut l, mut tp, mut r, mut b) = (t.x, t.y, t.x + t.w, t.y + t.h);
+    if let Some((cl, ct, cr, cb)) = t.clip {
+        l = l.max(cl);
+        tp = tp.max(ct);
+        r = r.min(cr);
+        b = b.min(cb);
+    }
+    (r > l && b > tp).then_some(((l, tp, r - l, b - tp), (t.x - l, t.y - tp)))
 }
 
 /// The window that asked for previews, so they can never outlive it or drift away from it.
@@ -379,6 +412,16 @@ pub struct PreviewOwner {
 pub const PREVIEW_LEAVE_GRACE_MS: u64 = 260;
 /// How often the preview thread checks the owner and the pointer while tiles are shown, in ms.
 pub const PREVIEW_WATCH_MS: u32 = 60;
+
+/// Extended styles of a preview tile: topmost, no taskbar button, never activated, and invisible
+/// to the mouse. Click-through needs WS_EX_LAYERED *and* WS_EX_TRANSPARENT: with TRANSPARENT alone
+/// Windows still hit-tests the tile, so the pointer "left" the Dock the moment it reached the live
+/// picture, the hover card closed under it and a click on the picture did nothing.
+pub const PREVIEW_TILE_EX_STYLE: u32 = 0x0000_0008 /* TOPMOST */
+    | 0x0000_0080 /* TOOLWINDOW */
+    | 0x0800_0000 /* NOACTIVATE */
+    | 0x0000_0020 /* TRANSPARENT */
+    | 0x0008_0000 /* LAYERED */;
 
 /// Pure: keeps only the tiles that lie inside the owner window (with a small margin). A tile
 /// outside it was measured against a stale origin (the window was still sliding, resizing or
@@ -472,7 +515,7 @@ pub fn preview_tick(
 
 #[cfg(windows)]
 mod sys {
-    use super::{fit_thumbnail, preview_tick, PreviewOwner, PreviewTick, PreviewTile, PREVIEW_WATCH_MS};
+    use super::{fit_thumbnail, preview_tick, tile_window_rect, PreviewOwner, PreviewTick, PreviewTile, PREVIEW_TILE_EX_STYLE, PREVIEW_WATCH_MS};
     use std::ffi::c_void;
     use std::sync::atomic::{AtomicIsize, Ordering};
     use std::sync::mpsc;
@@ -522,10 +565,7 @@ mod sys {
     const DWMWCP_ROUNDSMALL: u32 = 3;
 
     const WS_POPUP: u32 = 0x8000_0000;
-    const WS_EX_TOPMOST: u32 = 0x0000_0008;
-    const WS_EX_TRANSPARENT: u32 = 0x0000_0020;
-    const WS_EX_TOOLWINDOW: u32 = 0x0000_0080;
-    const WS_EX_NOACTIVATE: u32 = 0x0800_0000;
+    const LWA_ALPHA: u32 = 0x2;
     const SW_SHOWNOACTIVATE: i32 = 4;
     const HWND_TOPMOST: Hwnd = -1;
     const HWND_MESSAGE: Hwnd = -3;
@@ -553,6 +593,7 @@ mod sys {
         fn GetCursorPos(point: *mut Point) -> i32;
         fn SetTimer(hwnd: isize, id: usize, elapse_ms: u32, timer_proc: isize) -> usize;
         fn KillTimer(hwnd: Hwnd, id: usize) -> i32;
+        fn SetLayeredWindowAttributes(hwnd: Hwnd, key: u32, alpha: u8, flags: u32) -> i32;
     }
 
     #[repr(C)]
@@ -763,19 +804,23 @@ mod sys {
         let mut failed = Vec::new();
         let mut live = Vec::new();
         for t in tiles.iter().take(8) {
-            if t.w < 8 || t.h < 8 || IsWindow(t.hwnd) == 0 || IsIconic(t.hwnd) != 0 {
+            let Some(((wx, wy, ww, wh), (ox, oy))) = tile_window_rect(t) else {
+                failed.push(t.hwnd);
+                continue;
+            };
+            if t.w < 8 || t.h < 8 || ww < 4 || wh < 4 || IsWindow(t.hwnd) == 0 || IsIconic(t.hwnd) != 0 {
                 failed.push(t.hwnd);
                 continue;
             }
             let tile = CreateWindowExW(
-                WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_TRANSPARENT,
+                PREVIEW_TILE_EX_STYLE,
                 class_name.as_ptr(),
                 title.as_ptr(),
                 WS_POPUP,
-                t.x,
-                t.y,
-                t.w,
-                t.h,
+                wx,
+                wy,
+                ww,
+                wh,
                 0,
                 0,
                 hinst,
@@ -785,6 +830,9 @@ mod sys {
                 failed.push(t.hwnd);
                 continue;
             }
+            // A layered window draws nothing until it has an alpha; fully opaque, and the DWM
+            // thumbnail still renders into it (checked on Windows 11).
+            SetLayeredWindowAttributes(tile, 0, t.alpha.max(1), LWA_ALPHA);
             let corner = DWMWCP_ROUNDSMALL;
             DwmSetWindowAttribute(
                 tile,
@@ -801,6 +849,8 @@ mod sys {
             let mut src = Size::default();
             DwmQueryThumbnailSourceSize(thumb, &mut src);
             let (dx, dy, dw, dh) = fit_thumbnail((src.cx, src.cy), (t.w, t.h), 4);
+            // Laid out for the whole tile, shifted into the visible part's window (DWM clips it).
+            let (dx, dy) = (dx + ox, dy + oy);
             let props = ThumbProps {
                 dw_flags: DWM_TNP_RECTDESTINATION
                     | DWM_TNP_VISIBLE
@@ -826,10 +876,10 @@ mod sys {
             SetWindowPos(
                 tile,
                 HWND_TOPMOST,
-                t.x,
-                t.y,
-                t.w,
-                t.h,
+                wx,
+                wy,
+                ww,
+                wh,
                 SWP_NOACTIVATE | SWP_SHOWWINDOW,
             );
             ShowWindow(tile, SW_SHOWNOACTIVATE);
@@ -973,7 +1023,32 @@ mod tests {
     use super::*;
 
     fn tile(hwnd: isize, x: i32, y: i32, w: i32, h: i32) -> PreviewTile {
-        PreviewTile { hwnd, x, y, w, h }
+        PreviewTile::new(hwnd, x, y, w, h)
+    }
+
+    #[test]
+    fn a_clipped_tile_shows_only_its_visible_part_at_full_size() {
+        let whole = tile(1, 100, 50, 200, 120);
+        assert_eq!(tile_window_rect(&whole), Some(((100, 50, 200, 120), (0, 0))));
+        // A neighbour whose left 150 px are under the current window: the window covers the
+        // visible 50 px and the picture is shifted left so the same slice shows.
+        let side = PreviewTile { clip: Some((250, 0, 2000, 2000)), ..whole };
+        assert_eq!(tile_window_rect(&side), Some(((250, 50, 50, 120), (-150, 0))));
+        // Fully hidden: no window at all.
+        let gone = PreviewTile { clip: Some((400, 0, 500, 100)), ..whole };
+        assert_eq!(tile_window_rect(&gone), None);
+    }
+
+    #[test]
+    fn preview_tiles_are_invisible_to_the_mouse() {
+        // Both bits, or the tile takes the pointer away from the hover card (it closed the moment
+        // the pointer reached the live picture) and swallows the click meant for the card.
+        const WS_EX_TRANSPARENT: u32 = 0x20;
+        const WS_EX_LAYERED: u32 = 0x8_0000;
+        const WS_EX_NOACTIVATE: u32 = 0x0800_0000;
+        assert_eq!(PREVIEW_TILE_EX_STYLE & WS_EX_TRANSPARENT, WS_EX_TRANSPARENT);
+        assert_eq!(PREVIEW_TILE_EX_STYLE & WS_EX_LAYERED, WS_EX_LAYERED);
+        assert_eq!(PREVIEW_TILE_EX_STYLE & WS_EX_NOACTIVATE, WS_EX_NOACTIVATE, "a tile must never take focus");
     }
 
     #[test]
