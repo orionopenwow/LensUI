@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { hideSurface } from "../failsafe/calls";
 import { magicOpenFor } from "../magic/contract";
 import { emit, listen } from "@tauri-apps/api/event";
-import { Bell, Calendar, Timer, Monitor, Sparkles, RotateCw, X } from "lucide-react";
+import { Bell, Calendar, Music, Timer, Monitor, Sparkles, RotateCw, X } from "lucide-react";
 import { useLensState } from "../hooks/useLensState";
 import { PresenceList, duration } from "../ui/motion";
 import "./NotificationOverlaySurface.css";
@@ -15,7 +15,25 @@ interface LensNotification {
   appName: string;
   category: "calendar" | "timer" | "windows" | "system" | string;
   timeStr: string;
+  /** Buttons under the text (the Spotify question). A toast with buttons stays up longer. */
+  actions?: NotificationAction[];
 }
+
+interface NotificationAction {
+  id: string;
+  label: string;
+}
+
+/** What each known button does. Unknown ids just dismiss. */
+function runAction(id: string) {
+  if (id === "music.overlay.yes" || id === "music.overlay.no") {
+    invoke("music_spotify_overlay_answer", { yes: id === "music.overlay.yes" }).catch(() => {});
+  }
+}
+
+/** Plain toasts leave after 5.5 s; a question waits longer for an answer. */
+export const TOAST_MS = 5500;
+export const QUESTION_MS = 20000;
 
 function CategoryIcon({ category }: { category: string }) {
   switch (category) {
@@ -29,6 +47,8 @@ function CategoryIcon({ category }: { category: string }) {
       return <Sparkles size={16} strokeWidth={2.3} color="#A78BFA" />;
     case "update":
       return <RotateCw size={16} strokeWidth={2.3} color="#34D399" />;
+    case "music":
+      return <Music size={16} strokeWidth={2.3} color="#1DB954" />;
     default:
       return <Bell size={16} strokeWidth={2.3} color="#38BDF8" />;
   }
@@ -59,6 +79,7 @@ export const NotificationOverlaySurface: React.FC = () => {
       body: string;
       appName?: string;
       category?: string;
+      actions?: NotificationAction[];
     }>("lens://notification", (e) => {
       const dnd = localStorage.getItem("lens_dnd") === "1";
       if (dnd && e.payload.category !== "timer") {
@@ -72,6 +93,7 @@ export const NotificationOverlaySurface: React.FC = () => {
         appName: e.payload.appName || "Lens",
         category: e.payload.category || "system",
         timeStr: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        actions: Array.isArray(e.payload.actions) ? e.payload.actions.slice(0, 2) : undefined,
       };
 
       setItems((prev) => [...prev.slice(-3), n]);
@@ -87,7 +109,7 @@ export const NotificationOverlaySurface: React.FC = () => {
             }
           }, 800);
         }
-      }, 5500);
+      }, n.actions?.length ? QUESTION_MS : TOAST_MS);
     });
 
     return () => {
@@ -157,6 +179,25 @@ export const NotificationOverlaySurface: React.FC = () => {
           </div>
           <div className="nt-title">{n.title}</div>
           {n.body && <div className="nt-body">{n.body}</div>}
+          {n.actions && n.actions.length > 0 && (
+            <div className="nt-actions">
+              {n.actions.map((a, i) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  data-weight={i === 0 ? "heavy" : "medium"}
+                  className={`nt-action ${i === 0 ? "is-primary" : ""}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    runAction(a.id);
+                    dismiss(n.id);
+                  }}
+                >
+                  {a.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </PresenceList>

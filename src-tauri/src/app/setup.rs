@@ -601,6 +601,9 @@ pub(crate) fn run_setup(
     // Apps asking for attention (FlashWindowEx): the Dock shows them like the taskbar would.
     crate::attention::start(handle.clone());
 
+    // Spotify opening: ask once whether Lens Music should cover it (then do so if the answer was yes).
+    crate::music::spotify_overlay::start(&handle);
+
     // Background thread: theme sync, Top Bar / Dock auto-hide, click-through, desktop tab.
     crate::app::watcher::spawn_watcher(
         handle.clone(),

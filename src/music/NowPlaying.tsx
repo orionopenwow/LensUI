@@ -259,11 +259,38 @@ export const NowPlayingView: React.FC<Props> = ({ mode: modeProp, onMode, onClos
       <div ref={rootRef} className={`lm-np lm-mode-${mode} lm-empty`} style={rootStyle}>
         {onClose && <FlyoutClose onClose={onClose} />}
         <div className="lm-backdrop" aria-hidden><div className="lm-hero-wash" />{cfg?.dither !== false && <div className="lm-dither" />}</div>
-        <div className="lm-empty-card">
-          <Disc3 size={28} aria-hidden />
-          <div className="lm-empty-title">Nothing is playing</div>
-          <div className="lm-empty-desc">Play something in Spotify, Apple Music, your browser or any player that shows up in Windows' media controls.</div>
-        </div>
+        {cfg && !cfg.enabled && !fixed ? (
+          // Music is off (the default): Lens isn't reading the media session, so it would say
+          // "Nothing is playing" even while Spotify plays. Say why, and turn it on in one click.
+          <div className="lm-empty-card">
+            <Disc3 size={28} aria-hidden />
+            <div className="lm-empty-title">Lens Music is off</div>
+            <div className="lm-empty-desc">Turn it on to see and control what Spotify, Apple Music, your browser or any other player is playing. Lens only reads Windows' media controls.</div>
+            <button
+              type="button"
+              data-weight="heavy"
+              className="lm-empty-action"
+              onClick={() =>
+                music
+                  .setConfig({ ...cfg, enabled: true })
+                  .then((c) => {
+                    setCfg(c);
+                    return music.now();
+                  })
+                  .catch((e) => setProblem(String(e)))
+              }
+            >
+              Turn on Lens Music
+            </button>
+            {problem && <div className="lm-empty-desc" role="status">{problem}</div>}
+          </div>
+        ) : (
+          <div className="lm-empty-card">
+            <Disc3 size={28} aria-hidden />
+            <div className="lm-empty-title">Nothing is playing</div>
+            <div className="lm-empty-desc">Play something in Spotify, Apple Music, your browser or any player that shows up in Windows' media controls.</div>
+          </div>
+        )}
       </div>
     );
   }

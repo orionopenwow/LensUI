@@ -912,6 +912,7 @@ pub fn run() {
             commands::music::music_level,
             commands::music::music_glow_level,
             commands::music::music_open_search,
+            commands::music::music_spotify_overlay_answer,
             commands::music::music_spicetify_preview,
             commands::music::music_spicetify_export,
             commands::music::music_spotify_status,

@@ -42,6 +42,8 @@ const DEFAULT: MusicConfig = {
   discordShowProgress: true,
   setupDone: false,
   remoteIdleMin: 10,
+  spotifyOfferDone: false,
+  spotifyOverlay: false,
 };
 
 const Toggle: React.FC<{ on: boolean; label: string; onChange: (v: boolean) => void; disabled?: boolean }> = ({ on, label, onChange, disabled }) => (
@@ -131,6 +133,10 @@ export const MusicCard: React.FC<Props> = ({ config, updateConfig }) => {
             onChange={(v) => updateConfig({ ...config, topBar: { ...config.topBar, showMediaControls: v } })} />
         </Row>
       )}
+
+      <Row label="Cover Spotify with Lens Music" desc="Each time Spotify opens, Lens Music opens over its window. Spotify keeps playing underneath; Lens never changes Spotify itself.">
+        <Toggle on={cfg.spotifyOverlay} label="Cover Spotify with Lens Music" onChange={(v) => save(v ? { spotifyOverlay: true, spotifyOfferDone: true, enabled: true } : { spotifyOverlay: false, spotifyOfferDone: true })} />
+      </Row>
 
       <div className="cc-label" style={{ marginTop: 16 }}>Now Playing window</div>
       <div className="cc-chip-grid">

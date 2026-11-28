@@ -279,6 +279,12 @@ pub(crate) fn music_glow_level() -> f32 {
     }
 }
 
+/// The answer to "Cover Spotify with Lens Music?" from the Notification Overlay (or Settings).
+#[tauri::command]
+pub(crate) fn music_spotify_overlay_answer(app: AppHandle, yes: bool) -> Result<(), String> {
+    music::spotify_overlay::answer(&app, yes)
+}
+
 /// The pop-out's search button: opens Spotify's own search (a fixed link, nothing user-typed).
 #[tauri::command]
 pub(crate) fn music_open_search() -> Result<(), String> {
