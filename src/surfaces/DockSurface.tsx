@@ -51,6 +51,7 @@ import { DockFindChip } from "../dock/DockFindChip";
 import { DockNotice } from "../dock/DockNotice";
 import { DockContextMenu } from "../dock/DockContextMenu";
 import { DockHoverCard, type DockCardMode } from "../dock/DockHoverCard";
+import { HOVER_CLOSE_MS, HOVER_INTENT_MS, HOVER_WARM_MS, activationTarget } from "../dock/hoverIntent";
 import { FallbackAppIcon } from "../dock/DockIcons";
 import { DockSearchDrawer } from "../dock/DockSearchDrawer";
 import { openMagicForDockItem } from "../dock/LensMenuHost";
@@ -391,8 +392,6 @@ export const DockSurface: React.FC = () => {
   // icon for HOVER_INTENT_MS, not on every icon it crosses. Sweeping along the Dock used to open
   // and close a card, its native previews and the Dock's click region for each icon passed. Once a
   // card is showing (or closed moments ago) the next one opens at once, like macOS tooltips.
-  const HOVER_INTENT_MS = 90;
-  const HOVER_WARM_MS = 350;
   const hoverIntentRef = useRef<number | null>(null);
   const hoverShownRef = useRef<{ key: string | null; closedAt: number }>({ key: null, closedAt: 0 });
   hoverShownRef.current.key = hoverCard?.key ?? null;
@@ -412,8 +411,10 @@ export const DockSurface: React.FC = () => {
       if (!ctxMenu && !dockSearchOpenRef.current) {
         void setDockMenuOpen(false);
       }
-    }, 180);
+    }, HOVER_CLOSE_MS);
   };
+  const scheduleHoverCloseRef = useRef(scheduleHoverClose);
+  scheduleHoverCloseRef.current = scheduleHoverClose;
 
   const openHoverCardForItem = (
     el: HTMLElement,
@@ -550,14 +551,11 @@ export const DockSurface: React.FC = () => {
       closeInDockLauncher();
     });
     // Leaving the Dock window entirely (fast flicks out through click-through glass) closes a
-    // hover card even when the card's own mouseleave never fired.
+    // hover card even when the card's own mouseleave never fired. Never at once: the page also
+    // sees this when the pointer moves onto something native over the card (a live preview), so
+    // the card gets the usual grace and stays if the pointer is back on it in time.
     const onDocLeave = (e: MouseEvent) => {
-      if (e.relatedTarget === null) {
-        setHoverCard(null);
-        if (!dockSearchOpenRef.current) {
-          void setDockMenuOpen(false);
-        }
-      }
+      if (e.relatedTarget === null && hoverShownRef.current.key) scheduleHoverCloseRef.current();
     };
     document.addEventListener("mouseout", onDocLeave);
     const onBlur = () => {
@@ -897,14 +895,8 @@ export const DockSurface: React.FC = () => {
       void dockDo("launch_app_cmd", { path: it.path }, `open ${appLabel(it.path)}`);
       return;
     }
-    const focusedIdx = it.wins.findIndex((w) => w.isFocused);
-    if (focusedIdx >= 0 && it.wins.length > 1) {
-      // Pressing again cycles through that app's windows.
-      invoke("focus_window_cmd", { hwnd: it.wins[(focusedIdx + 1) % it.wins.length].hwnd }).catch(dockFail("switch to that window"));
-    } else {
-      // Same as clicking: focuses, or minimizes when already in front.
-      invoke("focus_window_cmd", { hwnd: it.primary.hwnd }).catch(dockFail("switch to that window"));
-    }
+    // Same as clicking: pressing again cycles through that app's windows.
+    invoke("focus_window_cmd", { hwnd: activationTarget(it.wins, it.primary) ?? it.primary.hwnd }).catch(dockFail("switch to that window"));
   };
 
   const pinWindow = (win: RunningWindow) => {
@@ -1349,8 +1341,9 @@ export const DockSurface: React.FC = () => {
                 if (suppressClickRef.current) return;
                 setHoverCard(null);
                 triggerLaunchAnim(app.id);
-                if (primaryWin) {
-                  invoke("focus_window_cmd", { hwnd: primaryWin.hwnd }).catch(dockFail("switch to that window"));
+                const target = activationTarget(wins, primaryWin);
+                if (target !== null) {
+                  invoke("focus_window_cmd", { hwnd: target }).catch(dockFail("switch to that window"));
                 } else {
                   launch();
                 }
@@ -1420,7 +1413,7 @@ export const DockSurface: React.FC = () => {
                 if (suppressClickRef.current) return;
                 setHoverCard(null);
                 triggerLaunchAnim(`win-${primaryWin.hwnd}`);
-                invoke("focus_window_cmd", { hwnd: primaryWin.hwnd }).catch(dockFail("switch to that window"));
+                invoke("focus_window_cmd", { hwnd: activationTarget(wins, primaryWin) ?? primaryWin.hwnd }).catch(dockFail("switch to that window"));
               }}
               onContextMenu={(e) => {
                 e.preventDefault();

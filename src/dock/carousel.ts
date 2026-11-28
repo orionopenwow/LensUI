@@ -66,3 +66,41 @@ export function wheelStep(deltaX: number, deltaY: number, lastAt: number, now: n
   if (!Number.isFinite(d) || Math.abs(d) < 1) return 0;
   return d > 0 ? 1 : -1;
 }
+
+export type Rect = { x: number; y: number; w: number; h: number };
+export type CarouselTile = Rect & { hwnd: number; clip?: Rect; opacity?: number };
+
+/** How dim the neighbours are (matches .dwc-slide.is-side in DockWindowCarousel.css). */
+export const SIDE_OPACITY = 0.55;
+/** Share of the stage at each side that fades out (the stage's mask); live pictures stop there. */
+const FADE = 0.12;
+
+/**
+ * Pure: the native preview tiles for the carousel at rest. The current window gets its whole
+ * picture; each neighbour gets a live picture too, cut to the part of it that peeks out (between
+ * the current window and the faded edge of the stage) and dimmed like the slide, so every window
+ * you can see is live. Native thumbnails are drawn by the compositor: nothing is captured or
+ * polled, and they are only re-sent when a rectangle changes.
+ */
+export function carouselTiles(
+  stage: Rect,
+  current: { hwnd: number; shot: Rect },
+  sides: { hwnd: number; offset: number; shot: Rect }[]
+): CarouselTile[] {
+  const r = (n: number) => Math.round(n);
+  const tile = (hwnd: number, a: Rect): CarouselTile => ({ hwnd, x: r(a.x), y: r(a.y), w: r(a.w), h: r(a.h) });
+  const out: CarouselTile[] = [tile(current.hwnd, current.shot)];
+  const lo = stage.x + stage.w * FADE;
+  const hi = stage.x + stage.w * (1 - FADE);
+  for (const s of sides) {
+    if (Math.abs(s.offset) !== 1) continue;
+    const left = s.offset < 0 ? Math.max(lo, s.shot.x) : Math.max(current.shot.x + current.shot.w, s.shot.x);
+    const right = s.offset < 0 ? Math.min(current.shot.x, s.shot.x + s.shot.w) : Math.min(hi, s.shot.x + s.shot.w);
+    const top = Math.max(stage.y, s.shot.y);
+    const bottom = Math.min(stage.y + stage.h, s.shot.y + s.shot.h);
+    // Less than a sliver showing: the icon is enough.
+    if (right - left < 12 || bottom - top < 12) continue;
+    out.push({ ...tile(s.hwnd, s.shot), clip: { x: r(left), y: r(top), w: r(right - left), h: r(bottom - top) }, opacity: SIDE_OPACITY });
+  }
+  return out;
+}

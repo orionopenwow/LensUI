@@ -2,7 +2,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { AppWindow, ChevronLeft, ChevronRight, X } from "lucide-react";
 import type { RunningWindow } from "../types/lens";
-import { counterText, initialIndex, jumps, reconcileIndex, slideOffset, stepIndex, wheelStep, wrapIndex } from "./carousel";
+import { carouselTiles, counterText, initialIndex, type Rect, jumps, reconcileIndex, slideOffset, stepIndex, wheelStep, wrapIndex } from "./carousel";
 import { useWindowPeek } from "./usePeek";
 import { logFail, quiet } from "../failsafe/calls";
 import "./DockWindowCarousel.css";
@@ -18,7 +18,10 @@ interface Props {
   active?: boolean;
 }
 
-type Tile = { hwnd: number; x: number; y: number; w: number; h: number };
+function rectOf(el: Element): Rect {
+  const b = el.getBoundingClientRect();
+  return { x: b.left, y: b.top, w: b.width, h: b.height };
+}
 
 /** Running animations that will end (a looping one would hold the picture back forever). */
 function finiteAnimations(el: Element | null | undefined): Animation[] {
@@ -44,6 +47,8 @@ export const DockWindowCarousel: React.FC<Props> = ({ title, windows, iconUrl, o
   const n = windows.length;
   const rootRef = useRef<HTMLDivElement>(null);
   const shotRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const sideShots = useRef<Map<number, { el: HTMLDivElement; offset: number }>>(new Map());
   const [index, setIndex] = useState(() => initialIndex(windows));
   const [failed, setFailed] = useState<Set<number>>(new Set());
   const { startPeek, endPeek } = useWindowPeek();
@@ -117,27 +122,32 @@ export const DockWindowCarousel: React.FC<Props> = ({ title, windows, iconUrl, o
         return;
       }
       const el = shotRef.current;
-      if (!el) return;
-      const r = el.getBoundingClientRect();
-      const tile: Tile = { hwnd: currentHwnd, x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) };
-      if (tile.w <= 0 || tile.h <= 0) return;
-      const sig = JSON.stringify(tile);
+      const stage = stageRef.current;
+      if (!el || !stage) return;
+      const shot = rectOf(el);
+      if (shot.w <= 0 || shot.h <= 0) return;
+      const sides = Array.from(sideShots.current.entries()).map(([hwnd, s]) => ({ hwnd, offset: s.offset, shot: rectOf(s.el) }));
+      const tiles = carouselTiles(rectOf(stage), { hwnd: currentHwnd, shot }, sides);
+      const sig = JSON.stringify(tiles);
       if (sig === sent) return;
       sent = sig;
+      const asked = tiles.map((t) => t.hwnd);
       const background = getComputedStyle(document.documentElement).getPropertyValue("--lens-pack-base").trim() || "#141418";
-      invoke<number[]>("dock_preview_show_cmd", { tiles: [tile], background, surface: "dock" })
+      invoke<number[]>("dock_preview_show_cmd", { tiles, background, surface: "dock" })
         .then((bad) => {
           if (cancelled) return;
           setFailed((prev) => {
             const next = new Set(prev);
-            if ((bad ?? []).includes(currentHwnd)) next.add(currentHwnd);
-            else next.delete(currentHwnd);
+            for (const h of asked) {
+              if ((bad ?? []).includes(h)) next.add(h);
+              else next.delete(h);
+            }
             return next;
           });
         })
         .catch((e) => {
-          logFail("Dock", "show the window preview")(e);
-          if (!cancelled) setFailed((prev) => new Set(prev).add(currentHwnd));
+          logFail("Dock", "show the window previews")(e);
+          if (!cancelled) setFailed((prev) => new Set([...prev, ...asked]));
         });
     };
     // After this commit's transitions have started (next frame), wait for them to end.
@@ -174,6 +184,7 @@ export const DockWindowCarousel: React.FC<Props> = ({ title, windows, iconUrl, o
       </div>
       <div
         className="dwc-stage"
+        ref={stageRef}
         onWheel={(e) => {
           const step = wheelStep(e.deltaX, e.deltaY, wheelAt.current, e.timeStamp);
           if (!step) return;
@@ -186,7 +197,9 @@ export const DockWindowCarousel: React.FC<Props> = ({ title, windows, iconUrl, o
           const prev = prevOffsets.current.get(w.hwnd);
           const instant = prev !== undefined && jumps(prev, d);
           const place = d === 0 ? "is-current" : Math.abs(d) === 1 ? "is-side" : "is-away";
-          const showIcon = d !== 0 || failed.has(w.hwnd);
+          // Current and neighbours are live pictures; windows further away, or ones Windows
+          // won't preview (minimized), show the icon.
+          const showIcon = Math.abs(d) > 1 || failed.has(w.hwnd);
           const ic = icon(w);
           return (
             <div
@@ -197,7 +210,14 @@ export const DockWindowCarousel: React.FC<Props> = ({ title, windows, iconUrl, o
               onMouseEnter={d === 0 ? () => startPeek(w.hwnd) : undefined}
               onMouseLeave={d === 0 ? endPeek : undefined}
             >
-              <div className={`dwc-shot ${showIcon ? "is-fallback" : ""}`} ref={d === 0 ? shotRef : undefined}>
+              <div
+                className={`dwc-shot ${showIcon ? "is-fallback" : ""}`}
+                ref={(el) => {
+                  if (d === 0) shotRef.current = el;
+                  if (el && Math.abs(d) === 1) sideShots.current.set(w.hwnd, { el, offset: d });
+                  else sideShots.current.delete(w.hwnd);
+                }}
+              >
                 {showIcon && (ic ? <img src={ic} alt="" className="dwc-fallback-icon" /> : <AppWindow size={30} strokeWidth={1.6} />)}
               </div>
               <div className="dwc-caption">

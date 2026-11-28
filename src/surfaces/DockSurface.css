@@ -685,6 +685,40 @@
   animation: dock-hover-card-in var(--lens-dur-fast) var(--lens-ease-out);
 }
 
+/* An invisible bridge over the gap between the card and its icon (the gap placeHoverCard leaves,
+ * src/dock/placement.ts): the pointer on its way to the card is always over the icon or the card,
+ * never over nothing, so the card can't close under it. Exactly as deep as the gap, so it never
+ * covers a neighbouring icon. */
+.dock-hover-card::before {
+  content: "";
+  position: absolute;
+  pointer-events: auto;
+}
+.dock-hover-card.dock-hover-edge-bottom::before {
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 13px;
+}
+.dock-hover-card.dock-hover-edge-top::before {
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  height: 19px;
+}
+.dock-hover-card.dock-hover-edge-left::before {
+  right: 100%;
+  top: 0;
+  bottom: 0;
+  width: 13px;
+}
+.dock-hover-card.dock-hover-edge-right::before {
+  left: 100%;
+  top: 0;
+  bottom: 0;
+  width: 13px;
+}
+
 .dock-win-list {
   display: flex;
   flex-direction: column;
@@ -1993,38 +2027,41 @@
 }
 
 /* ---------- Attention (an app flashes its taskbar button; src/dock/attention.ts) ----------
- * Same on every style and edge: the urgent colour (Windows' orange by default; a pack can set
- * --lens-attention), one bounce when the request starts, and a steady highlight until the app is
- * activated. Transform/opacity only; reduced motion keeps the colour and drops the bounce. */
+ * Like Windows' taskbar: the button glows in the urgent colour (Windows' orange by default; a pack
+ * can set --lens-attention), pulses softly a few times when the request starts, then keeps a quiet
+ * steady glow until the app is activated. The glow is its own layer animated by opacity only (no
+ * layout, no repaint of the icon); reduced motion keeps the steady glow and drops the pulses. An
+ * auto-hidden Dock comes out for a few seconds when a request starts (src-tauri attention.rs). */
 .dock-stage {
   --dock-attention: var(--lens-attention, #f7630c);
 }
 
-@keyframes dock-attention-bounce {
+@keyframes dock-attention-pulse {
   0%,
   100% {
-    translate: 0 0;
+    opacity: 0.5;
   }
-  22% {
-    translate: calc(var(--dock-bounce-x) * 12px) calc(var(--dock-bounce-y) * 12px);
-  }
-  44% {
-    translate: 0 0;
-  }
-  64% {
-    translate: calc(var(--dock-bounce-x) * 5px) calc(var(--dock-bounce-y) * 5px);
-  }
-  82% {
-    translate: 0 0;
+  50% {
+    opacity: 1;
   }
 }
 
 .dock-item-wrap.is-attention > .dock-item {
-  animation: dock-attention-bounce 760ms cubic-bezier(0.33, 0.9, 0.4, 1) 1;
-  box-shadow:
-    inset 0 0 0 1.5px color-mix(in srgb, var(--dock-attention) 70%, transparent),
-    0 0 14px color-mix(in srgb, var(--dock-attention) 38%, transparent);
-  background: color-mix(in srgb, var(--dock-attention) 16%, var(--lens-bg-elevated, transparent));
+  background: color-mix(in srgb, var(--dock-attention) 12%, var(--lens-bg-elevated, transparent));
+  border-color: color-mix(in srgb, var(--dock-attention) 45%, transparent);
+}
+
+.dock-item-wrap.is-attention > .dock-item::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(120% 90% at 50% 100%, color-mix(in srgb, var(--dock-attention) 42%, transparent), transparent 72%);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--dock-attention) 30%, transparent);
+  opacity: 0.5;
+  animation: dock-attention-pulse 1100ms ease-in-out 4;
+  will-change: opacity;
 }
 
 /* Higher specificity than every style's own indicator rule (Taskbar, Islands…), so urgent looks
@@ -2050,7 +2087,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dock-item-wrap.is-attention > .dock-item {
+  .dock-item-wrap.is-attention > .dock-item::after {
     animation: none;
   }
 }

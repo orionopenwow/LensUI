@@ -130,6 +130,32 @@ fn with_state<T>(f: impl FnOnce(&mut AttentionSet) -> T) -> T {
     f(g.get_or_insert_with(AttentionSet::default))
 }
 
+/// How long an auto-hidden Dock stays out after an app starts asking for attention, so the glow is
+/// seen (Windows does the same with an auto-hidden taskbar). The pointer, as usual, keeps it out.
+pub const ATTENTION_REVEAL_MS: u64 = 5_000;
+
+static LAST_REQUEST: Mutex<Option<std::time::Instant>> = Mutex::new(None);
+
+/// A new request started (not a repeat flash of a window that is already asking).
+pub fn note_new_request() {
+    *LAST_REQUEST.lock().unwrap_or_else(|e| e.into_inner()) = Some(std::time::Instant::now());
+}
+
+/// Pure: whether a Dock that would hide should stay shown because a request started `since_ms` ago
+/// (`None`: no request since Lens started) and is still open.
+pub fn reveal_for_attention(since_ms: Option<u64>, still_asking: bool) -> bool {
+    still_asking && since_ms.map(|ms| ms < ATTENTION_REVEAL_MS).unwrap_or(false)
+}
+
+/// True while the Dock should be revealed for an app asking for attention.
+pub fn wants_dock_revealed() -> bool {
+    let since = LAST_REQUEST
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .map(|t| t.elapsed().as_millis() as u64);
+    reveal_for_attention(since, !with_state(|s| s.is_empty()))
+}
+
 /// Current snapshot (for the `get_dock_attention` command).
 pub fn current() -> AttentionSnapshot {
     with_state(|s| s.snapshot())
@@ -259,7 +285,11 @@ mod sys {
                 HSHELL_FLASH => {
                     let exe = exe_of(target);
                     let fg = GetForegroundWindow();
-                    with_state(|s| s.flash(target, &exe, fg, now_ms()))
+                    let new = with_state(|s| s.flash(target, &exe, fg, now_ms()));
+                    if new {
+                        super::note_new_request();
+                    }
+                    new
                 }
                 HSHELL_WINDOWACTIVATED | HSHELL_RUDEAPPACTIVATED | HSHELL_WINDOWDESTROYED => {
                     with_state(|s| s.clear(target))
@@ -348,6 +378,15 @@ mod tests {
 
     const DISCORD: &str = r"C:\Users\me\AppData\Local\Discord\app-1.0\Discord.exe";
     const TEAMS: &str = r"C:\Program Files\Teams\ms-teams.exe";
+
+    #[test]
+    fn a_new_request_reveals_the_hidden_dock_for_a_while() {
+        assert!(reveal_for_attention(Some(0), true));
+        assert!(reveal_for_attention(Some(ATTENTION_REVEAL_MS - 1), true));
+        assert!(!reveal_for_attention(Some(ATTENTION_REVEAL_MS), true), "the Dock may hide again after the reveal");
+        assert!(!reveal_for_attention(Some(10), false), "an answered request does not hold the Dock out");
+        assert!(!reveal_for_attention(None, true));
+    }
 
     #[test]
     fn a_flash_groups_by_app_with_a_count() {
