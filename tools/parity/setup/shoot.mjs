@@ -13,7 +13,7 @@ await mkdir(shots, { recursive: true });
 const { chromium } = await import("playwright");
 
 const PRESETS = (process.env.PARITY_PRESETS || "obsidian,alabaster-daylight").split(",");
-const FLOWS = { first: ["welcome", "dock", "colour", "extras", "done"], update: ["whatsnew", "extras", "done"] };
+const FLOWS = { first: ["welcome", "dock", "colour", "apps", "extras", "done"], update: ["whatsnew", "extras", "done"] };
 const T = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".png": "image/png", ".svg": "image/svg+xml" };
 
 const srv = createServer(async (q, r) => {

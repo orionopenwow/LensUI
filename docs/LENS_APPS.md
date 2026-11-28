@@ -35,6 +35,18 @@ Everything is off until opened, and nothing installs without a click.
 - **Gallery.** App pages show every official screenshot and the demo loop with previous/next, dots and the arrow keys, and a credit line for the image's source.
 - **Keyboard.** `/` searches, Enter on a card opens details, Ctrl+Enter on a card is Get, Esc closes the popover and then goes back, and the arrow keys move along a row.
 
+## Getting there
+
+- Settings › Lens Apps, Command `/apps`, voice "Lens, install …", and `lens://apps` links.
+- The first setup has an Apps page and opens Lens Apps when it closes (docs/SETUP.md).
+- An optional **desktop icon**, off until turned on in setup or Settings › Lens Apps. It is one
+  shortcut, `Lens Apps.lnk`, on the Windows desktop with the Lens Apps icon (drawn by the page as a
+  PNG and saved as `%APPDATA%\LensUI\icons\lens-apps.ico`). It runs `lens-ui.exe --open-apps`:
+  a running Lens gets the request through the bridge (`settings_open` with `lens-apps`); if Lens
+  isn't running, Lens starts and opens Lens Apps once it is up, and if Lens is running with the
+  bridge off it says so instead of starting a second Lens. Lens only removes a `Lens Apps.lnk`
+  whose arguments carry `--open-apps`. Commands: `apps_desktop_icon_get`, `apps_desktop_icon_set`.
+
 ## Files
 
 | Area | Files |

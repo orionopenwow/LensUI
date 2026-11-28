@@ -1076,3 +1076,21 @@ pub(crate) fn apps_reveal(app_id: String) -> Result<(), String> {
     let target = lnk;
     crate::win_windows::launch_path_advanced(&target, "reveal")
 }
+
+/// Whether the optional Lens Apps icon is on the desktop (crate::desktop_shortcut).
+#[tauri::command]
+pub(crate) fn apps_desktop_icon_get() -> bool {
+    crate::desktop_shortcut::is_on()
+}
+
+/// Puts the Lens Apps icon on the desktop or takes it off. `icon_png` is the Lens Apps icon the
+/// page drew (PNG, up to 256×256). Returns whether the icon is on afterwards.
+#[tauri::command]
+pub(crate) fn apps_desktop_icon_set(on: bool, icon_png: Option<Vec<u8>>) -> Result<bool, String> {
+    if on {
+        crate::desktop_shortcut::turn_on(icon_png.as_deref())?;
+    } else {
+        crate::desktop_shortcut::turn_off()?;
+    }
+    Ok(crate::desktop_shortcut::is_on())
+}

@@ -7,6 +7,17 @@ up and migrates `%APPDATA%\LensUI` where it can.
 
 ## [Unreleased]
 
+### Added
+- **Setup shows what comes with Lens.** A new Apps page lists Lens's own apps (Monitor, Timer,
+  Notes, Clipboard and the rest) as tiles you tick to pin to the Dock, introduces Lens Apps, and
+  says where desktop widgets and Lens Cleaner live.
+- **Lens Apps opens after your first setup.** The free tools are the first thing you see once setup
+  closes; turn that off on the Apps page.
+- **An optional Lens Apps icon on your desktop.** Off until you turn it on, in setup or in Settings ›
+  Lens Apps (which also gains an Open window button). It opens Lens Apps, starting Lens first if it
+  isn't running, and Remove all Lens changes and uninstalling take it away. `lens://apps` links
+  open Lens Apps too.
+
 ## [0.4.0] - 2026-11-27
 
 ### Installing

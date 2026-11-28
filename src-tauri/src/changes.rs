@@ -320,6 +320,15 @@ pub const CHANGES: &[Change] = &[
         sources: &["commands/apps.rs", "apps/recipe.rs"],
         undo: undo_app_recipes,
     },
+    Change {
+        id: "lens-apps-shortcut",
+        label: "Lens Apps desktop icon",
+        scope: Scope::Persistent,
+        // The desktop can be moved (OneDrive); the shortcut goes wherever Windows keeps it.
+        writes: &["%USERPROFILE%\\Desktop\\Lens Apps.lnk"],
+        sources: &["desktop_shortcut.rs"],
+        undo: undo_lens_apps_shortcut,
+    },
 ];
 
 /// What Remove all deliberately leaves alone, said in the report so nobody has to wonder.
@@ -378,6 +387,13 @@ pub fn remove_all(config: &mut LensConfig) -> Vec<UninstallStep> {
 // ---------------------------------------------------------------------------------------------
 // Undo functions, one per row
 // ---------------------------------------------------------------------------------------------
+
+fn undo_lens_apps_shortcut(_: &mut LensConfig) -> Result<String, String> {
+    match crate::desktop_shortcut::turn_off()? {
+        true => Ok("The Lens Apps icon is off your desktop.".to_string()),
+        false => Ok("No Lens Apps icon on your desktop.".to_string()),
+    }
+}
 
 fn undo_workspaces(_: &mut LensConfig) -> Result<String, String> {
     crate::win_workspaces::restore_all_windows();

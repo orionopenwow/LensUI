@@ -7,7 +7,7 @@
 //     the choices you made, through the one settings writer.
 //   * Skip (any page, any time) writes only the "seen" markers, so it doesn't come back for this
 //     version. Defaults stay: the floating Dock and the default theme.
-import type { LensConfig } from "../types/lens";
+import type { LensConfig, PinnedApp } from "../types/lens";
 import { applyFeaturedLook, FEATURED_LOOKS } from "../themes/featured";
 import { packById } from "../themes/packs";
 import { DOCK_STYLES, withDock } from "../dock/styles";
@@ -159,6 +159,8 @@ export interface SetupChoices {
   /** Custom accent "#rrggbb", or "windows" to follow Windows; undefined = keep. */
   accent?: string;
   extras: Partial<Record<ExtraId, boolean>>;
+  /** Lens's own apps to pin to the Dock (src/coreapps/registry.ts pinEntry); ones already pinned are skipped. */
+  pins?: PinnedApp[];
 }
 
 export const NO_CHOICES: SetupChoices = { extras: {} };
@@ -223,6 +225,9 @@ export function applyChoices(base: LensConfig, choices: SetupChoices, version: s
   if (x.hideNativeTaskbar !== undefined) next = { ...next, func: { ...next.func, hideNativeTaskbar: x.hideNativeTaskbar } };
   if (x.livePreviews !== undefined) next = { ...next, dock: { ...next.dock, livePreviews: x.livePreviews } };
   if (x.tester !== undefined) next = { ...next, tester: { ...next.tester, enabled: x.tester } };
+  const have = new Set((next.dock.pinnedApps ?? []).map((p) => p.path));
+  const add = (choices.pins ?? []).filter((p) => !have.has(p.path) && (have.add(p.path), true));
+  if (add.length) next = { ...next, dock: { ...next.dock, pinnedApps: [...(next.dock.pinnedApps ?? []), ...add] } };
   return markSeen(next, version);
 }
 
@@ -237,6 +242,7 @@ export function describeChoices(choices: SetupChoices, lookLabel: (id: string) =
     const v = choices.extras[e.id];
     if (v !== undefined) out.push(`${e.label}: ${v ? "on" : "off"}`);
   }
+  if (choices.pins?.length) out.push(`Pin to the Dock: ${choices.pins.map((p) => p.name).join(", ")}`);
   return out;
 }
 

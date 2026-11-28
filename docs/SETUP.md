@@ -31,8 +31,21 @@ config switches as Settings, so **Remove all Lens changes** undoes it.
 | Welcome | What's new in *version* (from `CHANGELOG.md`) |
 | Dock: Floating, Slim, Taskbar, Split, and the screen edge | Extras added since the last setup that are still off (page skipped when there are none) |
 | Colour: Dark / Light / Day & night, the featured looks, the accent | Done |
+| Apps: tick Lens's own apps to pin them to the Dock; Lens Apps (open it when setup closes, on by default on the first setup; a desktop icon, off); where widgets and Lens Cleaner live | |
 | Optional extras (all off), plus where to set up Windhawk styling and voice transcription | |
 | Done: exactly what Finish will change | |
+
+## After the first setup
+
+On the very first setup (the config has never been through setup), Lens Apps opens in its own
+window when setup closes, whether by Finish or Skip, so the free tools are the first thing people
+see. The switch on the Apps page turns that off. "Run setup again" leaves it off unless you turn it on.
+
+The **Lens Apps icon on the desktop** is opt-in. Finish asks Rust to write one shortcut,
+`Lens Apps.lnk` (`src-tauri/src/desktop_shortcut.rs`); Settings › Lens Apps turns it on and off
+later, and Remove all Lens changes (change registry row `lens-apps-shortcut`) and the uninstaller
+remove it. It runs `lens-ui.exe --open-apps`, which asks a running Lens to open Lens Apps or starts
+Lens and opens it.
 
 "Day & night" turns on the theme schedule: a light look from 7:00, a dark look from 19:00.
 

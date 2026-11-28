@@ -63,6 +63,11 @@ export function AiApplyBridge({ config, updateConfig }: Props) {
       const target = String(e.payload.selection ?? "");
       // lens://settings/cleaner (Explorer's "Free up space with Lens") opens Lens Cleaner.
       if (openCleanerFor(target)) return;
+      // lens://apps and the Lens Apps desktop icon open Lens Apps in its own window.
+      if (target === "lens-apps") {
+        invoke("open_surface", { label: "apps" }).catch(() => {});
+        return;
+      }
       if (!resolveTarget(target)) return;
       invoke("open_surface", { label: "settings" })
         .then(() => emit("lens://settings-tab", target))

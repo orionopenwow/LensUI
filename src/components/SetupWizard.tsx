@@ -3,7 +3,7 @@
 // writes only what was picked (src/setup/flow.ts). Skip leaves everything as it is.
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useStartupBlock } from "../hooks/useStartupBlock";
-import { Check, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, LayoutGrid, Sparkles } from "lucide-react";
 import { LensConfig, WindowsThemeInfo } from "../types/lens";
 import { packById } from "../themes/packs";
 import { FEATURED_LOOKS, lookPack } from "../themes/featured";
@@ -13,6 +13,9 @@ import { PackCard } from "./ThemeGallery";
 import { DOCK_STYLES, DockScenePreview, dockStyleLabel, dockStyleOf } from "../dock/styles";
 import { enableAmbientBackdrop } from "../playground/ambient/controls";
 import { glideIn, swapDirection, swapIn } from "../ui/motion";
+import { CORE_APPS, iconUrl, pinEntry } from "../coreapps/registry";
+import { desktopIconOn, openLensApps, setDesktopIcon } from "../apps/desktopIcon";
+import { toast } from "../ui/toastBus";
 import {
   applyChoices,
   describeChoices,
@@ -43,13 +46,14 @@ interface SetupWizardProps {
   onFinish: () => void;
 }
 
-type Page = "welcome" | "whatsnew" | "dock" | "colour" | "extras" | "done";
+type Page = "welcome" | "whatsnew" | "dock" | "colour" | "apps" | "extras" | "done";
 
 const PAGE_LABEL: Record<Page, string> = {
   welcome: "Welcome",
   whatsnew: "What's new",
   dock: "Dock",
   colour: "Colour",
+  apps: "Apps",
   extras: "Extras",
   done: "Done",
 };
@@ -120,7 +124,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
   const notes = useMemo(() => (isUpdate ? whatsNewSince(reason === "forced" ? "" : seenVersion, version || "999") : []), [isUpdate, reason, seenVersion, version]);
   const extras = useMemo(() => extrasFor(reason, seenVersion, baseRef.current), [reason, seenVersion]);
   const pages: Page[] = useMemo(() => {
-    if (!isUpdate) return ["welcome", "dock", "colour", "extras", "done"];
+    if (!isUpdate) return ["welcome", "dock", "colour", "apps", "extras", "done"];
     const p: Page[] = [];
     if (notes.length) p.push("whatsnew");
     if (extras.length) p.push("extras");
@@ -156,17 +160,43 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
     wizRef.current?.style.setProperty("--lens-accent", previewAccent);
   }, [previewAccent]);
 
+  // The Apps page. On the very first setup Lens Apps opens when setup closes (so the free tools
+  // are the first thing people see), unless they turn that off. The desktop icon is opt-in.
+  const firstEver = reason === "first" && !baseRef.current.onboardingCompleted;
+  const [openApps, setOpenApps] = useState(firstEver);
+  const [desktopIcon, setDesktopIconChoice] = useState(false);
+  const [iconAlreadyOn, setIconAlreadyOn] = useState(false);
+  useEffect(() => {
+    desktopIconOn().then(setIconAlreadyOn);
+  }, []);
+  const pinnedPaths = new Set((baseRef.current.dock.pinnedApps ?? []).map((p) => p.path));
+  const togglePin = (id: string) => {
+    const app = CORE_APPS.find((a) => a.id === id);
+    if (!app) return;
+    const entry = pinEntry(app);
+    setChoices((c) => {
+      const pins = c.pins ?? [];
+      return { ...c, pins: pins.some((p) => p.path === entry.path) ? pins.filter((p) => p.path !== entry.path) : [...pins, entry] };
+    });
+  };
+  const afterClose = () => {
+    if (openApps) window.setTimeout(() => openLensApps().catch(() => {}), 350);
+  };
+
   /** Leaves setup without changing anything but the "seen" markers. */
   const skipAll = () => {
     onUpdateConfig({ ...config, onboardingCompleted: true, setupSeenVersion: version || config.setupSeenVersion || "" });
     onFinish();
+    afterClose();
   };
 
   /** Writes the choices (only those) and closes. */
   const finish = () => {
     onUpdateConfig({ ...applyChoices(config, choices, version || config.setupSeenVersion || "") });
     if (choices.extras.ambientBackdrop) enableAmbientBackdrop().catch(() => {});
+    if (desktopIcon && !iconAlreadyOn) setDesktopIcon(true).catch((e) => toast.error(`Couldn't put Lens Apps on the desktop. ${String(e)}`));
     onFinish();
+    afterClose();
   };
 
   const next = () => (index < last ? setIndex(index + 1) : finish());
@@ -178,8 +208,10 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
       if (page === "dock") return { ...c, dockStyle: undefined, dockEdge: undefined };
       if (page === "colour") return { ...c, look: undefined, accent: undefined, scheme: undefined };
       if (page === "extras") return { ...c, extras: {} };
+      if (page === "apps") return { ...c, pins: undefined };
       return c;
     });
+    if (page === "apps") setDesktopIconChoice(false);
     next();
   };
 
@@ -203,11 +235,14 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
     setScheme(s);
     setChoices((c) => ({ ...c, scheme: c.look ? s : c.scheme }));
   };
-  const summary = describeChoices(
-    choices,
-    (id) => packById(id)?.label ?? id,
-    (id) => dockStyleLabel(id),
-  );
+  const summary = [
+    ...describeChoices(
+      choices,
+      (id) => packById(id)?.label ?? id,
+      (id) => dockStyleLabel(id),
+    ),
+    ...(desktopIcon && !iconAlreadyOn ? ["Lens Apps icon on the desktop: on"] : []),
+  ];
   const nextLabel = page === "welcome" ? "Get started" : index === last ? "Finish" : "Continue";
   const heading = (text: string, big = false) => (
     <h1 id="wiz-heading" ref={headingRef} tabIndex={-1} className={big ? "wiz-h1" : "wiz-h2"}>
@@ -411,6 +446,106 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
           </>
         )}
 
+        {page === "apps" && (
+          <>
+            <div>
+              {heading("What comes with Lens")}
+              <p className="wiz-sub">
+                All free. Lens's own apps are already here: tick the ones you want on your Dock. Lens Apps has more free tools to install, one click each.
+              </p>
+            </div>
+            <div className="cc-card wiz-apps">
+              <div className="cc-label">Lens's own apps</div>
+              <div className="wiz-apps-grid" role="group" aria-label="Pin Lens apps to the Dock">
+                {CORE_APPS.map((a) => {
+                  const path = pinEntry(a).path;
+                  const already = pinnedPaths.has(path);
+                  const on = already || !!choices.pins?.some((p) => p.path === path);
+                  return (
+                    <button
+                      data-weight="medium"
+                      key={a.id}
+                      type="button"
+                      role="checkbox"
+                      aria-checked={on}
+                      aria-disabled={already || undefined}
+                      aria-label={`${a.title}. ${a.blurb} ${already ? "Already on your Dock." : "Pin to the Dock."}`}
+                      className={`wiz-app ${on ? "on" : ""} ${already ? "already" : ""}`}
+                      onClick={() => !already && togglePin(a.id)}
+                    >
+                      <img className="wiz-app-icon" src={iconUrl(a)} alt="" aria-hidden />
+                      <span className="wiz-app-text">
+                        <span className="wiz-app-name">{a.short}</span>
+                        <span className="wiz-app-blurb">{a.blurb}</span>
+                      </span>
+                      <span className="wiz-app-pin" aria-hidden>
+                        {on && <Check size={11} strokeWidth={3} />}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="cc-desc">Ticked apps go on your Dock when you finish. All of them are in the Launcher, and in Command: type /timer, /notes or /monitor.</div>
+            </div>
+            <div className="cc-card wiz-options">
+              <div className="wiz-store-head">
+                <span className="wiz-store-mark" aria-hidden>
+                  <LayoutGrid size={18} />
+                </span>
+                <div className="tux-row-text">
+                  <div className="cc-label">Lens Apps</div>
+                  <div className="cc-desc">Free and open-source tools for Windows, with screenshots and one-click Get. Nothing installs without your click.</div>
+                </div>
+              </div>
+              <div className="tux-row">
+                <div className="tux-row-text">
+                  <div className="cc-label">Open Lens Apps when setup finishes</div>
+                  <div className="cc-desc">Look around and get whatever you like. It's always in Settings › Lens Apps.</div>
+                </div>
+                <button
+                  data-weight="light"
+                  type="button"
+                  role="switch"
+                  aria-checked={openApps}
+                  aria-label="Open Lens Apps when setup finishes"
+                  className={`cc-toggle ${openApps ? "on" : ""}`}
+                  onClick={() => setOpenApps(!openApps)}
+                />
+              </div>
+              <div className={`tux-row ${iconAlreadyOn ? "wiz-unavailable" : ""}`}>
+                <div className="tux-row-text">
+                  <div className="cc-label">Lens Apps icon on the desktop</div>
+                  <div className="cc-desc">
+                    {iconAlreadyOn
+                      ? "It's already on your desktop."
+                      : "Adds one shortcut to your desktop. Turn it off in Settings › Lens Apps; Remove all Lens changes takes it away too."}
+                  </div>
+                </div>
+                <button
+                  data-weight="light"
+                  type="button"
+                  role="switch"
+                  aria-checked={desktopIcon || iconAlreadyOn}
+                  aria-disabled={iconAlreadyOn || undefined}
+                  aria-label="Lens Apps icon on the desktop"
+                  className={`cc-toggle ${desktopIcon || iconAlreadyOn ? "on" : ""}`}
+                  onClick={() => !iconAlreadyOn && setDesktopIconChoice(!desktopIcon)}
+                />
+              </div>
+            </div>
+            <div className="cc-card wiz-where">
+              <div className="cc-label">Also in Lens</div>
+              <div className="cc-desc">
+                <strong>Desktop widgets.</strong> Clock, weather, now playing, notes and today on your desktop (preview).{" "}
+                <span className="wiz-where-path">Settings › About &amp; Testing › Magic (preview)</span>
+              </div>
+              <div className="cc-desc">
+                <strong>Lens Cleaner.</strong> See what's filling your drive and clear it safely. <span className="wiz-where-path">Command: /clean</span>
+              </div>
+            </div>
+          </>
+        )}
+
         {page === "extras" && (
           <>
             <div>
@@ -459,11 +594,12 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
         {page === "done" && (
           <>
             <div>
-              {heading(summary.length ? "Ready to apply" : "Nothing to change")}
+              {heading(summary.length ? "Ready to apply" : openApps ? "All set" : "Nothing to change")}
               <p className="wiz-sub">
                 {summary.length
                   ? "Finish applies these. Everything can be changed later in Settings."
                   : "Lens keeps what it has. Finish just closes setup; it won't open again until the next version."}
+                {openApps ? " Then Lens Apps opens so you can get free tools." : ""}
               </p>
             </div>
             {summary.length > 0 && (
@@ -482,7 +618,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
             <div className="cc-card wiz-where">
               <div className="cc-label">Where to find things</div>
               <div className="cc-desc">
-                Settings has everything: Appearance for colours, Dock &amp; Bar for the Dock, Windows &amp; Keys for startup. Run this setup
+                Settings has everything: Appearance for colours, Dock &amp; Bar for the Dock, Windows &amp; Keys for startup, Lens Apps for free tools. Run this setup
                 again from Settings › About &amp; Testing, or type “setup” in Command.
               </div>
             </div>

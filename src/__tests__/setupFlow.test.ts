@@ -5,6 +5,7 @@ import { join } from "node:path";
 import {
   applyChoices,
   compareVersions,
+  describeChoices,
   EXTRAS,
   extrasFor,
   looksFor,
@@ -93,6 +94,29 @@ describe("Skip and Finish", () => {
   test("an accent choice sets custom or Windows accent", () => {
     expect(applyChoices(sampleConfig(), { extras: {}, accent: "#22c55e" }, "1").theme).toMatchObject({ accentMode: "custom", customAccent: "#22c55e" });
     expect(applyChoices(sampleConfig(), { extras: {}, accent: "windows" }, "1").theme.accentMode).toBe("windows");
+  });
+});
+
+describe("Apps page", () => {
+  const timer = { id: "lens-app-timer", name: "Lens Timer", path: "lens-app:timer", iconHint: null };
+  const notes = { id: "lens-app-notes", name: "Lens Notes", path: "lens-app:notes", iconHint: null };
+
+  test("ticked Lens apps are added to the Dock, after the ones already pinned, and only once", () => {
+    const base = sampleConfig();
+    const before = base.dock.pinnedApps ?? [];
+    const out = applyChoices(base, { extras: {}, pins: [timer, notes, timer] }, "1");
+    expect(out.dock.pinnedApps).toEqual([...before, timer, notes]);
+    expect(changedPaths(base, out).filter((p) => !["onboardingCompleted", "setupSeenVersion"].includes(p))).toEqual(["dock.pinnedApps"]);
+  });
+
+  test("an app that is already pinned is not pinned twice", () => {
+    const base = { ...sampleConfig(), dock: { ...sampleConfig().dock, pinnedApps: [timer] } };
+    expect(applyChoices(base, { extras: {}, pins: [timer] }, "1").dock.pinnedApps).toEqual([timer]);
+  });
+
+  test("the Done page lists what gets pinned", () => {
+    expect(describeChoices({ extras: {}, pins: [timer, notes] }, (id) => id, (id) => id)).toEqual(["Pin to the Dock: Lens Timer, Lens Notes"]);
+    expect(describeChoices({ extras: {}, pins: [] }, (id) => id, (id) => id)).toEqual([]);
   });
 });
 
