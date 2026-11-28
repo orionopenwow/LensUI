@@ -55,9 +55,12 @@ pub enum Feature {
     /// Magic Mouse: hold the left button, then drag to grab a region (`magic_waves::mouse_win`).
     /// Only the button-up after an armed hold is ever swallowed; short clicks always pass.
     MagicMouse = 8,
+    /// Clicks outside an open flyout (Search, Quick Settings, Settings on the Dock) close it
+    /// (`app::outside_click`). Claimed only while one is open; it observes and never swallows.
+    FlyoutClick = 9,
 }
 
-pub const FEATURES: usize = 9;
+pub const FEATURES: usize = 10;
 
 impl Feature {
     pub const ALL: [Feature; FEATURES] = [
@@ -70,6 +73,7 @@ impl Feature {
         Feature::CursorFx,
         Feature::AgentStop,
         Feature::MagicMouse,
+        Feature::FlyoutClick,
     ];
 
     pub fn name(self) -> &'static str {
@@ -83,6 +87,7 @@ impl Feature {
             Feature::CursorFx => "Pointer effects",
             Feature::AgentStop => "Esc stops an agent",
             Feature::MagicMouse => "Magic Mouse",
+            Feature::FlyoutClick => "Click outside a flyout",
         }
     }
 }
@@ -285,13 +290,15 @@ mod rt {
     ];
 
     /// Mouse dispatch order: the two features that can swallow a click first, observers after.
-    const MOUSE_TABLE: [(Feature, MouseHandler, WhenPaused); 6] = [
+    const MOUSE_TABLE: [(Feature, MouseHandler, WhenPaused); 7] = [
         (Feature::AltDrag, crate::win_altdrag::input_mouse, WhenPaused::Skip),
         (Feature::Magic, crate::magic::win::input_mouse, WhenPaused::Skip),
         (Feature::MagicMouse, crate::magic_waves::mouse_win::input_mouse, WhenPaused::Skip),
         (Feature::ClipBubble, crate::clip::uia::input_mouse, WhenPaused::Skip),
         (Feature::DesktopInput, crate::win_desktop_input::input_mouse, WhenPaused::Skip),
         (Feature::CursorFx, crate::win_cursor_fx::input_mouse, WhenPaused::Skip),
+        // Last: it only counts presses, after every feature that may swallow one has had it.
+        (Feature::FlyoutClick, crate::app::outside_click::input_mouse, WhenPaused::Skip),
     ];
 
     /// Told when the pause signal turns on, so a half-finished gesture is dropped.
@@ -379,7 +386,7 @@ mod rt {
         })
     }
 
-    fn mouse_slots(now: u64) -> [Slot<MouseEvent>; 6] {
+    fn mouse_slots(now: u64) -> [Slot<MouseEvent>; 7] {
         MOUSE_TABLE.map(|(f, handler, when_paused)| Slot {
             handler: (MOUSE_CLAIMED[f as usize].load(Ordering::Relaxed) && !benched(f, now)).then_some(handler),
             when_paused,
