@@ -1374,3 +1374,41 @@ pub fn browser_favicons_clear() {
 pub fn browser_sent() -> Vec<crate::browser::net::Sent> {
     crate::browser::net::sent()
 }
+
+/// Whether Lens Browser is offered to Windows as a browser, and whether it is the default.
+#[derive(Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct DefaultBrowserStatus {
+    pub registered: bool,
+    pub is_default: bool,
+}
+
+#[tauri::command]
+pub fn browser_default_status() -> DefaultBrowserStatus {
+    use crate::browser::default_browser as d;
+    DefaultBrowserStatus { registered: d::is_registered(&crate::bridge::exe_path()), is_default: d::is_default() }
+}
+
+/// "Make Lens Browser the default": registers it with Windows (HKCU only, undone by Remove all
+/// Lens changes) and opens Windows' Default apps page on it, where the person picks it. Windows
+/// never lets an app make itself the default.
+#[tauri::command]
+pub async fn browser_make_default() -> Result<DefaultBrowserStatus, String> {
+    tauri::async_runtime::spawn_blocking(|| {
+        use crate::browser::default_browser as d;
+        let exe = crate::bridge::exe_path();
+        if !d::is_registered(&exe) {
+            d::register(&exe)?;
+        }
+        crate::win_quick_settings::open_windows_setting(&d::settings_uri())?;
+        Ok(browser_default_status())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// Takes Lens Browser out of Windows' list of browsers again.
+#[tauri::command]
+pub async fn browser_unregister_default() -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(crate::browser::default_browser::unregister).await.map_err(|e| e.to_string())?
+}

@@ -15,6 +15,7 @@ pub(crate) mod safe_start;
 pub(crate) mod signin_gate;
 pub(crate) mod surface_state;
 pub(crate) mod topbar_hit;
+pub(crate) mod outside_click;
 
 use crate::*;
 

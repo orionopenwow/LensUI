@@ -453,6 +453,17 @@
   -webkit-mask-image: radial-gradient(circle 46px at var(--tb-hx) var(--tb-hy), rgb(0 0 0 / calc(1 - var(--tb-halo))) 0, rgb(0 0 0 / calc(1 - var(--tb-halo))) 18px, #000 46px);
   mask-image: radial-gradient(circle 46px at var(--tb-hx) var(--tb-hy), rgb(0 0 0 / calc(1 - var(--tb-halo))) 0, rgb(0 0 0 / calc(1 - var(--tb-halo))) 18px, #000 46px);
 }
+/* A soft light ring at the edge of the see-through circle, so the halo reads on any wallpaper
+   (a hole alone vanished over a dark desktop). Drawn as one more background layer of the bar. */
+.topbar[data-halo="on"] {
+  background-image:
+    radial-gradient(circle 34px at var(--tb-hx) var(--tb-hy), transparent 0 15px, rgb(var(--lens-ink) / calc(0.42 * var(--tb-halo))) 20px, rgb(var(--lens-ink) / calc(0.12 * var(--tb-halo))) 26px, transparent 34px),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--lens-pack-elevated, #141418) var(--lens-glass-opacity-pct), transparent) 0%,
+      color-mix(in srgb, var(--lens-surface-solid) var(--lens-glass-opacity-pct), transparent) 100%
+    );
+}
 @media (prefers-reduced-motion: reduce) {
   .topbar[data-halo="on"] { transition: none; }
 }

@@ -94,6 +94,7 @@ function TabRow({ t, active, p, nested }: { t: Tab; active: boolean; p: RowProps
      
       tabIndex={0}
       draggable
+      style={{ "--lb-tab-hue": avatar(t.url, t.title).hue } as React.CSSProperties}
       className={`lb-tab${active ? " is-active" : ""}${sleeping ? " is-sleeping" : ""}${nested ? " is-nested" : ""}${t.audible && !t.muted ? " is-audible" : ""}`}
       onClick={() => p.onActivate(t.id)}
       onKeyDown={(e) => {

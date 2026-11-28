@@ -15,6 +15,21 @@ up and migrates `%APPDATA%\LensUI` where it can.
 - **Restart to update for Lens run from the source folder.** A build made from a clone of the
   repository checks `origin/main` every 30 minutes; when main has new commits the Top Bar pill and
   Settings › Updates say **Restart to update**, which pulls, rebuilds and starts Lens again.
+- **Lens Browser welcomes you.** After your first Lens setup (and the Lens Apps window it opens),
+  Lens Browser opens on a new welcome: make it your default browser, take a five-slide tour, bring
+  bookmarks and tabs from another browser, and see what's new (the AI beside the page, magic
+  right-click, context, your own agents, colour).
+- **Lens Browser can be your default browser.** Make it your default registers it with Windows
+  (your account only) and opens Default apps on it; links from other apps then open in Lens
+  Browser. Remove all Lens changes and the uninstaller take the registration out again.
+- **12 stock themes, new-tab backdrops and tab colours** in Lens Browser's Make it yours, and a
+  theme pick in setup. The new tab shows the Lens orb.
+
+### Fixed
+- **Clicking outside Search, Quick Settings or Settings on the Dock closes it.** Lens now counts
+  every click while one is open, so a quick click is never missed, and a click on an empty part of
+  the Top Bar (which goes to the app behind) counts as outside.
+- **The Top Bar's click-through halo is easier to see:** a soft ring around the see-through circle.
 
 ## [0.4.0] - 2026-11-27
 

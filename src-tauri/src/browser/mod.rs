@@ -13,6 +13,7 @@
 
 pub mod agent_control;
 pub mod blocklist;
+pub mod default_browser;
 pub mod filter;
 pub mod gating;
 pub mod host;

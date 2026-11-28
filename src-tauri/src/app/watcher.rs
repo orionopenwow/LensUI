@@ -557,6 +557,8 @@ pub(crate) fn spawn_watcher(
         let mut last_settings_docked = false;
         let mut settings_away_since: Option<Instant> = None;
         let mut last_place_key: Option<(i32, i32, u32, u32, i32, i32, u32, u32, i32)> = None;
+        // The press count this watcher last read (app/outside_click.rs).
+        let mut presses_seen: u64 = 0;
 
         spawn_stall_supervisor(watcher_handle.clone());
         loop {
@@ -579,6 +581,10 @@ pub(crate) fn spawn_watcher(
             }
             // Sampled once per pass: the "pressed since last check" bit is consumed by the read.
             let clicked = mouse_button_down();
+            // Presses the mouse hook counted while a flyout is open: a quick click between two
+            // passes, which the sampled bit above can miss, still closes the flyout.
+            let presses = crate::app::outside_click::since(&mut presses_seen);
+            let clicked = clicked || presses.any;
 
             // One bad pass (a panic anywhere below) is caught and recorded, and the next pass runs:
             // a panic here used to end the whole process, taking the Dock, the Top Bar and their
@@ -674,6 +680,12 @@ pub(crate) fn spawn_watcher(
                             w.is_visible().unwrap_or(false) && !w.is_minimized().unwrap_or(false)
                         })
                         .unwrap_or(false);
+
+                    {
+                        let phases = crate::app::surface_state::snapshot();
+                        let up = |l: &str| phases.iter().any(|(k, v)| k == l && (v == "shown" || v == "showing"));
+                        crate::app::outside_click::want(palette_vis_now || up("launcher") || up("quicksettings") || up("settings"));
+                    }
 
                     // Launcher: it closes itself on blur, but it only gets a blur if its page had
                     // the focus. A Launcher Windows refused to bring forward (B-128), or one whose
@@ -806,12 +818,19 @@ pub(crate) fn spawn_watcher(
                             let pal_focused = pal.as_ref().map(is_foreground).unwrap_or(false);
                             let bar_focused = is_foreground(&topbar_win);
                                 let pointer_in = pal.as_ref().map(in_rect).unwrap_or(false) || in_rect(&topbar_win);
+                                let click_outside = clicked && search_click_outside(
+                                    presses.at.or(cursor),
+                                    pal.as_ref().and_then(crate::app::outside_click::rect_of),
+                                    crate::app::outside_click::rect_of(&topbar_win),
+                                    scale,
+                                    &crate::app::topbar_hit::rects(),
+                                );
                                 let close = search_should_close(
                                     SearchGuardInput {
                                         palette_focused: pal_focused,
                                         bar_focused,
                                         pointer_inside: pointer_in,
-                                    click_outside: !pointer_in && clicked,
+                                        click_outside,
                                     },
                                     &mut search_idle_since,
                                     Instant::now(),
@@ -847,7 +866,20 @@ pub(crate) fn spawn_watcher(
                                 let pointer_on = qs.as_ref().map(over).unwrap_or(false) || cursor_inside_bar;
                                 active_within(focused || pointer_on, &mut qs_idle_since, Instant::now(), popout_delays(&cfg.func.popout_close_delay).0)
                             };
-                            if !qs_vis {
+                            let qs_click_out = qs_vis
+                                && search_click_outside(
+                                    if clicked { presses.at.or(cursor) } else { None },
+                                    watcher_handle.get_webview_window("quicksettings").as_ref().and_then(crate::app::outside_click::rect_of),
+                                    crate::app::outside_click::rect_of(&topbar_win),
+                                    scale,
+                                    &crate::app::topbar_hit::rects(),
+                                )
+                                && crate::app::outside_click::settled(crate::commands::surfaces::shown_for_ms("quicksettings"));
+                            if qs_click_out {
+                                crate::tester::log("info", "surface", "Quick Settings closed: a click outside it");
+                                qs_idle_since = None;
+                                crate::commands::surfaces::glide_hide_surface(&watcher_handle, "quicksettings");
+                            } else if !qs_vis {
                                 qs_idle_since = None;
                             } else if !qs_in_use && popout_may_auto_close(&watcher_handle, "quicksettings") {
                                 // Pointer away (and no keyboard focus) for the pop-out delay: a
@@ -1230,7 +1262,24 @@ pub(crate) fn spawn_watcher(
                                 _ => false,
                             };
                             let in_use = settings_focused || pointer_on_settings || cursor_over_pill || cursor_over_dock_window;
-                            if !active_within(in_use, &mut settings_away_since, Instant::now(), popout_delays(&cfg.func.popout_close_delay).1)
+                            let at = presses.at.or(cursor);
+                            let click_out = clicked
+                                && !cursor_over_pill
+                                && !cursor_over_dock_window
+                                && crate::app::outside_click::closes(
+                                    true,
+                                    at,
+                                    &[settings_win.as_ref().and_then(crate::app::outside_click::rect_of), crate::app::outside_click::rect_of(&dock_win)]
+                                        .into_iter()
+                                        .flatten()
+                                        .collect::<Vec<_>>(),
+                                    crate::app::outside_click::settled(crate::commands::surfaces::shown_for_ms("settings")),
+                                );
+                            if click_out {
+                                crate::tester::log("info", "surface", "Settings closed: a click outside it and the Dock");
+                                settings_away_since = None;
+                                crate::commands::surfaces::glide_hide_surface(&watcher_handle, "settings");
+                            } else if !active_within(in_use, &mut settings_away_since, Instant::now(), popout_delays(&cfg.func.popout_close_delay).1)
                                 && popout_may_auto_close(&watcher_handle, "settings")
                             {
                                 settings_away_since = None;
@@ -1892,6 +1941,32 @@ pub(crate) struct SearchGuardInput {
     pub click_outside: bool,
 }
 
+/// Whether a click at `at` (physical px) is outside a Top Bar flyout: not on the flyout's window
+/// and not on one of the bar's controls (`rects`, CSS px in the bar's window; the empty parts of
+/// the bar pass clicks through to the app behind, so a click there is outside). Pure.
+pub(crate) fn search_click_outside(
+    at: Option<(i32, i32)>,
+    flyout: Option<(i32, i32, i32, i32)>,
+    bar: Option<(i32, i32, i32, i32)>,
+    scale: f64,
+    rects: &[crate::app::topbar_hit::Rect],
+) -> bool {
+    let Some((x, y)) = at else { return false };
+    if let Some((l, t, w, h)) = flyout {
+        if x >= l && x < l + w && y >= t && y < t + h {
+            return false;
+        }
+    }
+    if let Some((l, t, w, h)) = bar {
+        let on_bar = x >= l && x < l + w && y >= t && y < t + h;
+        let scale = if scale > 0.0 { scale } else { 1.0 };
+        if on_bar && !crate::app::topbar_hit::is_through(rects, (x - l) as f64 / scale, (y - t) as f64 / scale) {
+            return false;
+        }
+    }
+    true
+}
+
 /// True when the open Top Bar search should close: a click outside the bar and palette, or
 /// SEARCH_IDLE_MS with neither focused and the pointer elsewhere.
 pub(crate) fn search_should_close(
@@ -1920,6 +1995,22 @@ pub(crate) fn search_should_close(
 mod search_guard_tests {
     use super::*;
     use std::time::{Duration, Instant};
+
+    #[test]
+    fn empty_bar_is_outside_but_its_controls_and_the_flyout_are_inside() {
+        let bar = Some((0, 0, 3840, 64)); // 2x scale: 1920 x 32 CSS px
+        let rects = vec![(1700.0, 4.0, 24.0, 24.0)]; // a Quick Settings button, CSS px
+        let flyout = Some((3000, 64, 800, 900));
+        assert!(search_click_outside(Some((800, 20)), flyout, bar, 2.0, &rects), "empty part of the bar");
+        assert!(!search_click_outside(Some((3420, 30)), flyout, bar, 2.0, &rects), "the button that toggles it");
+        assert!(!search_click_outside(Some((3200, 500)), flyout, bar, 2.0, &rects), "inside the flyout");
+        assert!(search_click_outside(Some((1000, 1000)), flyout, bar, 2.0, &rects), "on an app below");
+        // Another monitor, left of the primary one.
+        assert!(search_click_outside(Some((-900, 400)), flyout, bar, 2.0, &rects));
+        assert!(!search_click_outside(None, flyout, bar, 2.0, &rects), "no click position");
+        // Before the bar has reported its controls nothing on it passes through, so nothing on it is outside.
+        assert!(!search_click_outside(Some((800, 20)), flyout, bar, 2.0, &[]));
+    }
 
     #[test]
     fn focused_or_hovered_search_stays_open() {

@@ -10,9 +10,9 @@
   "src/browser/ApprovalCard.tsx": 3,
   "src/browser/BookmarksPanel.tsx": 1,
   "src/browser/BrowserSurface.tsx": 1,
-  "src/browser/CustomisePanel.tsx": 3,
+  "src/browser/CustomisePanel.tsx": 5,
   "src/browser/ImportPanel.tsx": 1,
-  "src/browser/Sidebar.tsx": 1,
+  "src/browser/Sidebar.tsx": 2,
   "src/cleaner/Cleanup.tsx": 1,
   "src/cleaner/Extras.tsx": 5,
   "src/cleaner/Scanning.tsx": 1,
@@ -115,5 +115,8 @@
   "src/themeux/ThemeTab.tsx": 18,
   "src/ui/Skeleton.tsx": 2,
   "src/voice/Conversation.tsx": 1,
-  "src/voice/VoiceHud.tsx": 1
+  "src/voice/VoiceHud.tsx": 1,
+  "src/browser/BrowserSetup.tsx": 1,
+  "src/browser/Pages.tsx": 1,
+  "src/browser/TabStrip.tsx": 1
 }

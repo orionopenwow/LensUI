@@ -6,7 +6,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ChevronDown, Columns2, Folder as FolderIcon, Plus, X } from "lucide-react";
 import type { BrowserState, Tab } from "./api";
-import { hostOf, tabLabel } from "./model";
+import { avatar, hostOf, tabLabel } from "./model";
 import { Avatar } from "./Sidebar";
 import { stripKey, type TabStyle } from "./tabModes";
 
@@ -106,6 +106,7 @@ export function TabStrip(p: StripProps) {
               tabIndex={active ? 0 : -1}
               draggable
               data-weight="light"
+              style={{ "--lb-tab-hue": avatar(t.url, t.title).hue } as React.CSSProperties}
               className={`lb-stab${active ? " is-active" : ""}${t.life === "sleeping" ? " is-sleeping" : ""}${compactIcon ? " is-icon" : ""}${t.pinned ? " is-pinned" : ""}${splitIds.has(t.id) ? " is-split" : ""}`}
               onClick={() => p.onActivate(t.id)}
               onAuxClick={(e) => e.button === 1 && p.onClose(t.id)}
