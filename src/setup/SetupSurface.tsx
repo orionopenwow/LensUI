@@ -23,8 +23,9 @@ export function SetupSurface() {
   }, [run]);
 
   if (!config || !status) return <div className="wiz wiz-full" aria-busy="true" />;
-  // Opened by hand with nothing due: the full first-run slides ("Run setup again").
-  const reason = setupReason(status) ?? "first";
+  // Opened by hand with nothing due, or again after this window's setup was finished or skipped:
+  // the full first-run slides ("Run setup again").
+  const reason = run > 0 ? "first" : setupReason(status) ?? "first";
   return (
     <>
       <SetupWizard
