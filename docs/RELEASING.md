@@ -41,7 +41,7 @@ into the repository.
 
 The signing key is only needed for in-app updates. Without it, `release.yml` still builds the
 NSIS and MSI installers and attaches them (with `SHA256SUMS.txt`, no `.sig`, no `latest.json`) to
-a draft **pre-release** named `Lens vX.Y.Z (preview)`. People can download and install Lens from
+a draft release (not a pre-release, so `/releases/latest` finds it once published). People can download and install Lens from
 it; the in-app updater stays off in that build and points to the Releases page. Once the key is
 set up, the next tag produces a normal signed release.
 
@@ -99,6 +99,21 @@ updates…" in the tray menu opens the Updates card and checks.
 The Updates card shows the release notes (the `notes` in `latest.json`, from the CHANGELOG
 section pasted into the release) under "What's new". Every window gets the same state from
 `win_update` through `lens://update-state` (`src/update/useLensUpdate.ts`).
+
+### The main channel (every push to main)
+
+Settings › About & Testing › Updates has two channels:
+
+- **Every update to main** (the default during the beta): checks hourly against
+  `releases/download/main-build/latest.json` (`win_update::MAIN_ENDPOINT`).
+- **Releases only:** checks daily against the newest published release (`tauri.conf.json`).
+
+`.github/workflows/main-channel.yml` runs on every push to main. It builds the NSIS installer at
+version `<next patch>-main.<run number>` (above the last release, below the next one), signs it
+with the updater key and replaces `Lens-main-setup.exe` and `latest.json` on the rolling
+`main-build` pre-release, installer first. The pre-release never becomes "Latest", so the README's
+download link stays on the newest published release. Without the signing key the workflow skips,
+green. The same "Restart to update" pill and notification then appear on installed copies.
 
 ### Builds run from the source folder
 
