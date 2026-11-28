@@ -37,7 +37,6 @@ import { CORE_APPS, iconUrl, pinEntry } from "../coreapps/registry";
 import { desktopIconOn, firstRunSetupClosed, openLensApps, setDesktopIcon } from "../apps/desktopIcon";
 import { lensAppIconUrl } from "../icons/lensApps";
 import { LensCloud } from "../presence/LensCloud";
-import { isOn } from "../magicwaves/flags";
 import { toast } from "../ui/toastBus";
 import { oops, quiet } from "../ui/oops";
 import {
@@ -155,7 +154,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
   const firstEver = reason === "first" && !baseRef.current.onboardingCompleted;
   const pinnedPaths = new Set((baseRef.current.dock.pinnedApps ?? []).map((p) => p.path));
   const storeAlreadyPinned = pinnedPaths.has(STORE_PIN.path);
-  const widgetsAlreadyOn = isOn(baseRef.current, "desktopWidgets");
+  const widgetsAlreadyOn = baseRef.current.magicWaves?.desktopWidgets === true;
   // First setup: Lens Apps goes on the Dock and widgets go on the desktop unless the person turns
   // them off here; both live inside Lens and are one switch to undo in Settings.
   const [choices, setChoices] = useState<SetupChoices>(() => ({

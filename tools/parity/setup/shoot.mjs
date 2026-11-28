@@ -48,7 +48,9 @@ for (const preset of PRESETS) {
     // Skip setup must close it without writing anything but the seen markers (checked in unit tests).
     await pg.locator("[data-setup-skip]").click();
     await pg.waitForTimeout(200);
-    if (await pg.locator(".wiz").count()) errors.push("Skip setup did not close it");
+    // Skip hides the window and the page starts a fresh setup for next time (back on its first slide).
+    const after = await pg.locator(".wiz").getAttribute("data-setup-page").catch(() => null);
+    if (after && after !== expected[0]) errors.push(`Skip setup did not close it (still on ${after})`);
     report.push({ preset, flow, pages: seen, ok: errors.length === 0, errors });
     console.log(`${errors.length ? "FAIL" : "ok  "} ${preset} ${flow} ${seen.join(" > ")}${errors.length ? " " + errors.join(" | ") : ""}`);
     await pg.close();

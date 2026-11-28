@@ -12,7 +12,6 @@ import { applyFeaturedLook, FEATURED_LOOKS } from "../themes/featured";
 import { packById } from "../themes/packs";
 import { DOCK_STYLES, withDock } from "../dock/styles";
 import { WHATS_NEW, type WhatsNewRelease } from "./whatsNew";
-import { withFlag } from "../magicwaves/flags";
 
 export type SetupReason = "first" | "update" | "forced";
 
@@ -168,6 +167,9 @@ export interface SetupChoices {
   widgets?: boolean;
 }
 
+/** Every Magic flag off: the base when a config has no magicWaves yet (mirrors MAGIC_DEFAULTS). */
+const MAGIC_OFF = { dashboard: false, widgets: false, mouse: false, mouseHoldMs: 400, startButton: false, shelfNotes: false, studioV2: false, learn: false, desktopWidgets: false };
+
 /** The Dock pin that opens Lens Apps (launch_app_cmd knows "lens-surface:apps"). */
 export const STORE_PIN: PinnedApp = { id: "lens-apps", name: "Lens Apps", path: "lens-surface:apps", iconHint: null };
 
@@ -237,7 +239,8 @@ export function applyChoices(base: LensConfig, choices: SetupChoices, version: s
   const wanted = [...(choices.pinStore ? [STORE_PIN] : []), ...(choices.pins ?? [])];
   const add = wanted.filter((p) => !have.has(p.path) && (have.add(p.path), true));
   if (add.length) next = { ...next, dock: { ...next.dock, pinnedApps: [...(next.dock.pinnedApps ?? []), ...add] } };
-  if (choices.widgets !== undefined) next = withFlag(next, "desktopWidgets", choices.widgets);
+  // Desktop widgets' switch (magicWaves.desktopWidgets); the other Magic flags stay as they are.
+  if (choices.widgets !== undefined) next = { ...next, magicWaves: { ...MAGIC_OFF, ...next.magicWaves, desktopWidgets: choices.widgets } };
   return markSeen(next, version);
 }
 
