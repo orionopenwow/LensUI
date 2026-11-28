@@ -4846,6 +4846,8 @@ export interface UpdateSettings {
   mode: string;
   /** Unix ms of the last automatic check. */
   lastCheckMs: number;
+  /** "main" (every push to main, the default during the beta) | "stable" (published releases). */
+  channel: string;
 }
 
 /** Rust: `win_update::UpdateStatus` */
